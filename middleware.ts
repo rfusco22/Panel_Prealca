@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const publicRoutes = ['/login', '/api/auth'];
+const publicRoutes = ['/auth/login', '/auth/forget', '/api/auth'];
 const adminRoutes = ['/admin'];
 const registroRoutes = ['/registro'];
 const documentadorRoutes = ['/documentador'];
@@ -8,12 +8,17 @@ const documentadorRoutes = ['/documentador'];
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Permitir rutas públicas
+  // 1. SOLUCIÓN: Permitir acceso a archivos de video e imágenes (public/...)
+  if (pathname.endsWith('.mp4') || pathname.endsWith('.jpeg') || pathname.endsWith('.png')) {
+    return NextResponse.next();
+  }
+
+  // 2. Permitir rutas públicas
   if (publicRoutes.some(route => pathname.startsWith(route))) {
     return NextResponse.next();
   }
 
-  // Permitir API routes de auth
+  // Permitir API routes
   if (pathname.startsWith('/api')) {
     return NextResponse.next();
   }
@@ -22,11 +27,9 @@ export async function middleware(request: NextRequest) {
   const session = request.cookies.get('session');
   
   if (!session) {
-    return NextResponse.redirect(new URL('/login', request.url));
+    return NextResponse.redirect(new URL('/auth/login', request.url));
   }
 
-  // En una implementación real, aquí verificarías el rol del usuario
-  // Por ahora, permitimos acceso a todas las rutas autenticadas
   return NextResponse.next();
 }
 
