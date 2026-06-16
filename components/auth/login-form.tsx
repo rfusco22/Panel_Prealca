@@ -12,23 +12,34 @@ export function LoginForm() {
   const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError('');
+  e.preventDefault();
+  setIsLoading(true);
+  setError('');
 
-    // Simulación de autenticación profesional y fluida
-    setTimeout(() => {
-      if (email && password) {
-        // Simular éxito con redirección
-        console.log('Autenticado en PREALCA:', { email });
-        setIsLoading(false);
-        // router.push('/dashboard'); // Descomentar cuando tengas la ruta lista
-      } else {
-        setError('Por favor, introduce credenciales válidas.');
-        setIsLoading(false);
-      }
-    }, 1800); // Retraso intencional para lucir la animación de carga industrial
-  };
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      // Éxito: redirección dinámica según el rol enviado por la API
+      console.log('Autenticación exitosa, redirigiendo a:', data.redirect);
+      router.push(data.redirect); 
+      router.refresh(); // Refresca el router para actualizar estados de sesión
+    } else {
+      // Error: mostrar mensaje del servidor
+      setError(data.error || 'Credenciales inválidas.');
+    }
+  } catch (err) {
+    setError('Error de conexión con el servidor.');
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5 text-left">
@@ -94,6 +105,16 @@ export function LoginForm() {
           Mantener sesión activa en esta estación
         </label>
       </div>
+
+      {/* Botón de Registro (Acción Secundaria) */}
+<div className="pt-2">
+  <Link
+    href="/auth/registro" // Esta es la URL que debe coincidir con tu carpeta app/auth/registro
+    className="w-full h-12 flex items-center justify-center border-2 border-zinc-200 text-zinc-600 font-bold text-sm tracking-wide uppercase rounded-xl transition-all duration-300 hover:border-zinc-300 hover:bg-zinc-50 active:scale-[0.99]"
+  >
+    ¿No tienes cuenta? Regístrate
+  </Link>
+</div>
 
       {/* Botón de Envío Súper Animado */}
       <button

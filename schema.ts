@@ -1,5 +1,19 @@
-import { mysqlTable, serial, varchar, text, decimal, int, boolean, datetime, json, enum as mysqlEnum, uniqueIndex, index } from 'drizzle-orm/mysql-core';
+import { 
+  mysqlTable, 
+  serial, 
+  varchar, 
+  text, 
+  decimal, 
+  int, 
+  boolean, 
+  datetime, 
+  json, 
+  mysqlEnum, // <--- CORRECCIÓN AQUÍ
+  uniqueIndex, 
+  index 
+} from 'drizzle-orm/mysql-core';
 import { relations } from 'drizzle-orm';
+import { sql } from 'drizzle-orm'; // <-- AGREGA ESTO
 
 // ==================== USUARIOS Y AUTENTICACIÓN ====================
 
@@ -10,8 +24,8 @@ export const users = mysqlTable('users', {
   nombre: varchar('nombre', { length: 255 }).notNull(),
   role: mysqlEnum('role', ['admin', 'registro', 'documentador']).notNull().default('registro'),
   estado: varchar('estado', { length: 50 }).default('activo'),
-  createdAt: datetime('created_at').defaultNow(),
-  updatedAt: datetime('updated_at').onUpdateNow(),
+  createdAt: datetime('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: datetime('updated_at').$onUpdateFn(() => sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
   emailIdx: uniqueIndex('email_idx').on(table.email),
 }));
@@ -20,7 +34,7 @@ export const sessions = mysqlTable('sessions', {
   id: varchar('id', { length: 255 }).primaryKey(),
   userId: serial('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   expiresAt: datetime('expires_at').notNull(),
-  createdAt: datetime('created_at').defaultNow(),
+  createdAt: datetime('created_at').default(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
   userIdIdx: index('user_id_idx').on(table.userId),
 }));
@@ -34,8 +48,8 @@ export const proveedores = mysqlTable('proveedores', {
   direccion: text('direccion'),
   clasificacionGasto: varchar('clasificacion_gasto', { length: 100 }),
   esContribuyenteEspecial: boolean('es_contribuyente_especial').default(false),
-  createdAt: datetime('created_at').defaultNow(),
-  updatedAt: datetime('updated_at').onUpdateNow(),
+  createdAt: datetime('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: datetime('updated_at').onUpdate(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
   rifIdx: uniqueIndex('proveedor_rif_idx').on(table.rif),
 }));
@@ -46,8 +60,8 @@ export const clientes = mysqlTable('clientes', {
   rif: varchar('rif', { length: 50 }).notNull().unique(),
   direccion: text('direccion'),
   esContribuyenteEspecial: boolean('es_contribuyente_especial').default(false),
-  createdAt: datetime('created_at').defaultNow(),
-  updatedAt: datetime('updated_at').onUpdateNow(),
+  createdAt: datetime('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: datetime('updated_at').onUpdate(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
   rifIdx: uniqueIndex('cliente_rif_idx').on(table.rif),
 }));
@@ -58,8 +72,8 @@ export const bancos = mysqlTable('bancos', {
   numeroCuenta: varchar('numero_cuenta', { length: 50 }).notNull().unique(),
   titularCuenta: varchar('titular_cuenta', { length: 255 }),
   cedula: varchar('cedula', { length: 50 }),
-  createdAt: datetime('created_at').defaultNow(),
-  updatedAt: datetime('updated_at').onUpdateNow(),
+  createdAt: datetime('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: datetime('updated_at').onUpdate(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
   cuentaIdx: uniqueIndex('cuenta_idx').on(table.numeroCuenta),
 }));
@@ -69,8 +83,8 @@ export const productos = mysqlTable('productos', {
   nombre: varchar('nombre', { length: 255 }).notNull(),
   resistencia: varchar('resistencia', { length: 100 }),
   descripcion: text('descripcion'),
-  createdAt: datetime('created_at').defaultNow(),
-  updatedAt: datetime('updated_at').onUpdateNow(),
+  createdAt: datetime('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: datetime('updated_at').onUpdate(sql`CURRENT_TIMESTAMP`),
 });
 
 export const unidades = mysqlTable('unidades', {
