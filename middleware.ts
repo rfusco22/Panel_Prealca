@@ -1,25 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sessionOptions } from '@/lib/session';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 1. Rutas públicas
+  // 1. Rutas públicas: Acceso libre
   if (pathname.startsWith('/auth') || pathname.startsWith('/api/auth')) {
     return NextResponse.next();
   }
 
-  // 2. Validación de existencia de cookie
-  const sessionCookie = request.cookies.get(sessionOptions.cookieName);
+  // 2. Verificar la única cookie que realmente usas: 'prealca-session'
+  const sessionToken = request.cookies.get('prealca-session');
 
-  if (!sessionCookie) {
+  if (!sessionToken) {
     return NextResponse.redirect(new URL('/auth/login', request.url));
   }
 
-  // Si llega aquí, la cookie existe, dejamos pasar al Server Component
+  // 3. Dejamos pasar al admin. 
+  // LA VALIDACIÓN DE ROL DEBE HACERSE EN app/admin/page.tsx (Server Component)
+  // No hagas fetch aquí, eso causa bucles y errores de sintaxis.
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: ["/((?!api|_next|_vercel|.*\\..*).*)"],
 };

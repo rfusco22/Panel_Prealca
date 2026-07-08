@@ -12,7 +12,8 @@ export function LoginForm() {
   const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+  e.preventDefault(); // Detiene el comportamiento por defecto del navegador
+  e.stopPropagation(); // Detiene cualquier burbujeo de eventos
   setIsLoading(true);
   setError('');
 
@@ -26,16 +27,14 @@ export function LoginForm() {
     const data = await res.json();
 
     if (res.ok) {
-      // Éxito: redirección dinámica según el rol enviado por la API
-      console.log('Autenticación exitosa, redirigiendo a:', data.redirect);
-      router.push(data.redirect); 
-      router.refresh(); // Refresca el router para actualizar estados de sesión
+      console.log('Éxito, redirigiendo a:', data.redirect);
+      // FORZAR REDIRECCIÓN: Esto es lo más importante
+      window.location.href = data.redirect; 
     } else {
-      // Error: mostrar mensaje del servidor
       setError(data.error || 'Credenciales inválidas.');
     }
   } catch (err) {
-    setError('Error de conexión con el servidor.');
+    setError('Error de conexión.');
   } finally {
     setIsLoading(false);
   }
