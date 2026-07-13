@@ -1,125 +1,128 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@/components/ui/button';
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 
-const clienteSchema = z.object({
-  nombre: z.string().min(3, 'El nombre debe tener al menos 3 caracteres'),
-  rif: z.string().min(6, 'El RIF debe tener al menos 6 caracteres'),
-  direccion: z.string().optional(),
-  esContribuyenteEspecial: z.boolean().default(false),
-});
+export default function ClienteForm({ onClose }: { onClose?: () => void }) {
+  const { register, handleSubmit, reset } = useForm();
+  const [isLoading, setIsLoading] = useState(false);
+  const [mensaje, setMensaje] = useState({ tipo: "", texto: "" });
 
-type ClienteFormData = z.infer<typeof clienteSchema>;
-
-interface ClienteFormProps {
-  onSubmit: (data: ClienteFormData) => Promise<void>;
-  isLoading?: boolean;
-  initialData?: Partial<ClienteFormData>;
-  title?: string;
-}
-
-export function ClienteForm({
-  onSubmit,
-  isLoading = false,
-  initialData,
-  title = 'Nuevo Cliente',
-}: ClienteFormProps) {
-  const [error, setError] = useState<string | null>(null);
-  const { register, handleSubmit, formState: { errors } } = useForm<ClienteFormData>({
-    resolver: zodResolver(clienteSchema),
-    defaultValues: initialData,
-  });
-
-  const handleFormSubmit = async (data: ClienteFormData) => {
-    setError(null);
+  const onSubmit = async (data: any) => {
+    setIsLoading(true);
+    setMensaje({ tipo: "", texto: "" });
+    
     try {
-      await onSubmit(data);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Error al guardar cliente';
-      setError(message);
+      const response = await fetch("/api/clientes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok) {
+        setMensaje({ tipo: "exito", texto: "Cliente registrado exitosamente en el directorio." });
+        reset();
+        
+        // Esperamos 1 segundo para mostrar el mensaje de éxito y luego recargamos/cerramos
+        setTimeout(() => {
+          if (onClose) onClose();
+          window.location.reload(); 
+        }, 1200);
+
+      } else {
+        setMensaje({ tipo: "error", texto: result.error || "Error al registrar el cliente." });
+      }
+    } catch (error) {
+      setMensaje({ tipo: "error", texto: "Error de conexión con el servidor." });
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  // Clases CSS reutilizables para mantener el diseño Premium exacto
+  const inputCls = "w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 text-sm font-medium text-slate-900 shadow-sm placeholder:text-slate-300 transition-all";
+  const labelCls = "block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2";
+
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6 max-w-2xl mx-auto">
-      <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col h-full">
+      
+      <div className="p-8 space-y-6">
+        
+        {/* Mensajes de Alerta */}
+        {mensaje.texto && (
+          <div className={`p-4 rounded-xl flex items-center gap-3 text-sm font-medium border ${mensaje.tipo === "error" ? "bg-red-50 text-red-700 border-red-100" : "bg-emerald-50 text-emerald-700 border-emerald-100"}`}>
+            {mensaje.tipo === "error" ? <AlertCircle size={18} /> : <CheckCircle2 size={18} />}
+            {mensaje.texto}
+          </div>
+        )}
 
-      {error && <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded">{error}</div>}
+        {/* Campos del Formulario */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          
+          <div className="space-y-1">
+            <label className={labelCls}>Razón Social / Nombre</label>
+            <input 
+              type="text" 
+              {...register("nombre", { required: true })} 
+              className={inputCls} 
+              placeholder="Ej: Inversiones CA / Juan Pérez" 
+            />
+          </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label htmlFor="nombre" className="block text-sm font-medium text-gray-700 mb-2">
-            Nombre *
-          </label>
-          <input
-            {...register('nombre')}
-            id="nombre"
-            type="text"
-            placeholder="Nombre del cliente"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          {errors.nombre && <p className="text-red-500 text-sm mt-1">{errors.nombre.message}</p>}
+          <div className="space-y-1">
+            <label className={labelCls}>RIF / Cédula</label>
+            <input 
+              type="text" 
+              {...register("rif", { required: true })} 
+              className={inputCls} 
+              placeholder="Ej: J-12345678-9" 
+            />
+          </div>
+
+          <div className="md:col-span-2 space-y-1">
+            <label className={labelCls}>Teléfono</label>
+            <input 
+              type="text" 
+              {...register("telefono")} 
+              className={inputCls} 
+              placeholder="Ej: 0414-0000000" 
+            />
+          </div>
+
+          <div className="md:col-span-2 space-y-1">
+            <label className={labelCls}>Dirección</label>
+            <textarea 
+              {...register("direccion")} 
+              className={`${inputCls} resize-none`} 
+              rows={3} 
+              placeholder="Dirección fiscal o de residencia"
+            ></textarea>
+          </div>
+
         </div>
-
-        <div>
-          <label htmlFor="rif" className="block text-sm font-medium text-gray-700 mb-2">
-            RIF *
-          </label>
-          <input
-            {...register('rif')}
-            id="rif"
-            type="text"
-            placeholder="V-12345678 o J-12345678"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          {errors.rif && <p className="text-red-500 text-sm mt-1">{errors.rif.message}</p>}
-        </div>
       </div>
 
-      <div>
-        <label htmlFor="direccion" className="block text-sm font-medium text-gray-700 mb-2">
-          Dirección
-        </label>
-        <textarea
-          {...register('direccion')}
-          id="direccion"
-          placeholder="Dirección del cliente"
-          rows={3}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-
-      <div className="flex items-end">
-        <label className="flex items-center space-x-3 cursor-pointer">
-          <input
-            {...register('esContribuyenteEspecial')}
-            type="checkbox"
-            className="w-4 h-4"
-          />
-          <span className="text-sm font-medium text-gray-700">Contribuyente Especial (aplica retención IVA)</span>
-        </label>
-      </div>
-
-      <div className="flex justify-end gap-4">
-        <Button
-          type="button"
-          className="bg-gray-300 hover:bg-gray-400 text-gray-900"
-          onClick={() => window.history.back()}
+      {/* FOOTER DE BOTONES */}
+      <div className="px-8 py-6 bg-slate-50 flex items-center justify-end gap-3 border-t border-slate-100 mt-auto">
+        <button 
+          type="button" 
+          onClick={onClose}
+          className="text-slate-500 hover:text-slate-700 hover:bg-slate-200 bg-slate-100 border border-slate-200 rounded-xl px-6 py-4 text-sm font-medium transition-colors"
         >
           Cancelar
-        </Button>
-        <Button
+        </button>
+        <button 
           type="submit"
           disabled={isLoading}
-          className="bg-blue-600 hover:bg-blue-700 text-white"
+          className="bg-slate-900 hover:bg-slate-800 text-white rounded-xl px-8 py-4 shadow-md transition-all text-sm font-semibold disabled:opacity-50"
         >
-          {isLoading ? 'Guardando...' : 'Guardar'}
-        </Button>
+          {isLoading ? "Guardando..." : "Guardar Cliente"}
+        </button>
       </div>
+
     </form>
   );
 }

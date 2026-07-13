@@ -1,20 +1,37 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Building2, Package, Truck, Receipt, Settings, PieChart, LogOut, LayoutDashboard } from "lucide-react";
+import { 
+  Building2, 
+  Package, 
+  Truck, 
+  Receipt, 
+  Settings, 
+  PieChart, 
+  LogOut, 
+  LayoutDashboard,
+  Users,           // <- Nuevo ícono para Vendedores
+  TrendingUp,      // <- Nuevo ícono para Ingresos
+  TrendingDown     // <- Nuevo ícono para Egresos
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 
 const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/admin" },
+  { id: "ingresos", label: "Ingresos", icon: TrendingUp, href: "/admin/ingresos" },
+  { id: "egresos", label: "Egresos", icon: TrendingDown, href: "/admin/egresos" },
+  // Nota: Ajusta la ruta "/admin/vendedores" a "/registro/vendedores" si corresponde a ese rol específico
+  { id: "vendedores", label: "Vendedores", icon: Users, href: "/admin/vendedores" }, 
   { id: "bancos", label: "Gestión de Bancos", icon: Building2, href: "/admin/bancos" },
   { id: "productos", label: "Productos", icon: Package, href: "/admin/productos" },
   { id: "unidades", label: "Unidades", icon: Truck, href: "/admin/unidades" },
   { id: "retenciones", label: "Retenciones", icon: Receipt, href: "/admin/retenciones" },
   { id: "reportes", label: "Reportes", icon: PieChart, href: "/admin/reportes" },
+  { id: "agregados", label: "Agregados", icon: Settings, href: "/admin/agregados" },
   { id: "settings", label: "Configuración", icon: Settings, href: "/admin/settings" },
-   {id: "agregados", label: "Agregados", icon: Settings, href: "/admin/agregados" },
+  { id: "clientes", label: "Clientes", icon: Users, href: "/admin/clientes" },
 ];
 
 export function Sidebar({ 
@@ -73,7 +90,8 @@ export function Sidebar({
           
           {menuItems.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href;
+            // Manejamos rutas dinámicas o exactas para mantener el estilo 'active'
+            const isActive = pathname.startsWith(item.href) && (pathname === item.href || item.href !== "/admin");
             
             return (
               <Link key={item.id} href={item.href} title={isCollapsed ? item.label : ""}>

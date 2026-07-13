@@ -1,101 +1,56 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import { Trash2, Edit2 } from 'lucide-react';
+import { useState, useEffect } from "react";
 
-interface Cliente {
-  id: number;
-  nombre: string;
-  rif: string;
-  direccion?: string;
-  esContribuyenteEspecial: boolean;
-}
+export default function ClientesTable() {
+  const [data, setData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-interface ClientesTableProps {
-  data: Cliente[];
-  onDelete?: (id: number) => Promise<void>;
-  isLoading?: boolean;
-  editLink?: (id: number) => string;
-}
+  useEffect(() => {
+    fetch('/api/clientes')
+      .then(res => res.json())
+      .then(result => setData(result.clientes || []))
+      .catch(err => {
+        console.error("Error al obtener los clientes:", err);
+        setData([]);
+      })
+      .finally(() => setIsLoading(false));
+  }, []);
 
-export function ClientesTable({
-  data,
-  onDelete,
-  isLoading = false,
-  editLink = (id) => `/registro/clientes/${id}/edit`,
-}: ClientesTableProps) {
-  const [deletingId, setDeletingId] = useState<number | null>(null);
-
-  const handleDelete = async (id: number) => {
-    if (!onDelete || !confirm('¿Estás seguro de que deseas eliminar este cliente?')) {
-      return;
-    }
-
-    setDeletingId(id);
-    try {
-      await onDelete(id);
-    } finally {
-      setDeletingId(null);
-    }
-  };
-
-  if (data.length === 0) {
+  if (isLoading) {
     return (
-      <div className="text-center py-12">
-        <p className="text-gray-500">No hay clientes registrados</p>
+      <div className="p-8 text-center text-slate-500 font-medium">
+        Cargando directorio de clientes...
+      </div>
+    );
+  }
+  
+  if (!data || data.length === 0) {
+    return (
+      <div className="p-8 text-center text-slate-500 font-medium">
+        No hay clientes registrados en el sistema.
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto bg-white rounded-lg shadow">
-      <table className="w-full">
-        <thead className="bg-gray-100 border-b">
+    <div className="overflow-x-auto">
+      <table className="w-full text-left text-sm text-slate-600">
+        <thead className="bg-slate-50/80 text-[10px] uppercase font-extrabold text-slate-500 tracking-widest border-b border-slate-200">
           <tr>
-            <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Nombre</th>
-            <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">RIF</th>
-            <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Dirección</th>
-            <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Contribuyente Especial</th>
-            <th className="px-6 py-3 text-center text-sm font-semibold text-gray-900">Acciones</th>
+            <th className="px-6 py-4">ID</th>
+            <th className="px-6 py-4">Razón Social</th>
+            <th className="px-6 py-4">RIF</th>
+            <th className="px-6 py-4">Teléfono</th>
           </tr>
         </thead>
-        <tbody>
-          {data.map((cliente) => (
-            <tr key={cliente.id} className="border-b hover:bg-gray-50 transition">
-              <td className="px-6 py-3 text-sm text-gray-900">{cliente.nombre}</td>
-              <td className="px-6 py-3 text-sm text-gray-600">{cliente.rif}</td>
-              <td className="px-6 py-3 text-sm text-gray-600">{cliente.direccion || '--'}</td>
-              <td className="px-6 py-3 text-sm">
-                {cliente.esContribuyenteEspecial ? (
-                  <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">
-                    Sí
-                  </span>
-                ) : (
-                  <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs">No</span>
-                )}
-              </td>
-              <td className="px-6 py-3 text-center">
-                <div className="flex justify-center gap-2">
-                  <Link href={editLink(cliente.id)}>
-                    <Button
-                      size="sm"
-                      className="bg-blue-600 hover:bg-blue-700 text-white p-2"
-                    >
-                      <Edit2 size={16} />
-                    </Button>
-                  </Link>
-                  <Button
-                    size="sm"
-                    className="bg-red-600 hover:bg-red-700 text-white p-2"
-                    onClick={() => handleDelete(cliente.id)}
-                    disabled={deletingId === cliente.id || isLoading}
-                  >
-                    <Trash2 size={16} />
-                  </Button>
-                </div>
-              </td>
+        <tbody className="divide-y divide-slate-100">
+          {data.map((c) => (
+            <tr key={c.id} className="hover:bg-slate-50/80 transition-colors">
+              <td className="px-6 py-4 font-mono text-slate-400">#{c.id}</td>
+              <td className="px-6 py-4 font-bold text-slate-800">{c.nombre}</td>
+              <td className="px-6 py-4 font-medium text-slate-600">{c.rif}</td>
+              <td className="px-6 py-4 text-slate-500">{c.telefono || '-'}</td>
             </tr>
           ))}
         </tbody>

@@ -1,140 +1,93 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import { Trash2, Edit2, Eye } from 'lucide-react';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { useState, useEffect } from "react";
 
-interface Ingreso {
-  id: number;
-  bancoId: number;
-  clienteId: number;
-  descripcion?: string;
-  m3?: number;
-  resistencia?: string;
-  precioBolivares: number;
-  precioDolares?: number;
-  ivaAplicado: boolean;
-  ivaMonto?: number;
-  esAnticipo: boolean;
-  referencia?: string;
-  fecha: Date;
-}
+export default function IngresosTable() {
+  // 1. Inicializar siempre con un arreglo vacío
+  const [data, setData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
 
-interface IngresosTableProps {
-  data: Ingreso[];
-  onDelete?: (id: number) => Promise<void>;
-  isLoading?: boolean;
-  editLink?: (id: number) => string;
-}
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch('/api/ingresos');
+        if (!response.ok) throw new Error("Fallo al obtener los datos del servidor");
+        
+        const result = await response.json();
+        
+        // 2. Extraer el arreglo dependiendo de cómo responda tu API GET
+        const arregloDatos = Array.isArray(result) ? result : (result.ingresos || result.data || []);
+        
+        setData(arregloDatos);
+      } catch (err) {
+        console.error("Error cargando ingresos:", err);
+        setError("Ocurrió un error al cargar el historial de ingresos.");
+        setData([]); // Mantenemos el estado seguro
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-export function IngresosTable({
-  data,
-  onDelete,
-  isLoading = false,
-  editLink = (id) => `/registro/ingresos/${id}/edit`,
-}: IngresosTableProps) {
-  const [deletingId, setDeletingId] = useState<number | null>(null);
+    fetchData();
+  }, []);
 
-  const handleDelete = async (id: number) => {
-    if (!onDelete || !confirm('¿Estás seguro de que deseas eliminar este ingreso?')) {
-      return;
-    }
-
-    setDeletingId(id);
-    try {
-      await onDelete(id);
-    } finally {
-      setDeletingId(null);
-    }
-  };
-
-  if (data.length === 0) {
+  // 3. Manejo de estados de carga y error ANTES de renderizar la tabla
+  if (isLoading) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500">No hay ingresos registrados</p>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <p className="text-gray-500 font-medium">Cargando historial de ingresos...</p>
       </div>
     );
   }
 
+  if (error) {
+    return (
+      <div className="text-center py-12 bg-red-50 rounded-lg">
+        <p className="text-red-600 font-medium">{error}</p>
+      </div>
+    );
+  }
+
+  // 4. Protección contra undefined o arreglos vacíos
+  if (!data || data.length === 0) {
+    return (
+      <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-lg bg-gray-50">
+        <p className="text-gray-500">No hay ingresos registrados en el sistema.</p>
+      </div>
+    );
+  }
+
+  // 5. Renderizado seguro de la tabla
   return (
-    <div className="overflow-x-auto bg-white rounded-lg shadow">
-      <table className="w-full">
-        <thead className="bg-gray-100 border-b">
+    <div className="overflow-x-auto rounded-md border border-gray-200">
+      <table className="min-w-full divide-y divide-gray-200 text-sm text-left">
+        <thead className="bg-gray-100">
           <tr>
-            <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Fecha</th>
-            <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Referencia</th>
-            <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Descripción</th>
-            <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">Bolívares</th>
-            <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">Dólares</th>
-            <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">IVA</th>
-            <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Tipo</th>
-            <th className="px-6 py-3 text-center text-sm font-semibold text-gray-900">Acciones</th>
+            <th className="px-4 py-3 font-semibold text-gray-700">ID</th>
+            <th className="px-4 py-3 font-semibold text-gray-700">Fecha</th>
+            <th className="px-4 py-3 font-semibold text-gray-700">Banco</th>
+            <th className="px-4 py-3 font-semibold text-gray-700">Referencia</th>
+            <th className="px-4 py-3 font-semibold text-gray-700">Cliente</th>
+            <th className="px-4 py-3 font-semibold text-gray-700">Monto (Bs)</th>
+            <th className="px-4 py-3 font-semibold text-gray-700">Monto ($)</th>
+            <th className="px-4 py-3 font-semibold text-gray-700">Tasa Aplicada</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="bg-white divide-y divide-gray-200">
           {data.map((ingreso) => (
-            <tr key={ingreso.id} className="border-b hover:bg-gray-50 transition">
-              <td className="px-6 py-3 text-sm text-gray-600">
-                {format(new Date(ingreso.fecha), 'dd MMM yyyy', { locale: es })}
+            <tr key={ingreso.id} className="hover:bg-gray-50 transition-colors">
+              <td className="px-4 py-3 text-gray-500">#{ingreso.id}</td>
+              <td className="px-4 py-3 whitespace-nowrap">
+                {new Date(ingreso.createdAt || ingreso.fecha).toLocaleDateString('es-VE')}
               </td>
-              <td className="px-6 py-3 text-sm text-gray-900 font-medium">{ingreso.referencia || '--'}</td>
-              <td className="px-6 py-3 text-sm text-gray-600">{ingreso.descripcion?.substring(0, 30) || '--'}</td>
-              <td className="px-6 py-3 text-sm text-right text-gray-900 font-medium">
-                {ingreso.precioBolivares.toFixed(2)} Bs
-              </td>
-              <td className="px-6 py-3 text-sm text-right text-gray-600">
-                ${(ingreso.precioDolares || 0).toFixed(2)}
-              </td>
-              <td className="px-6 py-3 text-sm text-right">
-                {ingreso.ivaAplicado ? (
-                  <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold">
-                    {(ingreso.ivaMonto || 0).toFixed(2)} Bs
-                  </span>
-                ) : (
-                  <span className="text-gray-400">--</span>
-                )}
-              </td>
-              <td className="px-6 py-3 text-sm">
-                {ingreso.esAnticipo ? (
-                  <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-semibold">
-                    Anticipo
-                  </span>
-                ) : (
-                  <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">
-                    Normal
-                  </span>
-                )}
-              </td>
-              <td className="px-6 py-3 text-center">
-                <div className="flex justify-center gap-2">
-                  <Button
-                    size="sm"
-                    className="bg-gray-600 hover:bg-gray-700 text-white p-2"
-                    title="Ver detalles"
-                  >
-                    <Eye size={16} />
-                  </Button>
-                  <Link href={editLink(ingreso.id)}>
-                    <Button
-                      size="sm"
-                      className="bg-blue-600 hover:bg-blue-700 text-white p-2"
-                    >
-                      <Edit2 size={16} />
-                    </Button>
-                  </Link>
-                  <Button
-                    size="sm"
-                    className="bg-red-600 hover:bg-red-700 text-white p-2"
-                    onClick={() => handleDelete(ingreso.id)}
-                    disabled={deletingId === ingreso.id || isLoading}
-                  >
-                    <Trash2 size={16} />
-                  </Button>
-                </div>
-              </td>
+              <td className="px-4 py-3 font-medium text-gray-900">{ingreso.banco}</td>
+              <td className="px-4 py-3 text-gray-600">{ingreso.referencia}</td>
+              <td className="px-4 py-3">{ingreso.nombreCliente}</td>
+              <td className="px-4 py-3 font-semibold text-green-700">Bs. {Number(ingreso.precioBs).toLocaleString('es-VE')}</td>
+              <td className="px-4 py-3 text-gray-700">${Number(ingreso.precioDivisa).toLocaleString('es-VE')}</td>
+              <td className="px-4 py-3 text-gray-500 text-xs">Bs. {ingreso.tasaCambio}</td>
             </tr>
           ))}
         </tbody>

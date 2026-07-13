@@ -1,299 +1,716 @@
-'use client';
+// "use client";
 
-import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@/components/ui/button';
-import { calculateIVA, convertBolivaresToDollars, getExchangeRate } from '@/lib/currency';
+// import { useState, useEffect } from "react";
+// import { useForm } from "react-hook-form";
+// import { AlertCircle, CheckCircle2, TrendingUp } from "lucide-react";
 
-const ingresoSchema = z.object({
-  bancoId: z.coerce.number().min(1, 'Debe seleccionar un banco'),
-  clienteId: z.coerce.number().min(1, 'Debe seleccionar un cliente'),
-  vendedorId: z.coerce.number().optional(),
-  descripcion: z.string().optional(),
-  m3: z.coerce.number().min(0.01, 'Cantidad mínima 0.01').optional(),
-  resistencia: z.string().optional(),
-  precioBolivares: z.coerce.number().min(0, 'Precio debe ser positivo'),
-  ivaAplicado: z.boolean().default(false),
-  esAnticipo: z.boolean().default(false),
-  referencia: z.string().optional(),
-});
+// export default function IngresoForm({ onClose }: { onClose?: () => void }) {
+//   const { register, handleSubmit, watch, setValue, reset } = useForm({
+//     defaultValues: {
+//       aplicaIva: false,
+//       precioBs: 0,
+//       tipoDocumento: "FACTURA",
+//       nombreCliente: "",
+//       rif: "",
+//       valorComision: ""
+//     }
+//   });
+  
+//   const [tasaCambio, setTasaCambio] = useState<number>(0);
+//   const [cargandoTasa, setCargandoTasa] = useState(true);
+//   const [errorTasa, setErrorTasa] = useState<string | null>(null);
+//   const [ultimaActualizacion, setUltimaActualizacion] = useState<string>("");
 
-type IngresoFormData = z.infer<typeof ingresoSchema>;
+//   const [vendedores, setVendedores] = useState<any[]>([]);
+//   const [cargandoVendedores, setCargandoVendedores] = useState(true);
+  
+//   const [clientes, setClientes] = useState<any[]>([]);
+//   const [cargandoClientes, setCargandoClientes] = useState(true);
 
-interface IngresoFormProps {
-  onSubmit: (data: IngresoFormData & { precioDolares: number; ivaMonto: number }) => Promise<void>;
-  isLoading?: boolean;
-  initialData?: Partial<IngresoFormData>;
-  title?: string;
-  bancos?: Array<{ id: number; nombreBanco: string }>;
-  clientes?: Array<{ id: number; nombre: string }>;
-  vendedores?: Array<{ id: number; nombre: string }>;
-}
+//   const [productos, setProductos] = useState<any[]>([]);
+//   const [cargandoProductos, setCargandoProductos] = useState(true);
 
-export function IngresoForm({
-  onSubmit,
-  isLoading = false,
-  initialData,
-  title = 'Registrar Ingreso',
-  bancos = [],
-  clientes = [],
-  vendedores = [],
-}: IngresoFormProps) {
-  const [error, setError] = useState<string | null>(null);
-  const [exchangeRate, setExchangeRate] = useState<number>(35.0);
-  const [precioDolares, setPrecioDolares] = useState<number>(0);
-  const [ivaMonto, setIvaMonto] = useState<number>(0);
-  const [loadingRate, setLoadingRate] = useState(true);
+//   const [isLoading, setIsLoading] = useState(false);
+//   const [mensaje, setMensaje] = useState({ tipo: "", texto: "" });
+//   const [totalBsVisual, setTotalBsVisual] = useState("0.00"); 
+  
+//   const [tipoComision, setTipoComision] = useState<"PORCENTAJE" | "MONTO">("PORCENTAJE");
 
-  const { register, handleSubmit, watch, formState: { errors }, setValue } = useForm<IngresoFormData>({
-    resolver: zodResolver(ingresoSchema),
-    defaultValues: initialData,
+//   const precioBs = watch("precioBs", 0);
+//   const aplicaIva = watch("aplicaIva", false);
+//   const clienteSeleccionado = watch("nombreCliente");
+
+//   useEffect(() => {
+//     const fetchBCVRate = async () => {
+//       setCargandoTasa(true);
+//       setErrorTasa(null);
+//       try {
+//         const res = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
+//         if (!res.ok) throw new Error('Error en la red');
+//         const data = await res.json();
+//         if (data && data.promedio) {
+//           setTasaCambio(data.promedio);
+//           setValue("tasaCambio", data.promedio); 
+//           const updateDate = new Date(data.fechaActualizacion);
+//           setUltimaActualizacion(updateDate.toLocaleString('es-VE', { dateStyle: 'medium', timeStyle: 'short' }));
+//         }
+//       } catch (error) {
+//         setErrorTasa('No se pudo obtener la tasa actual.');
+//       } finally {
+//         setCargandoTasa(false);
+//       }
+//     };
+//     fetchBCVRate();
+//   }, [setValue]);
+
+//   useEffect(() => {
+//     fetch('/api/vendedores').then(res => res.json()).then(data => {
+//       if (data.success && data.vendedores) setVendedores(data.vendedores);
+//       setCargandoVendedores(false);
+//     });
+//   }, []);
+
+//   useEffect(() => {
+//     fetch('/api/clientes').then(res => res.json()).then(data => {
+//       if (data.success && data.clientes) setClientes(data.clientes);
+//       setCargandoClientes(false);
+//     });
+//   }, []);
+
+//   useEffect(() => {
+//     fetch('/api/productos').then(res => res.json()).then(data => {
+//       const prodArray = Array.isArray(data) ? data : (data.productos || []);
+//       setProductos(prodArray);
+//       setCargandoProductos(false);
+//     });
+//   }, []);
+
+//   useEffect(() => {
+//     if (clienteSeleccionado && clientes.length > 0) {
+//       const clienteEncontrado = clientes.find(c => c.nombre === clienteSeleccionado);
+//       if (clienteEncontrado) setValue("rif", clienteEncontrado.rif); 
+//     } else {
+//       setValue("rif", ""); 
+//     }
+//   }, [clienteSeleccionado, clientes, setValue]);
+
+//   useEffect(() => {
+//     if (tasaCambio > 0) {
+//       const baseBs = parseFloat(precioBs.toString()) || 0;
+//       const ivaBs = aplicaIva ? (baseBs * 0.16) : 0;
+//       const totalConIvaBs = baseBs + ivaBs;
+//       const totalConIvaUsd = totalConIvaBs / tasaCambio;
+
+//       setValue("montoIva", ivaBs.toFixed(2));
+//       setValue("precioDivisa", totalConIvaUsd.toFixed(2));
+//       setTotalBsVisual(totalConIvaBs.toFixed(2));
+//     }
+//   }, [precioBs, aplicaIva, tasaCambio, setValue]);
+
+//   const onSubmit = async (data: any) => {
+//     setIsLoading(true);
+//     setMensaje({ tipo: "", texto: "" });
+    
+//     const valorNum = parseFloat(data.valorComision) || null;
+//     const payload = {
+//       ...data,
+//       comision_porcentaje: tipoComision === "PORCENTAJE" ? valorNum : null,
+//       comision_monto: tipoComision === "MONTO" ? valorNum : null,
+//     };
+//     delete payload.valorComision;
+
+//     try {
+//       const response = await fetch("/api/ingresos", {
+//         method: "POST",
+//         headers: { "Content-Type": "application/json" },
+//         body: JSON.stringify(payload),
+//       });
+//       const result = await response.json();
+//       if (response.ok) {
+//         setMensaje({ tipo: "exito", texto: "Ingreso registrado exitosamente." });
+//         setTimeout(() => {
+//           if (onClose) onClose();
+//           window.location.reload(); 
+//         }, 1200);
+//       } else {
+//         setMensaje({ tipo: "error", texto: result.error || "Error al registrar." });
+//       }
+//     } catch (error) {
+//       setMensaje({ tipo: "error", texto: "Error de conexión." });
+//     } finally {
+//       setIsLoading(false);
+//     }
+//   };
+
+//   // Clases CSS compactas
+//   const inputCls = "w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 text-sm font-medium text-slate-900 shadow-sm placeholder:text-slate-300 bg-white transition-all";
+//   const labelCls = "block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1";
+
+//   return (
+//     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col h-full">
+//       <div className="p-6 space-y-5 flex-1 flex flex-col">
+        
+//         {/* Banner Tasa BCV */}
+//         <div className={`flex items-center justify-between py-2.5 px-4 rounded-lg border shadow-sm ${errorTasa ? 'bg-red-50 border-red-100' : 'bg-emerald-50/50 border-emerald-100'} shrink-0`}>
+//           <div className="flex items-center gap-2.5">
+//             <TrendingUp size={18} className={errorTasa ? 'text-red-500' : 'text-emerald-500'} />
+//             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+//               <span className="text-xs font-bold text-slate-800">Tasa Oficial BCV</span>
+//               <span className="hidden sm:inline text-slate-300">|</span>
+//               <span className="text-[10px] font-medium text-slate-500">
+//                 {cargandoTasa ? "Conectando..." : errorTasa ? errorTasa : `Act: ${ultimaActualizacion}`}
+//               </span>
+//             </div>
+//           </div>
+//           <div>
+//             <span className="text-sm font-black text-slate-900">Bs. {tasaCambio > 0 ? tasaCambio : "0.00"}</span>
+//           </div>
+//         </div>
+
+//         {mensaje.texto && (
+//           <div className={`p-3 rounded-lg flex items-center gap-2 text-sm font-medium border ${mensaje.tipo === "error" ? "bg-red-50 text-red-700 border-red-100" : "bg-emerald-50 text-emerald-700 border-emerald-100"} shrink-0`}>
+//             {mensaje.tipo === "error" ? <AlertCircle size={16} /> : <CheckCircle2 size={16} />}
+//             {mensaje.texto}
+//           </div>
+//         )}
+
+//         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch flex-1">
+          
+//           {/* COLUMNA 1 */}
+//           <div className="flex flex-col space-y-4 bg-slate-50/50 p-5 rounded-xl border border-slate-100 h-full">
+//             <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2 mb-2">
+//               <span className="w-5 h-5 rounded-md bg-slate-200 flex items-center justify-center text-slate-600 text-[10px]">1</span> Datos Bancarios
+//             </h4>
+
+//             <input type="hidden" {...register("tasaCambio")} />
+
+//             <div className="grid grid-cols-2 gap-3">
+//               <div>
+//                 <label className={labelCls}>Banco Origen</label>
+//                 <select {...register("banco", { required: true })} className={inputCls}>
+//                   <option value="">Seleccione...</option>
+//                   <option value="Mercantil">Mercantil</option>
+//                   <option value="Banesco">Banesco</option>
+//                   <option value="Provincial">Provincial</option>
+//                   <option value="Venezuela">Venezuela</option>
+//                 </select>
+//               </div>
+//               <div>
+//                 <label className={labelCls}>Método de Pago</label>
+//                 <select {...register("metodoPago", { required: true })} className={inputCls}>
+//                   <option value="TRANSFERENCIA">Transferencia</option>
+//                   <option value="PAGO_MOVIL">Pago Móvil</option>
+//                 </select>
+//               </div>
+//             </div>
+
+//             <div>
+//               <label className={labelCls}>Número de Referencia</label>
+//               <input type="text" {...register("referencia", { required: true })} className={inputCls} placeholder="Ej: 12345678" />
+//             </div>
+
+//             <div className="p-3 bg-white rounded-lg border border-slate-200 shadow-sm space-y-3">
+//               <div className="flex gap-3 items-end">
+//                 <div className="flex-1">
+//                   <label className={labelCls}>Monto Base (Bs)</label>
+//                   <input type="number" step="0.01" {...register("precioBs", { required: true })} className={inputCls} placeholder="0.00" />
+//                 </div>
+//                 <div className="flex items-center gap-1.5 mb-2.5">
+//                   <input type="checkbox" id="aplicaIva" {...register("aplicaIva")} className="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer" />
+//                   <label htmlFor="aplicaIva" className="text-xs font-bold text-slate-700 cursor-pointer select-none">+ IVA</label>
+//                 </div>
+//               </div>
+//               <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100">
+//                 <div>
+//                   <label className={labelCls}>Total (Bs)</label>
+//                   <input type="text" readOnly value={totalBsVisual} className={`${inputCls} bg-slate-50 cursor-not-allowed font-bold text-slate-900`} placeholder="0.00" />
+//                 </div>
+//                 <div>
+//                   <label className={labelCls}>Equivalente (USD)</label>
+//                   <input type="number" step="0.01" {...register("precioDivisa")} readOnly className={`${inputCls} bg-slate-50 cursor-not-allowed font-mono text-emerald-700 font-bold`} placeholder="0.00" />
+//                 </div>
+//               </div>
+//             </div>
+
+//             {/* Este div empuja el campo hacia abajo para alinear perfectamente */}
+//             <div className="mt-auto pt-2">
+//               <label className={labelCls}>Tipo de Documento</label>
+//               <select {...register("tipoDocumento", { required: true })} className={inputCls}>
+//                 <option value="FACTURA">Factura</option>
+//                 <option value="ANTICIPO">Anticipo</option>
+//               </select>
+//             </div>
+//           </div>
+
+//           {/* COLUMNA 2 */}
+//           <div className="flex flex-col space-y-4 bg-slate-50/50 p-5 rounded-xl border border-slate-100 h-full">
+//              <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2 mb-2 shrink-0">
+//               <span className="w-5 h-5 rounded-md bg-slate-200 flex items-center justify-center text-slate-600 text-[10px]">2</span> Operación y Cliente
+//             </h4>
+
+//             <div className="grid grid-cols-2 gap-3 shrink-0">
+//               <div className="col-span-2 sm:col-span-1">
+//                 <label className={labelCls}>Cliente / Empresa</label>
+//                 <select {...register("nombreCliente", { required: true })} className={inputCls} disabled={cargandoClientes}>
+//                   <option value="">{cargandoClientes ? "Cargando..." : "Seleccione..."}</option>
+//                   {clientes.map((c) => (
+//                     <option key={c.id} value={c.nombre}>{c.nombre}</option>
+//                   ))}
+//                 </select>
+//               </div>
+//               <div className="col-span-2 sm:col-span-1">
+//                 <label className={labelCls}>RIF / Cédula</label>
+//                 <input type="text" {...register("rif", { required: true })} className={`${inputCls} bg-slate-100 cursor-not-allowed text-slate-500`} readOnly placeholder="Automático" />
+//               </div>
+//             </div>
+
+//             <div className="grid grid-cols-2 gap-3 shrink-0">
+//               <div>
+//                 <label className={labelCls}>Vendedor</label>
+//                 <select {...register("vendedor", { required: true })} className={inputCls} disabled={cargandoVendedores}>
+//                   <option value="">{cargandoVendedores ? "Cargando..." : "Seleccione..."}</option>
+//                   {vendedores.map((vend) => (
+//                     <option key={vend.id} value={vend.nombre}>{vend.nombre}</option>
+//                   ))}
+//                 </select>
+//               </div>
+              
+//               <div>
+//                 <div className="flex items-center justify-between mb-1">
+//                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0">Comisión</label>
+//                   <div className="flex bg-slate-200/60 p-0.5 rounded border border-slate-200">
+//                     <button type="button" onClick={() => setTipoComision("PORCENTAJE")} className={`px-1.5 py-0.5 text-[9px] font-bold rounded transition-all ${tipoComision === "PORCENTAJE" ? 'bg-white shadow-sm text-slate-800' : 'text-slate-400'}`}>%</button>
+//                     <button type="button" onClick={() => setTipoComision("MONTO")} className={`px-1.5 py-0.5 text-[9px] font-bold rounded transition-all ${tipoComision === "MONTO" ? 'bg-white shadow-sm text-slate-800' : 'text-slate-400'}`}>$</button>
+//                   </div>
+//                 </div>
+//                 <div className="relative">
+//                   <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+//                     <span className="text-slate-400 font-bold text-sm">{tipoComision === "PORCENTAJE" ? "%" : "$"}</span>
+//                   </div>
+//                   <input type="number" step="0.01" {...register("valorComision")} className={`${inputCls} pl-7`} placeholder="0.00" />
+//                 </div>
+//               </div>
+//             </div>
+
+//             <div className="grid grid-cols-2 gap-3 shrink-0">
+//               <div>
+//                 <label className={labelCls}>Volumen (M3)</label>
+//                 <input type="number" step="0.01" {...register("m3")} className={inputCls} placeholder="Opcional" />
+//               </div>
+//               <div>
+//                 <label className={labelCls}>Resistencia</label>
+//                 <select {...register("resistencia")} className={inputCls} disabled={cargandoProductos}>
+//                   <option value="">{cargandoProductos ? "Cargando..." : "Opcional"}</option>
+//                   {productos.map((prod) => (
+//                     <option key={prod.id} value={prod.resistencia}>
+//                       {prod.resistencia} {prod.pulgada ? `(${prod.pulgada}")` : ''}
+//                     </option>
+//                   ))}
+//                 </select>
+//               </div>
+//             </div>
+
+//             {/* ESTO ES LO NUEVO: Se estira automáticamente llenando todo el espacio restante */}
+//             <div className="flex flex-col flex-1 pt-1 min-h-[80px]">
+//               <label className={labelCls}>Descripción</label>
+//               <textarea 
+//                 {...register("descripcion")} 
+//                 className={`${inputCls} resize-none flex-1`} 
+//                 placeholder="Detalles adicionales opcionales..."
+//               ></textarea>
+//             </div>
+            
+//           </div>
+//         </div>
+//       </div>
+
+//       <div className="px-6 py-4 bg-slate-50 flex items-center justify-end gap-3 border-t border-slate-100 shrink-0">
+//         <button type="button" onClick={onClose} className="text-slate-500 hover:text-slate-700 hover:bg-slate-200 bg-slate-100 border border-slate-200 rounded-lg px-5 py-2 text-sm font-medium transition-colors">
+//           Cancelar
+//         </button>
+//         <button type="submit" disabled={isLoading || cargandoTasa || tasaCambio === 0} className="bg-slate-900 hover:bg-slate-800 text-white rounded-lg px-6 py-2 shadow-md transition-all text-sm font-semibold disabled:opacity-50">
+//           {isLoading ? "Procesando..." : "Registrar Ingreso"}
+//         </button>
+//       </div>
+//     </form>
+//   );
+// }
+"use client";
+
+import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { AlertCircle, CheckCircle2, TrendingUp, Loader2 } from "lucide-react";
+
+export default function IngresoForm({ onClose }: { onClose?: () => void }) {
+  const { register, handleSubmit, watch, setValue } = useForm({
+    defaultValues: {
+      aplicaIva: false,
+      precioBs: 0,
+      tipoDocumento: "FACTURA",
+      nombreCliente: "",
+      rif: "",
+      valorComision: ""
+    }
   });
+  
+  const [tasaCambio, setTasaCambio] = useState<number>(0);
+  const [cargandoTasa, setCargandoTasa] = useState(true);
+  const [errorTasa, setErrorTasa] = useState<string | null>(null);
+  const [ultimaActualizacion, setUltimaActualizacion] = useState<string>("");
 
-  const precioBolivares = watch('precioBolivares');
-  const ivaAplicado = watch('ivaAplicado');
+  const [vendedores, setVendedores] = useState<any[]>([]);
+  const [cargandoVendedores, setCargandoVendedores] = useState(true);
+  
+  const [clientes, setClientes] = useState<any[]>([]);
+  const [cargandoClientes, setCargandoClientes] = useState(true);
 
-  // Obtener tasa de cambio al montar
+  const [productos, setProductos] = useState<any[]>([]);
+  const [cargandoProductos, setCargandoProductos] = useState(true);
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [mensaje, setMensaje] = useState({ tipo: "", texto: "" });
+  const [totalBsVisual, setTotalBsVisual] = useState("0.00"); 
+  
+  const [tipoComision, setTipoComision] = useState<"PORCENTAJE" | "MONTO">("PORCENTAJE");
+  
+  // NUEVO: Estado para controlar el mensaje emergente de éxito
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+
+  const precioBs = watch("precioBs", 0);
+  const aplicaIva = watch("aplicaIva", false);
+  const clienteSeleccionado = watch("nombreCliente");
+
   useEffect(() => {
-    const fetchRate = async () => {
+    const fetchBCVRate = async () => {
+      setCargandoTasa(true);
+      setErrorTasa(null);
       try {
-        const rate = await getExchangeRate();
-        setExchangeRate(rate);
-      } catch (err) {
-        console.error('[v0] Error fetching exchange rate:', err);
+        const res = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
+        if (!res.ok) throw new Error('Error en la red');
+        const data = await res.json();
+        if (data && data.promedio) {
+          setTasaCambio(data.promedio);
+          setValue("tasaCambio", data.promedio); 
+          const updateDate = new Date(data.fechaActualizacion);
+          setUltimaActualizacion(updateDate.toLocaleString('es-VE', { dateStyle: 'medium', timeStyle: 'short' }));
+        }
+      } catch (error) {
+        setErrorTasa('No se pudo obtener la tasa actual.');
       } finally {
-        setLoadingRate(false);
+        setCargandoTasa(false);
       }
     };
-    fetchRate();
+    fetchBCVRate();
+  }, [setValue]);
+
+  useEffect(() => {
+    fetch('/api/vendedores').then(res => res.json()).then(data => {
+      if (data.success && data.vendedores) setVendedores(data.vendedores);
+      setCargandoVendedores(false);
+    });
   }, []);
 
-  // Calcular precio en dólares e IVA cuando cambia el precio en bolívares
   useEffect(() => {
-    if (precioBolivares) {
-      const dollars = precioBolivares / exchangeRate;
-      setPrecioDolares(dollars);
+    fetch('/api/clientes').then(res => res.json()).then(data => {
+      if (data.success && data.clientes) setClientes(data.clientes);
+      setCargandoClientes(false);
+    });
+  }, []);
 
-      if (ivaAplicado) {
-        const iva = calculateIVA(precioBolivares);
-        setIvaMonto(iva);
-      } else {
-        setIvaMonto(0);
-      }
+  useEffect(() => {
+    fetch('/api/productos').then(res => res.json()).then(data => {
+      const prodArray = Array.isArray(data) ? data : (data.productos || []);
+      setProductos(prodArray);
+      setCargandoProductos(false);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (clienteSeleccionado && clientes.length > 0) {
+      const clienteEncontrado = clientes.find(c => c.nombre === clienteSeleccionado);
+      if (clienteEncontrado) setValue("rif", clienteEncontrado.rif); 
+    } else {
+      setValue("rif", ""); 
     }
-  }, [precioBolivares, ivaAplicado, exchangeRate]);
+  }, [clienteSeleccionado, clientes, setValue]);
 
-  const handleFormSubmit = async (data: IngresoFormData) => {
-    setError(null);
+  useEffect(() => {
+    if (tasaCambio > 0) {
+      const baseBs = parseFloat(precioBs.toString()) || 0;
+      const ivaBs = aplicaIva ? (baseBs * 0.16) : 0;
+      const totalConIvaBs = baseBs + ivaBs;
+      const totalConIvaUsd = totalConIvaBs / tasaCambio;
+
+      setValue("montoIva", ivaBs.toFixed(2));
+      setValue("precioDivisa", totalConIvaUsd.toFixed(2));
+      setTotalBsVisual(totalConIvaBs.toFixed(2));
+    }
+  }, [precioBs, aplicaIva, tasaCambio, setValue]);
+
+  // LA NUEVA LÓGICA DE DOBLE VALIDACIÓN
+  // LA NUEVA LÓGICA DE DOBLE VALIDACIÓN MEJORADA
+  const onSubmit = async (data: any) => {
+    setIsLoading(true);
+    setMensaje({ tipo: "", texto: "" });
+    
     try {
-      await onSubmit({
+      // 1. VERIFICAR CON EL BANCO PRIMERO (SOLO SI ES MERCANTIL)
+      if (data.banco === "Mercantil") {
+        setMensaje({ tipo: "info", texto: "Conectando con Mercantil para validar referencia..." });
+        
+        const mercantilRes = await fetch("/api/mercantil/verificar", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            metodoPago: data.metodoPago,
+            referencia: data.referencia,
+            monto: data.precioBs,
+            cedula: data.rif // Pasamos el RIF/Cédula del cliente seleccionado
+          }),
+        });
+
+        const mercantilData = await mercantilRes.json();
+
+        // Si Mercantil no devuelve un 200 OK, detenemos todo
+        if (!mercantilRes.ok || mercantilData.respuesta_mercantil?.status !== 200) {
+          setMensaje({ 
+            tipo: "error", 
+            texto: "Referencia no encontrada o inválida en el Banco Mercantil." 
+          });
+          setIsLoading(false);
+          return; // El "return" evita que pase al paso 2 (MySQL)
+        }
+
+        // Si pasó la prueba de Mercantil
+        setMensaje({ tipo: "info", texto: "Pago validado por Mercantil. Guardando registro..." });
+      } else {
+        // Si es Banesco, Provincial, etc.
+        setMensaje({ tipo: "info", texto: `Registrando ingreso de ${data.banco}...` });
+      }
+
+      // 2. SI TODO ESTÁ BIEN, GUARDAMOS EN MYSQL
+      const valorNum = parseFloat(data.valorComision) || null;
+      const payload = {
         ...data,
-        precioDolares,
-        ivaMonto,
+        comision_porcentaje: tipoComision === "PORCENTAJE" ? valorNum : null,
+        comision_monto: tipoComision === "MONTO" ? valorNum : null,
+      };
+      // Eliminamos el campo genérico temporal
+      delete payload.valorComision;
+
+      const response = await fetch("/api/ingresos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Error al guardar ingreso';
-      setError(message);
+      
+      if (response.ok) {
+        setMensaje({ tipo: "", texto: "" });
+        // Activamos el Pop-Up Emergente que bloquea la pantalla
+        setShowSuccessPopup(true); 
+        
+        // Esperamos 2.5 segundos para que el usuario lea el éxito y recargamos
+        setTimeout(() => {
+          if (onClose) onClose();
+          window.location.reload(); 
+        }, 2500);
+      } else {
+        const result = await response.json();
+        setMensaje({ tipo: "error", texto: result.error || "Error al registrar en base de datos." });
+      }
+    } catch (error) {
+      setMensaje({ tipo: "error", texto: "Error de conexión con el servidor." });
+    } finally {
+      // Solo quitamos el estado de carga si NO estamos mostrando el popup de éxito
+      if (!showSuccessPopup) setIsLoading(false);
     }
   };
 
+  const inputCls = "w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 text-sm font-medium text-slate-900 shadow-sm placeholder:text-slate-300 bg-white transition-all";
+  const labelCls = "block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1";
+
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6 max-w-4xl mx-auto">
-      <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
-
-      {error && <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded">{error}</div>}
-
-      {loadingRate && (
-        <div className="bg-blue-50 border border-blue-200 text-blue-800 p-4 rounded">
-          Cargando tasa de cambio...
+    // Agregamos "relative" al form para que el mensaje emergente se posicione encima
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col h-full relative overflow-hidden">
+      
+      {/* MENSAJE EMERGENTE DE ÉXITO (POP-UP) */}
+      {showSuccessPopup && (
+        <div className="absolute inset-0 bg-white/90 backdrop-blur-[2px] z-50 flex flex-col items-center justify-center rounded-2xl transition-all duration-300">
+          <div className="bg-emerald-100 text-emerald-500 p-4 rounded-full mb-5 animate-bounce">
+            <CheckCircle2 size={56} strokeWidth={2.5} />
+          </div>
+          <h3 className="text-2xl font-black text-slate-900 mb-2">¡Ingreso Registrado!</h3>
+          <p className="text-slate-500 text-sm font-medium text-center px-10 max-w-sm">
+            El pago fue validado por Mercantil y los datos se han guardado correctamente en la base de datos.
+          </p>
         </div>
       )}
 
-      <div className="bg-blue-50 p-4 rounded-lg">
-        <p className="text-sm text-blue-900">
-          <strong>Tasa de Cambio Actual:</strong> 1 USD = {exchangeRate.toFixed(2)} Bs
-        </p>
-        {precioBolivares > 0 && (
-          <p className="text-sm text-blue-900 mt-2">
-            <strong>Conversión:</strong> {precioBolivares.toFixed(2)} Bs = ${precioDolares.toFixed(2)}
-          </p>
+      <div className="p-6 space-y-5 flex-1 flex flex-col">
+        {/* Banner Tasa BCV */}
+        <div className={`flex items-center justify-between py-2.5 px-4 rounded-lg border shadow-sm ${errorTasa ? 'bg-red-50 border-red-100' : 'bg-emerald-50/50 border-emerald-100'} shrink-0`}>
+          <div className="flex items-center gap-2.5">
+            <TrendingUp size={18} className={errorTasa ? 'text-red-500' : 'text-emerald-500'} />
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+              <span className="text-xs font-bold text-slate-800">Tasa Oficial BCV</span>
+              <span className="hidden sm:inline text-slate-300">|</span>
+              <span className="text-[10px] font-medium text-slate-500">
+                {cargandoTasa ? "Conectando..." : errorTasa ? errorTasa : `Act: ${ultimaActualizacion}`}
+              </span>
+            </div>
+          </div>
+          <div>
+            <span className="text-sm font-black text-slate-900">Bs. {tasaCambio > 0 ? tasaCambio : "0.00"}</span>
+          </div>
+        </div>
+
+        {mensaje.texto && (
+          <div className={`p-3 rounded-lg flex items-center gap-2 text-sm font-medium border ${mensaje.tipo === "error" ? "bg-red-50 text-red-700 border-red-100" : "bg-blue-50 text-blue-700 border-blue-100"} shrink-0`}>
+            {mensaje.tipo === "info" ? <Loader2 size={16} className="animate-spin" /> : <AlertCircle size={16} />}
+            {mensaje.texto}
+          </div>
         )}
-        {ivaAplicado && ivaMonto > 0 && (
-          <p className="text-sm text-blue-900 mt-2">
-            <strong>IVA 16%:</strong> {ivaMonto.toFixed(2)} Bs
-          </p>
-        )}
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label htmlFor="bancoId" className="block text-sm font-medium text-gray-700 mb-2">
-            Banco *
-          </label>
-          <select
-            {...register('bancoId')}
-            id="bancoId"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Seleccionar banco...</option>
-            {bancos.map((banco) => (
-              <option key={banco.id} value={banco.id}>
-                {banco.nombreBanco}
-              </option>
-            ))}
-          </select>
-          {errors.bancoId && <p className="text-red-500 text-sm mt-1">{errors.bancoId.message}</p>}
-        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch flex-1">
+          {/* COLUMNA 1 */}
+          <div className="flex flex-col space-y-4 bg-slate-50/50 p-5 rounded-xl border border-slate-100 h-full">
+            <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2 mb-2">
+              <span className="w-5 h-5 rounded-md bg-slate-200 flex items-center justify-center text-slate-600 text-[10px]">1</span> Datos Bancarios
+            </h4>
+            <input type="hidden" {...register("tasaCambio")} />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelCls}>Banco Origen</label>
+                <select {...register("banco", { required: true })} className={inputCls}>
+                  <option value="">Seleccione...</option>
+                  <option value="Mercantil">Mercantil</option>
+                  <option value="Banesco">Banesco</option>
+                  <option value="Provincial">Provincial</option>
+                  <option value="Venezuela">Venezuela</option>
+                </select>
+              </div>
+              <div>
+                <label className={labelCls}>Método de Pago</label>
+                <select {...register("metodoPago", { required: true })} className={inputCls}>
+                  <option value="TRANSFERENCIA">Transferencia</option>
+                  <option value="PAGO_MOVIL">Pago Móvil</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className={labelCls}>Número de Referencia</label>
+              <input type="text" {...register("referencia", { required: true })} className={inputCls} placeholder="Ej: 12345678" />
+            </div>
+            <div className="p-3 bg-white rounded-lg border border-slate-200 shadow-sm space-y-3">
+              <div className="flex gap-3 items-end">
+                <div className="flex-1">
+                  <label className={labelCls}>Monto Base (Bs)</label>
+                  <input type="number" step="0.01" {...register("precioBs", { required: true })} className={inputCls} placeholder="0.00" />
+                </div>
+                <div className="flex items-center gap-1.5 mb-2.5">
+                  <input type="checkbox" id="aplicaIva" {...register("aplicaIva")} className="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer" />
+                  <label htmlFor="aplicaIva" className="text-xs font-bold text-slate-700 cursor-pointer select-none">+ IVA</label>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100">
+                <div>
+                  <label className={labelCls}>Total (Bs)</label>
+                  <input type="text" readOnly value={totalBsVisual} className={`${inputCls} bg-slate-50 cursor-not-allowed font-bold text-slate-900`} placeholder="0.00" />
+                </div>
+                <div>
+                  <label className={labelCls}>Equivalente (USD)</label>
+                  <input type="number" step="0.01" {...register("precioDivisa")} readOnly className={`${inputCls} bg-slate-50 cursor-not-allowed font-mono text-emerald-700 font-bold`} placeholder="0.00" />
+                </div>
+              </div>
+            </div>
+            <div className="mt-auto pt-2">
+              <label className={labelCls}>Tipo de Documento</label>
+              <select {...register("tipoDocumento", { required: true })} className={inputCls}>
+                <option value="FACTURA">Factura</option>
+                <option value="ANTICIPO">Anticipo</option>
+              </select>
+            </div>
+          </div>
 
-        <div>
-          <label htmlFor="clienteId" className="block text-sm font-medium text-gray-700 mb-2">
-            Cliente *
-          </label>
-          <select
-            {...register('clienteId')}
-            id="clienteId"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Seleccionar cliente...</option>
-            {clientes.map((cliente) => (
-              <option key={cliente.id} value={cliente.id}>
-                {cliente.nombre}
-              </option>
-            ))}
-          </select>
-          {errors.clienteId && <p className="text-red-500 text-sm mt-1">{errors.clienteId.message}</p>}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label htmlFor="vendedorId" className="block text-sm font-medium text-gray-700 mb-2">
-            Vendedor
-          </label>
-          <select
-            {...register('vendedorId')}
-            id="vendedorId"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Seleccionar vendedor...</option>
-            {vendedores.map((vendedor) => (
-              <option key={vendedor.id} value={vendedor.id}>
-                {vendedor.nombre}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label htmlFor="referencia" className="block text-sm font-medium text-gray-700 mb-2">
-            Referencia
-          </label>
-          <input
-            {...register('referencia')}
-            id="referencia"
-            type="text"
-            placeholder="Número de referencia o comprobante"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-      </div>
-
-      <div>
-        <label htmlFor="descripcion" className="block text-sm font-medium text-gray-700 mb-2">
-          Descripción
-        </label>
-        <textarea
-          {...register('descripcion')}
-          id="descripcion"
-          placeholder="Descripción del ingreso"
-          rows={2}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div>
-          <label htmlFor="m3" className="block text-sm font-medium text-gray-700 mb-2">
-            M³ (Cantidad)
-          </label>
-          <input
-            {...register('m3')}
-            id="m3"
-            type="number"
-            step="0.01"
-            min="0"
-            placeholder="0.00"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="resistencia" className="block text-sm font-medium text-gray-700 mb-2">
-            Resistencia
-          </label>
-          <input
-            {...register('resistencia')}
-            id="resistencia"
-            type="text"
-            placeholder="Ej: 40 MP"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="precioBolivares" className="block text-sm font-medium text-gray-700 mb-2">
-            Precio en Bolívares *
-          </label>
-          <input
-            {...register('precioBolivares')}
-            id="precioBolivares"
-            type="number"
-            step="0.01"
-            min="0"
-            placeholder="0.00"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          {errors.precioBolivares && <p className="text-red-500 text-sm mt-1">{errors.precioBolivares.message}</p>}
+          {/* COLUMNA 2 */}
+          <div className="flex flex-col space-y-4 bg-slate-50/50 p-5 rounded-xl border border-slate-100 h-full">
+             <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2 mb-2 shrink-0">
+              <span className="w-5 h-5 rounded-md bg-slate-200 flex items-center justify-center text-slate-600 text-[10px]">2</span> Operación y Cliente
+            </h4>
+            <div className="grid grid-cols-2 gap-3 shrink-0">
+              <div className="col-span-2 sm:col-span-1">
+                <label className={labelCls}>Cliente / Empresa</label>
+                <select {...register("nombreCliente", { required: true })} className={inputCls} disabled={cargandoClientes}>
+                  <option value="">{cargandoClientes ? "Cargando..." : "Seleccione..."}</option>
+                  {clientes.map((c) => (
+                    <option key={c.id} value={c.nombre}>{c.nombre}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="col-span-2 sm:col-span-1">
+                <label className={labelCls}>RIF / Cédula</label>
+                <input type="text" {...register("rif", { required: true })} className={`${inputCls} bg-slate-100 cursor-not-allowed text-slate-500`} readOnly placeholder="Automático" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 shrink-0">
+              <div>
+                <label className={labelCls}>Vendedor</label>
+                <select {...register("vendedor", { required: true })} className={inputCls} disabled={cargandoVendedores}>
+                  <option value="">{cargandoVendedores ? "Cargando..." : "Seleccione..."}</option>
+                  {vendedores.map((vend) => (
+                    <option key={vend.id} value={vend.nombre}>{vend.nombre}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0">Comisión</label>
+                  <div className="flex bg-slate-200/60 p-0.5 rounded border border-slate-200">
+                    <button type="button" onClick={() => setTipoComision("PORCENTAJE")} className={`px-1.5 py-0.5 text-[9px] font-bold rounded transition-all ${tipoComision === "PORCENTAJE" ? 'bg-white shadow-sm text-slate-800' : 'text-slate-400'}`}>%</button>
+                    <button type="button" onClick={() => setTipoComision("MONTO")} className={`px-1.5 py-0.5 text-[9px] font-bold rounded transition-all ${tipoComision === "MONTO" ? 'bg-white shadow-sm text-slate-800' : 'text-slate-400'}`}>$</button>
+                  </div>
+                </div>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                    <span className="text-slate-400 font-bold text-sm">{tipoComision === "PORCENTAJE" ? "%" : "$"}</span>
+                  </div>
+                  <input type="number" step="0.01" {...register("valorComision")} className={`${inputCls} pl-7`} placeholder="0.00" />
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 shrink-0">
+              <div>
+                <label className={labelCls}>Volumen (M3)</label>
+                <input type="number" step="0.01" {...register("m3")} className={inputCls} placeholder="Opcional" />
+              </div>
+              <div>
+                <label className={labelCls}>Resistencia</label>
+                <select {...register("resistencia")} className={inputCls} disabled={cargandoProductos}>
+                  <option value="">{cargandoProductos ? "Cargando..." : "Opcional"}</option>
+                  {productos.map((prod) => (
+                    <option key={prod.id} value={prod.resistencia}>
+                      {prod.resistencia} {prod.pulgada ? `(${prod.pulgada}")` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="flex flex-col flex-1 pt-1 min-h-[80px]">
+              <label className={labelCls}>Descripción</label>
+              <textarea {...register("descripcion")} className={`${inputCls} resize-none flex-1`} placeholder="Detalles adicionales opcionales..."></textarea>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="flex items-center gap-6">
-        <label className="flex items-center space-x-3 cursor-pointer">
-          <input
-            {...register('ivaAplicado')}
-            type="checkbox"
-            className="w-4 h-4"
-          />
-          <span className="text-sm font-medium text-gray-700">Aplicar IVA 16%</span>
-        </label>
-
-        <label className="flex items-center space-x-3 cursor-pointer">
-          <input
-            {...register('esAnticipo')}
-            type="checkbox"
-            className="w-4 h-4"
-          />
-          <span className="text-sm font-medium text-gray-700">Es Anticipo</span>
-        </label>
-      </div>
-
-      <div className="flex justify-end gap-4">
-        <Button
-          type="button"
-          className="bg-gray-300 hover:bg-gray-400 text-gray-900"
-          onClick={() => window.history.back()}
-        >
+      <div className="px-6 py-4 bg-slate-50 flex items-center justify-end gap-3 border-t border-slate-100 shrink-0">
+        <button type="button" onClick={onClose} disabled={isLoading || showSuccessPopup} className="text-slate-500 hover:text-slate-700 hover:bg-slate-200 bg-slate-100 border border-slate-200 rounded-lg px-5 py-2 text-sm font-medium transition-colors disabled:opacity-50">
           Cancelar
-        </Button>
-        <Button
-          type="submit"
-          disabled={isLoading || loadingRate}
-          className="bg-blue-600 hover:bg-blue-700 text-white"
-        >
-          {isLoading ? 'Guardando...' : 'Guardar Ingreso'}
-        </Button>
+        </button>
+        <button type="submit" disabled={isLoading || cargandoTasa || tasaCambio === 0 || showSuccessPopup} className="bg-slate-900 hover:bg-slate-800 text-white rounded-lg px-6 py-2 shadow-md transition-all text-sm font-semibold flex items-center gap-2 disabled:opacity-75 disabled:cursor-not-allowed">
+          {isLoading && <Loader2 size={16} className="animate-spin" />}
+          {isLoading ? "Validando..." : "Registrar Ingreso"}
+        </button>
       </div>
     </form>
   );

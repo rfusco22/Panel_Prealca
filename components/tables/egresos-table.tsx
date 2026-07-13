@@ -1,121 +1,95 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import { Trash2, Edit2, Eye } from 'lucide-react';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { useState, useEffect } from "react";
 
-interface Egreso {
-  id: number;
-  bancoId: number;
-  proveedorId: number;
-  clasificacionGasto: string;
-  tipoGasto: string;
-  descripcion?: string;
-  montoBolivares: number;
-  montoDolares?: number;
-  referencia?: string;
-  fecha: Date;
-}
+export default function EgresosTable() {
+  const [data, setData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
 
-interface EgresosTableProps {
-  data: Egreso[];
-  onDelete?: (id: number) => Promise<void>;
-  isLoading?: boolean;
-  editLink?: (id: number) => string;
-}
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch('/api/egresos');
+        if (!response.ok) throw new Error("Fallo al obtener los datos del servidor");
+        
+        const result = await response.json();
+        
+        // Extracción segura del arreglo
+        const arregloDatos = Array.isArray(result) ? result : (result.egresos || result.data || []);
+        
+        setData(arregloDatos);
+      } catch (err) {
+        console.error("Error cargando egresos:", err);
+        setError("Ocurrió un error al cargar el historial de egresos.");
+        setData([]); 
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-export function EgresosTable({
-  data,
-  onDelete,
-  isLoading = false,
-  editLink = (id) => `/registro/egresos/${id}/edit`,
-}: EgresosTableProps) {
-  const [deletingId, setDeletingId] = useState<number | null>(null);
+    fetchData();
+  }, []);
 
-  const handleDelete = async (id: number) => {
-    if (!onDelete || !confirm('¿Estás seguro de que deseas eliminar este egreso?')) {
-      return;
-    }
-
-    setDeletingId(id);
-    try {
-      await onDelete(id);
-    } finally {
-      setDeletingId(null);
-    }
-  };
-
-  if (data.length === 0) {
+  if (isLoading) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500">No hay egresos registrados</p>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto mb-4"></div>
+        <p className="text-gray-500 font-medium">Cargando historial de egresos...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12 bg-red-50 rounded-lg">
+        <p className="text-red-600 font-medium">{error}</p>
+      </div>
+    );
+  }
+
+  if (!data || data.length === 0) {
+    return (
+      <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-lg bg-gray-50">
+        <p className="text-gray-500">No hay egresos registrados en el sistema.</p>
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto bg-white rounded-lg shadow">
-      <table className="w-full">
-        <thead className="bg-gray-100 border-b">
+    <div className="overflow-x-auto rounded-md border border-gray-200">
+      <table className="min-w-full divide-y divide-gray-200 text-sm text-left">
+        <thead className="bg-gray-100">
           <tr>
-            <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Fecha</th>
-            <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Referencia</th>
-            <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Clasificación</th>
-            <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Tipo</th>
-            <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">Bolívares</th>
-            <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">Dólares</th>
-            <th className="px-6 py-3 text-center text-sm font-semibold text-gray-900">Acciones</th>
+            <th className="px-4 py-3 font-semibold text-gray-700">ID</th>
+            <th className="px-4 py-3 font-semibold text-gray-700">Fecha</th>
+            <th className="px-4 py-3 font-semibold text-gray-700">Proveedor</th>
+            <th className="px-4 py-3 font-semibold text-gray-700">Clasificación</th>
+            <th className="px-4 py-3 font-semibold text-gray-700">Banco / Ref.</th>
+            <th className="px-4 py-3 font-semibold text-gray-700">Monto (Bs)</th>
+            <th className="px-4 py-3 font-semibold text-gray-700">Monto ($)</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="bg-white divide-y divide-gray-200">
           {data.map((egreso) => (
-            <tr key={egreso.id} className="border-b hover:bg-gray-50 transition">
-              <td className="px-6 py-3 text-sm text-gray-600">
-                {format(new Date(egreso.fecha), 'dd MMM yyyy', { locale: es })}
+            <tr key={egreso.id} className="hover:bg-gray-50 transition-colors">
+              <td className="px-4 py-3 text-gray-500">#{egreso.id}</td>
+              <td className="px-4 py-3 whitespace-nowrap">
+                {new Date(egreso.fecha || egreso.createdAt).toLocaleDateString('es-VE')}
               </td>
-              <td className="px-6 py-3 text-sm text-gray-900 font-medium">{egreso.referencia || '--'}</td>
-              <td className="px-6 py-3 text-sm text-gray-600">{egreso.clasificacionGasto}</td>
-              <td className="px-6 py-3 text-sm">
-                <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
-                  {egreso.tipoGasto}
+              <td className="px-4 py-3 font-medium text-gray-900">{egreso.nombreProveedor}</td>
+              <td className="px-4 py-3">
+                <span className="bg-gray-200 text-gray-700 px-2 py-1 rounded-md text-xs font-semibold">
+                  {egreso.clasificacionGasto}
                 </span>
+                <div className="text-xs text-gray-500 mt-1">{egreso.subCategoria}</div>
               </td>
-              <td className="px-6 py-3 text-sm text-right text-gray-900 font-medium">
-                {egreso.montoBolivares.toFixed(2)} Bs
+              <td className="px-4 py-3 text-gray-600">
+                {egreso.banco} <br/>
+                <span className="text-xs">{egreso.referencia}</span>
               </td>
-              <td className="px-6 py-3 text-sm text-right text-gray-600">
-                ${(egreso.montoDolares || 0).toFixed(2)}
-              </td>
-              <td className="px-6 py-3 text-center">
-                <div className="flex justify-center gap-2">
-                  <Button
-                    size="sm"
-                    className="bg-gray-600 hover:bg-gray-700 text-white p-2"
-                    title="Ver detalles"
-                  >
-                    <Eye size={16} />
-                  </Button>
-                  <Link href={editLink(egreso.id)}>
-                    <Button
-                      size="sm"
-                      className="bg-blue-600 hover:bg-blue-700 text-white p-2"
-                    >
-                      <Edit2 size={16} />
-                    </Button>
-                  </Link>
-                  <Button
-                    size="sm"
-                    className="bg-red-600 hover:bg-red-700 text-white p-2"
-                    onClick={() => handleDelete(egreso.id)}
-                    disabled={deletingId === egreso.id || isLoading}
-                  >
-                    <Trash2 size={16} />
-                  </Button>
-                </div>
-              </td>
+              <td className="px-4 py-3 font-semibold text-red-700">Bs. {Number(egreso.montoBs).toLocaleString('es-VE')}</td>
+              <td className="px-4 py-3 text-gray-700">${Number(egreso.montoDivisa).toLocaleString('es-VE')}</td>
             </tr>
           ))}
         </tbody>
