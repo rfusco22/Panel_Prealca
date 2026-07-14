@@ -48,7 +48,7 @@ export function useAuth() {
     try {
       await fetch('/api/auth/signout', { method: 'POST' });
       setSession(null);
-      router.push('/login');
+      router.push('/auth/login');
     } catch (err) {
       console.error('[v0] Error logging out:', err);
       setError('Error al cerrar sesión');

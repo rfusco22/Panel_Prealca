@@ -1,39 +1,39 @@
 'use client';
 
-import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
-import { ReactNode } from 'react';
-import { Navbar } from '@/components/layout/navbar';
+import { useEffect } from 'react';
 
-export default function RegistroLayout({
-  children,
-}: {
-  children: ReactNode;
-}) {
-  const { session, loading } = useAuth();
+// AGREGAR ESTA LÍNEA (Ajusta la ruta si tu @ no apunta a la raíz, o usa '../hooks/useAuth')
+import { useAuth } from '@/hooks/useAuth'; 
+
+export default function RegistroLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  
+  const { session, loading } = useAuth();
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <p className="text-gray-600">Cargando...</p>
-      </div>
-    );
-  }
-
-  if (!session || (session.user.role !== 'registro' && session.user.role !== 'admin')) {
+  useEffect(() => {
+    // Solo actuamos cuando ya terminó de cargar
     if (!loading) {
-      router.push('/login');
+      // Verificamos si no hay sesión o si el rol no es válido
+      if (!session || (session.user.role !== 'registro' && session.user.role !== 'admin')) {
+        router.push('/auth/login'); // Redirección correcta a la pantalla de login
+      }
     }
-    return null;
+  }, [session, loading, router]); 
+
+  // Mientras carga o si estamos a punto de redirigir, mostramos nada (o un spinner)
+  if (loading || !session || (session.user.role !== 'registro' && session.user.role !== 'admin')) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-zinc-50">
+        <span className="text-sm font-bold text-zinc-500 animate-pulse">Cargando panel...</span>
+      </div>
+    ); 
   }
 
+  // Si pasa las validaciones, renderiza el contenido del panel (sidebar, topbar, etc.)
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
-      <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        {children}
-      </main>
-    </div>
+    <>
+      {children}
+    </>
   );
 }

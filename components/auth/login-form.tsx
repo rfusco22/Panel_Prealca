@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link'; // Asegúrate de importar Link
+import Link from 'next/link';
 
 export function LoginForm() {
   const router = useRouter();
@@ -12,33 +12,49 @@ export function LoginForm() {
   const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault(); // Detiene el comportamiento por defecto del navegador
-  e.stopPropagation(); // Detiene cualquier burbujeo de eventos
-  setIsLoading(true);
-  setError('');
+    e.preventDefault();
+    e.stopPropagation();
+    setIsLoading(true);
+    setError('');
 
-  try {
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-      headers: { 'Content-Type': 'application/json' },
-    });
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+        headers: { 'Content-Type': 'application/json' },
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (res.ok) {
-      console.log('Éxito, redirigiendo a:', data.redirect);
-      // FORZAR REDIRECCIÓN: Esto es lo más importante
-      window.location.href = data.redirect; 
-    } else {
-      setError(data.error || 'Credenciales inválidas.');
+      if (res.ok) {
+        console.log('Éxito, datos recibidos:', data);
+        
+        // Extraemos el rol (ajusta "data.role" o "data.user.role" según lo que devuelva tu API)
+        const userRole = data.role || data.user?.role;
+
+        // REDIRECCIÓN EXPLÍCITA POR ROL
+        if (userRole === 'registro') {
+          window.location.href = '/registro';
+        } else if (userRole === 'admin') {
+          window.location.href = '/admin';
+        } else if (userRole === 'dosificador') {
+          window.location.href = '/dosificador';
+        } else if (data.redirect && data.redirect !== '/login') {
+          // Fallback al redirect de la API solo si no es el "/login" erróneo
+          window.location.href = data.redirect;
+        } else {
+          window.location.href = '/';
+        }
+
+      } else {
+        setError(data.error || 'Credenciales inválidas.');
+      }
+    } catch (err) {
+      setError('Error de conexión.');
+    } finally {
+      setIsLoading(false);
     }
-  } catch (err) {
-    setError('Error de conexión.');
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5 text-left">
@@ -69,17 +85,16 @@ export function LoginForm() {
       {/* Input de Contraseña */}
       <div className="space-y-1.5 group">
         <div className="flex justify-between items-center">
-  <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-500">
-    Contraseña
-  </label>
-  {/* CAMBIA ESTO: */}
-  <Link 
-    href="/auth/forget" 
-    className="text-xs font-semibold text-zinc-400 hover:text-red-600 transition-colors"
-  >
-    ¿La olvidaste?
-  </Link>
-</div>
+          <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-500">
+            Contraseña
+          </label>
+          <Link 
+            href="/auth/forget" 
+            className="text-xs font-semibold text-zinc-400 hover:text-red-600 transition-colors"
+          >
+            ¿La olvidaste?
+          </Link>
+        </div>
         <div className="relative">
           <input
             type="password"
@@ -105,15 +120,15 @@ export function LoginForm() {
         </label>
       </div>
 
-      {/* Botón de Registro (Acción Secundaria) */}
-<div className="pt-2">
-  <Link
-    href="/auth/registro" // Esta es la URL que debe coincidir con tu carpeta app/auth/registro
-    className="w-full h-12 flex items-center justify-center border-2 border-zinc-200 text-zinc-600 font-bold text-sm tracking-wide uppercase rounded-xl transition-all duration-300 hover:border-zinc-300 hover:bg-zinc-50 active:scale-[0.99]"
-  >
-    ¿No tienes cuenta? Regístrate
-  </Link>
-</div>
+      {/* Botón de Registro */}
+      <div className="pt-2">
+        <Link
+          href="/auth/registro"
+          className="w-full h-12 flex items-center justify-center border-2 border-zinc-200 text-zinc-600 font-bold text-sm tracking-wide uppercase rounded-xl transition-all duration-300 hover:border-zinc-300 hover:bg-zinc-50 active:scale-[0.99]"
+        >
+          ¿No tienes cuenta? Regístrate
+        </Link>
+      </div>
 
       {/* Botón de Envío Súper Animado */}
       <button
@@ -123,11 +138,9 @@ export function LoginForm() {
       >
         {isLoading ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900">
-            {/* Texto de carga industrial */}
             <span className="text-[10px] font-black tracking-widest text-zinc-400 animate-pulse">
               CONECTANDO CON PLANTA...
             </span>
-            {/* Línea de carga fluida tipo flujo de concreto */}
             <div className="absolute bottom-0 left-0 h-1 w-full bg-zinc-800 overflow-hidden">
               <div className="h-full w-1/3 bg-red-500 animate-progress-bar" />
             </div>

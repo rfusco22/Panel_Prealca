@@ -23,7 +23,7 @@ export default function DocumentadorLayout({
 
   if (!session || (session.user.role !== 'documentador' && session.user.role !== 'admin')) {
     if (!loading) {
-      router.push('/login');
+      router.push('/auth/login');
     }
     return null;
   }
