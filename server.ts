@@ -10,7 +10,7 @@ const port = parseInt(process.env.PORT || '3000', 10);
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
 
-const connectedUsers = new Map<string, number>();
+const connectedSockets = new Map<string, number>();
 const onlineUserIds = new Set<number>();
 
 app.prepare().then(() => {
@@ -27,19 +27,25 @@ app.prepare().then(() => {
   (globalThis as any).__socketio = io;
 
   io.on('connection', (socket) => {
+    console.log(`[Socket] Client connected: ${socket.id}`);
+
     socket.on('user:identify', (userId: number) => {
-      connectedUsers.set(socket.id, userId);
+      connectedSockets.set(socket.id, userId);
       onlineUserIds.add(userId);
-      io.emit('presence:update', { onlineUserIds: Array.from(onlineUserIds) });
+      console.log(`[Socket] User ${userId} identified. Online: [${[...onlineUserIds].join(',')}]`);
+      io.emit('presence:update', { onlineUserIds: [...onlineUserIds] });
     });
 
-    socket.on('disconnect', () => {
-      const userId = connectedUsers.get(socket.id);
-      connectedUsers.delete(socket.id);
-      if (userId && !Array.from(connectedUsers.values()).includes(userId)) {
+    socket.on('disconnect', (reason) => {
+      const userId = connectedSockets.get(socket.id);
+      connectedSockets.delete(socket.id);
+      // Only remove if no other sockets for this user
+      const stillConnected = [...connectedSockets.values()].includes(userId!);
+      if (!stillConnected && userId) {
         onlineUserIds.delete(userId);
       }
-      io.emit('presence:update', { onlineUserIds: Array.from(onlineUserIds) });
+      console.log(`[Socket] User ${userId} disconnected (${reason}). Online: [${[...onlineUserIds].join(',')}]`);
+      io.emit('presence:update', { onlineUserIds: [...onlineUserIds] });
     });
   });
 

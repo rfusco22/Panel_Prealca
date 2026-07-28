@@ -26,21 +26,15 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   const [onlineUserIds, setOnlineUserIds] = useState<number[]>([]);
 
   useEffect(() => {
-    const socketUrl = typeof window !== 'undefined'
-      ? `${window.location.protocol}//${window.location.hostname}:3000`
-      : 'http://localhost:3000';
-
-    const newSocket = ioClient(socketUrl, {
+    const newSocket = ioClient({
       path: '/api/socketio',
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'],
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
     });
 
-    newSocket.on('connect', () => {
-      setConnected(true);
-      // Send userId to server for presence tracking
+    const identifyUser = () => {
       fetch('/api/auth/session')
         .then(res => res.json())
         .then(data => {
@@ -49,6 +43,11 @@ export function SocketProvider({ children }: { children: ReactNode }) {
           }
         })
         .catch(() => {});
+    };
+
+    newSocket.on('connect', () => {
+      setConnected(true);
+      identifyUser();
     });
 
     newSocket.on('disconnect', () => {
