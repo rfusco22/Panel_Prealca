@@ -28,8 +28,16 @@ export async function GET() {
       ORDER BY a.nombre
     `);
 
+    // Convert BigInt to Number
+    const materiaPrima = materiaPrimaDisponible.map((row: any) => ({
+      ...row,
+      totalEntradas: Number(row.totalEntradas),
+      totalConsumido: Number(row.totalConsumido),
+      disponible: Number(row.disponible),
+    }));
+
     // 2. Stock disponible por producto (usando fórmula)
-    const stockProductos: any = await query(`
+    const stockProductosRaw: any = await query(`
       SELECT 
         p.id AS productoId,
         CONCAT(p.resistencia, ' - ', p.pulgada) AS productoNombre,
@@ -69,6 +77,14 @@ export async function GET() {
       ORDER BY p.resistencia, p.pulgada
     `);
 
+    // Convert BigInt to Number
+    const stockProductos = stockProductosRaw.map((row: any) => ({
+      ...row,
+      stockDisponible: Number(row.stockDisponible),
+      totalDespachado: Number(row.totalDespachado),
+      totalAgregados: Number(row.totalAgregados),
+    }));
+
     // 3. Detalle de fórmula por producto (para mostrar composición)
     const formulasDetalle: any = await query(`
       SELECT 
@@ -98,22 +114,20 @@ export async function GET() {
       }
       formulasPorProducto[row.productoId].push({
         agregadoNombre: row.agregadoNombre,
-        cantidadRequerida: parseFloat(row.cantidadRequerida),
+        cantidadRequerida: Number(row.cantidadRequerida),
         unidadMedida: row.unidadMedida,
-        disponible: parseFloat(row.disponibleAgregado) - parseFloat(row.consumidoAgregado),
+        disponible: Number(row.disponibleAgregado) - Number(row.consumidoAgregado),
       });
     }
 
     // Agregar formulas a cada producto
     for (const prod of stockProductos) {
       prod.formula = formulasPorProducto[prod.productoId] || [];
-      prod.stockDisponible = prod.stockDisponible !== null ? parseFloat(prod.stockDisponible) : 0;
-      prod.totalDespachado = parseFloat(prod.totalDespachado);
     }
 
     return NextResponse.json({
       success: true,
-      materiaPrima: materiaPrimaDisponible,
+      materiaPrima,
       productos: stockProductos,
     }, { status: 200 });
 

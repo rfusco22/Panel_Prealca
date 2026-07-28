@@ -151,11 +151,11 @@ export default function StockPage() {
                     <div className="font-semibold text-sm text-slate-900">{mp.agregadoNombre}</div>
                     <div className="text-xs text-slate-500">{mp.unidadMedida}</div>
                   </td>
-                  <td className="px-6 py-4 text-right text-sm text-slate-600">{mp.totalEntradas.toFixed(2)}</td>
-                  <td className="px-6 py-4 text-right text-sm text-amber-600">{mp.totalConsumido.toFixed(2)}</td>
+                  <td className="px-6 py-4 text-right text-sm text-slate-600">{Number(mp.totalEntradas).toFixed(2)}</td>
+                  <td className="px-6 py-4 text-right text-sm text-amber-600">{Number(mp.totalConsumido).toFixed(2)}</td>
                   <td className="px-6 py-4 text-right">
-                    <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-bold ${getStockColor(mp.disponible)}`}>
-                      {mp.disponible.toFixed(2)}
+                    <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-bold ${getStockColor(Number(mp.disponible))}`}>
+                      {Number(mp.disponible).toFixed(2)}
                     </span>
                   </td>
                 </tr>
@@ -196,7 +196,7 @@ export default function StockPage() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {productos.map((prod) => {
-                const badge = getStockBadge(prod.stockDisponible);
+                const badge = getStockBadge(Number(prod.stockDisponible));
                 const isExpanded = expandedProduct === prod.productoId;
                 return (
                   <>
@@ -216,11 +216,11 @@ export default function StockPage() {
                         <span className="text-xs text-slate-500">{prod.totalAgregados} agregado{prod.totalAgregados !== 1 ? 's' : ''}</span>
                       </td>
                       <td className="px-6 py-4 text-right text-sm text-slate-600">
-                        {prod.totalDespachado.toFixed(2)} M³
+                        {Number(prod.totalDespachado).toFixed(2)} M³
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <span className={`text-lg font-bold ${getStockColor(prod.stockDisponible)}`}>
-                          {prod.stockDisponible.toFixed(2)} M³
+                        <span className={`text-lg font-bold ${getStockColor(Number(prod.stockDisponible))}`}>
+                          {Number(prod.stockDisponible).toFixed(2)} M³
                         </span>
                       </td>
                       <td className="px-6 py-4 text-center">
@@ -250,8 +250,8 @@ export default function StockPage() {
                             <p className="text-xs font-bold text-slate-500 uppercase mb-3">Composición de Fórmula</p>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                               {prod.formula.map((f, idx) => {
-                                const disp = f.disponible;
-                                const color = disp <= 0 ? 'border-red-200 bg-red-50' : disp < f.cantidadRequerida ? 'border-amber-200 bg-amber-50' : 'border-emerald-200 bg-emerald-50';
+                                const disp = Number(f.disponible);
+                                const color = disp <= 0 ? 'border-red-200 bg-red-50' : disp < Number(f.cantidadRequerida) ? 'border-amber-200 bg-amber-50' : 'border-emerald-200 bg-emerald-50';
                                 return (
                                   <div key={idx} className={`rounded-lg border p-3 ${color}`}>
                                     <div className="font-semibold text-sm text-slate-900">{f.agregadoNombre}</div>
@@ -259,7 +259,7 @@ export default function StockPage() {
                                       Requiere: <span className="font-bold">{f.cantidadRequerida}</span> {f.unidadMedida}/M³
                                     </div>
                                     <div className="text-xs text-slate-500">
-                                      Disponible: <span className="font-bold">{disp.toFixed(2)}</span> {f.unidadMedida}
+                                      Disponible: <span className="font-bold">{Number(disp).toFixed(2)}</span> {f.unidadMedida}
                                     </div>
                                   </div>
                                 );
