@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Fragment } from 'react';
 import { Package, ArrowDown, ArrowUp, Box, ChevronDown, ChevronUp } from 'lucide-react';
 import { useSocket } from '@/contexts/SocketContext';
 
@@ -182,8 +182,8 @@ export default function DosificadorStockPage() {
                 const badge = getStockBadge(Number(prod.stockDisponible));
                 const isExpanded = expandedProduct === prod.productoId;
                 return (
-                  <>
-                    <tr key={prod.productoId} className="hover:bg-slate-50 transition-colors">
+                  <Fragment key={prod.productoId}>
+                    <tr className="hover:bg-slate-50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="h-9 w-9 rounded-lg bg-green-50 flex items-center justify-center">
@@ -252,7 +252,7 @@ export default function DosificadorStockPage() {
                         </td>
                       </tr>
                     )}
-                  </>
+                  </Fragment>
                 );
               })}
               {productos.length === 0 && (
