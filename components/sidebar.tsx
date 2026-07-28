@@ -13,7 +13,8 @@ import {
   Users,
   TrendingUp,
   TrendingDown,
-  Warehouse
+  Warehouse,
+  Boxes
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -24,7 +25,7 @@ const menuItems = [
   { id: "ingresos", label: "Ingresos", icon: TrendingUp, href: "/admin/ingresos" },
   { id: "egresos", label: "Egresos", icon: TrendingDown, href: "/admin/egresos" },
   { id: "productos", label: "Productos", icon: Package, href: "/admin/productos" },
-  { id: "stock", label: "Stock", icon: Warehouse, href: "/admin/stock" },
+  { id: "stock", label: "Stock", icon: Boxes, href: "/admin/stock" },
   { id: "unidades", label: "Unidades", icon: Truck, href: "/admin/unidades" },
   { id: "retenciones", label: "Retenciones", icon: Receipt, href: "/admin/retenciones" },
   { id: "reportes", label: "Reportes", icon: PieChart, href: "/admin/reportes" },
@@ -66,7 +67,7 @@ export function Sidebar({
 
           <div className={`flex items-center gap-4 relative z-10 ${isCollapsed ? 'justify-center' : ''}`}>
             <div className="h-14 w-14 bg-gradient-to-br from-white to-slate-100 rounded-2xl flex items-center justify-center p-1.5 shadow-[0_0_20px_rgba(59,130,246,0.15)] border border-white/10 shrink-0">
-              <Image src="/logo.jpeg" alt="PREALCA" width={56} height={56} className="w-full h-full object-contain drop-shadow-sm" />
+              <Image src="/logo.jpeg" alt="PREALCA" width={56} height={56} style={{ width: '100%', height: '100%' }} className="object-contain drop-shadow-sm" />
             </div>
             
             {/* Ocultamos el texto si está contraído */}
