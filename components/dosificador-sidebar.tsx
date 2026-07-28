@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { AlertTriangle, LayoutDashboard, Package, FileText, LogOut } from "lucide-react";
+import { AlertTriangle, LayoutDashboard, Package, FileText, LogOut, Warehouse } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
@@ -10,6 +10,7 @@ const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/dosificador" },
   { id: "alerta", label: "Alerta", icon: AlertTriangle, href: "/dosificador/alerta" },
   { id: "materia-prima", label: "Materia Prima", icon: Package, href: "/dosificador/materia-prima" },
+  { id: "stock", label: "Stock", icon: Warehouse, href: "/dosificador/stock" },
   { id: "guias", label: "Guías de Despacho", icon: FileText, href: "/dosificador/guia-despacho" },
 ];
 

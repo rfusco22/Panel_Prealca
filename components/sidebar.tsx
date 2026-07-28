@@ -10,9 +10,10 @@ import {
   PieChart, 
   LogOut, 
   LayoutDashboard,
-  Users,           // <- Nuevo ícono para Vendedores
-  TrendingUp,      // <- Nuevo ícono para Ingresos
-  TrendingDown     // <- Nuevo ícono para Egresos
+  Users,
+  TrendingUp,
+  TrendingDown,
+  Warehouse
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -23,6 +24,7 @@ const menuItems = [
   { id: "ingresos", label: "Ingresos", icon: TrendingUp, href: "/admin/ingresos" },
   { id: "egresos", label: "Egresos", icon: TrendingDown, href: "/admin/egresos" },
   { id: "productos", label: "Productos", icon: Package, href: "/admin/productos" },
+  { id: "stock", label: "Stock", icon: Warehouse, href: "/admin/stock" },
   { id: "unidades", label: "Unidades", icon: Truck, href: "/admin/unidades" },
   { id: "retenciones", label: "Retenciones", icon: Receipt, href: "/admin/retenciones" },
   { id: "reportes", label: "Reportes", icon: PieChart, href: "/admin/reportes" },
