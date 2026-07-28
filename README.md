@@ -1,323 +1,274 @@
 # Sistema de Gestión PREALCA
 
-Aplicación web empresarial para automatizar procesos de la empresa PREALCA, incluyendo gestión de proveedores, clientes, bancos, ingresos, egresos, guías de despacho, facturas y retenciones de impuestos.
+Aplicación web empresarial para automatizar procesos de la empresa PREALCA, incluyendo gestión de proveedores, clientes, bancos, ingresos, egresos, guías de despacho, facturas, retenciones de impuestos, choferes y más.
 
 ## Características Principales
 
 ### Autenticación y Seguridad
-- Login seguro con Better Auth + MySQL
-- Three roles with dashboard redirection:
-  - **Admin**: Gestión de maestros, bancos, retenciones, reportes
-  - **Registro**: Registro de proveedores, clientes, ingresos, egresos, facturas
-  - **Documentador**: Creación de guías de despacho
-- Middleware de protección por rol
+- Login seguro con iron-session + MySQL
+- Tres roles con redirección por dashboard:
+  - **Admin**: Gestión completa del sistema, usuarios, productos, unidades, retenciones
+  - **Registro**: Proveedores, clientes, vendedores, bancos, facturas, órdenes de compra, choferes
+  - **Dosificador**: Alertas de stock, materia prima, guías de despacho
 - Hashing seguro de contraseñas con bcryptjs
+- Último inicio de sesión registrado
 
-### Catálogos Maestros
-- Gestión de Proveedores (RIF único)
-- Gestión de Clientes (RIF único)
-- Gestión de Bancos con cuentas
-- Gestión de Productos (Prealca, Premezclado)
-- Gestión de Unidades de Transporte (Camiones, volquetas, etc)
+### Rol Admin
+- **Dashboard**: Estadísticas en tiempo real con 6 módulos
+- **Gestión de Usuarios**: CRUD completo, activar/desactivar, roles, último acceso
+- **Ingresos**: Registro con tasa BCV automática
+- **Egresos**: Clasificación por categoría (Mantenimiento, Producción, Servicios, Gasto de Personal, Impuestos)
+- **Productos**: Catálogo de productos (resistencia, pulgada, unidad)
+- **Unidades**: Gestión de unidades de transporte
+- **Retenciones de Impuestos**: Filtros por cliente/factura, cálculo automático 75% IVA
 
-### Módulo Banco
-- **Ingresos**: Registrar ingresos bancarios con conversión automática de moneda
-- **Egresos**: Registrar gastos con clasificación dinámica
-- Cálculo automático de IVA 16%
-- Conversión Bs ↔ $ en tiempo real
+### Rol Registro
+- **Dashboard**: Resumen general con estadísticas y alertas de documentos
+- **Choferes**: CRUD con documentos (licencia, certificado médico, RIF) y alertas de vencimiento
+- **Alertas**: Documentos de choferes vencidos o por vencer en ≤ 7 días
+- **Proveedores**: CRUD con RIF, dirección, clasificación
+- **Clientes**: CRUD con RIF, vendedor, contribuyente especial
+- **Vendedores**: CRUD con cédula, teléfono
+- **Bancos**: Gestión de cuentas bancarias con logos
+- **Facturas**: Auto-fill desde guía de despacho, impresión
+- **Órdenes de Compra**: Moneda toggle (Bs/$), tasa BCV, vista previa
 
-### Módulo Ventas
-- **Guías de Despacho**: Crear guías con volumen y peso
-- **Facturas**: Tres tipos (Prealca, Premezclado, Servicio)
-- Vinculación automática entre documentos
-- Cálculo automático de IVA
+### Rol Dosificador
+- **Dashboard**: Vista general del flujo de materiales
+- **Alertas de Stock**: Productos con despacho < 200 M³ en 30 días
+- **Materia Prima**: Registro de cantidades por agregado
+- **Guías de Despacho**: Formulario completo con Prealca/Premezclado
 
-### Retenciones
-- Retención del 75% de IVA para contribuyentes especiales
-- Vinculación automática con facturas
-- Cálculo automático
+### Módulo Financiero
+- **Ingresos**: Registro bancario con conversión automática Bs ↔ $
+- **Egresos**: 5 clasificaciones con subcategorías detalladas
+- **Cálculo de IVA**: 16% automático en documentos
+- **Retenciones**: 75% del IVA para contribuyentes especiales
+- **Tasa BCV**: API `ve.dolarapi.com/v1/dolares/oficiales` con fallback
 
-### Reportes y Exportación
-- Reportes de Ingresos, Egresos, Ventas, Retenciones
-- Exportación a Excel (XLSX) y PDF
-- Utilidades reutilizables para reportes
+### Choferes y Alertas
+- **Campos**: Nombre, cédula, teléfono, correo, dirección
+- **Documentos**: Licencia, certificado médico, RIF — cada uno con número y fecha de vencimiento
+- **Alertas automáticas**: Documentos vencidos o por vencer en ≤ 7 días
+- **Sección dedicada**: `/registro/alerta` con diseño alarmante (rojo, pulsante)
 
 ## Tech Stack
 
 - **Frontend**: Next.js 16 + React 19 + Tailwind CSS v4
 - **Backend**: Next.js API Routes
-- **Auth**: Better Auth
-- **Database**: MySQL + Drizzle ORM
-- **Validation**: Zod + react-hook-form
-- **Export**: XLSX + jsPDF
-- **Currency**: Axios para API de tasas de cambio
+- **Auth**: iron-session
+- **Database**: MySQL remoto (cPanel)
+- **Validation**: react-hook-form + Zod
 - **Icons**: lucide-react
+- **Animations**: framer-motion
+- **Currency**: API BCV (ve.dolarapi.com)
 
 ## Estructura del Proyecto
 
 ```
 app/
-  ├── (auth)/login/                 # Página de login
-  ├── (admin)/                       # Dashboard Admin
-  │   ├── bancos/                   # Gestión de bancos
-  │   ├── productos/                # Gestión de productos
-  │   ├── unidades/                 # Gestión de unidades
-  │   ├── retenciones/              # Gestión de retenciones
-  │   ├── reportes/                 # Reportes y estadísticas
-  │   └── settings/                 # Configuración de tasas
-  ├── (registro)/                    # Dashboard Registro
-  │   ├── proveedores/              # Gestión de proveedores
+  ├── auth/
+  │   ├── login/                    # Login
+  │   ├── registro/                 # Registro de usuarios
+  │   └── forget/                   # Recuperar contraseña
+  ├── admin/
+  │   ├── page.tsx                  # Dashboard Admin
+  │   ├── users/                    # Gestión de usuarios
+  │   ├── retenciones/              # Retenciones de impuestos
+  │   └── layout.tsx                # Layout con sidebar
+  ├── registro/
+  │   ├── page.tsx                  # Dashboard Registro
+  │   ├── alerta/                   # Alertas de documentos choferes
+  │   ├── choferes/                 # Gestión de choferes
   │   ├── clientes/                 # Gestión de clientes
-  │   ├── ingresos/                 # Ingresos bancarios
-  │   ├── egresos/                  # Egresos/gastos
-  │   └── facturas/                 # Facturas
-  └── (documentador)/                # Dashboard Documentador
-      └── guia-despacho/            # Guías de despacho
+  │   ├── proveedores/              # Gestión de proveedores
+  │   ├── vendedores/               # Gestión de vendedores
+  │   ├── bancos/                   # Gestión de bancos
+  │   ├── facturas/                 # Facturas
+  │   └── ordenes-compra/           # Órdenes de compra
+  ├── dosificador/
+  │   ├── page.tsx                  # Dashboard Dosificador
+  │   ├── alerta/                   # Alertas de stock bajo
+  │   ├── materia-prima/            # Registro de materia prima
+  │   └── guia-despacho/            # Guías de despacho
+  └── api/
+      ├── auth/                     # Login, session, signout
+      ├── admin/users/              # CRUD usuarios
+      ├── choferes/                 # CRUD choferes + alertas
+      ├── clientes/                 # CRUD clientes
+      ├── proveedores/              # CRUD proveedores
+      ├── vendedores/               # CRUD vendedores
+      ├── bancos/                   # CRUD bancos
+      ├── egresos/                  # CRUD egresos
+      ├── ingresos/                 # CRUD ingresos
+      ├── facturas/                 # CRUD facturas
+      ├── guia-despacho/            # CRUD guías
+      ├── orden-compra/             # CRUD órdenes
+      ├── retenciones/              # CRUD retenciones
+      ├── materia-prima/            # CRUD materia prima
+      ├── agregados/                # CRUD agregados
+      ├── alerta/                   # Alertas de stock
+      ├── productos/                # Productos
+      ├── unidades/                 # Unidades
+      ├── bcv/                      # Tasa BCV
+      └── stats/                    # Estadísticas
 
 components/
   ├── auth/
-  │   └── login-form.tsx
-  ├── layout/
-  │   └── navbar.tsx
-  ├── forms/                        # 10+ formularios CRUD
-  └── tables/                       # 10+ tablas responsivas
+  │   ├── login-form.tsx
+  │   └── register-form.tsx
+  ├── forms/
+  │   ├── chofer-form.tsx           # Formulario choferes
+  │   ├── cliente-form.tsx          # Formulario clientes
+  │   ├── proveedor-form.tsx        # Formulario proveedores
+  │   ├── vendedor-form.tsx         # Formulario vendedores
+  │   ├── egreso-form.tsx           # Formulario egresos
+  │   ├── ingreso-form.tsx          # Formulario ingresos
+  │   ├── factura-form.tsx          # Formulario facturas
+  │   ├── guia-despacho-form.tsx    # Formulario guías
+  │   ├── orden-compra-form.tsx     # Formulario órdenes
+  │   └── retencion-form.tsx        # Formulario retenciones
+  ├── tables/
+  │   ├── choferes-table.tsx
+  │   ├── clientes-table.tsx
+  │   ├── egresos-table.tsx
+  │   ├── guia-despacho-table.tsx
+  │   ├── ingresos-table.tsx
+  │   ├── retenciones-table.tsx
+  │   └── ordenes-compra-table.tsx
+  ├── sidebar.tsx                   # Sidebar Admin
+  ├── registro-sidebar.tsx          # Sidebar Registro
+  ├── dosificador-sidebar.tsx       # Sidebar Dosificador
+  └── top-bar.tsx                   # Barra superior
 
 lib/
-  ├── auth.ts                       # Configuración Better Auth
-  ├── db.ts                         # Conexión MySQL
+  ├── db.ts                         # Conexión MySQL directa
+  ├── session.ts                    # Configuración iron-session
+  ├── calculations.ts               # Cálculos IVA y retención
   ├── currency.ts                   # Conversión de monedas
-  └── export.ts                     # Utilidades de exportación
+  └── document-templates.ts         # HTML para impresión de documentos
 
-schema.ts                           # Drizzle ORM schema
+hooks/
+  └── useAuth.ts                    # Hook de autenticación
 
-middleware.ts                       # Protección de rutas por rol
-
-scripts/
-  └── init-db.ts                    # Script de inicialización
+schema.ts                           # Schema Drizzle ORM (referencia)
 ```
 
-## Instalación y Configuración
+## Base de Datos
 
-### 1. Requisitos Previos
-- Node.js 18+
-- MySQL 8.0+
-- pnpm (gestor de paquetes)
+### Tablas Principales
 
-### 2. Configuración de MySQL
+| Tabla | Descripción |
+|-------|-------------|
+| `users` | Usuarios con roles (admin, registro, dosificador) |
+| `clientes` | Clientes con RIF, vendedor, contribuyente especial |
+| `proveedores` | Proveedores con RIF y clasificación |
+| `vendedores` | Vendedores con cédula y teléfono |
+| `choferes` | Choferes con documentos y fechas de vencimiento |
+| `bancos` | Cuentas bancarias |
+| `productos` | Catálogo de productos (resistencia, pulgada) |
+| `unidades` | Unidades de transporte |
+| `agregados` | Materiales agregados con unidad de medida |
+| `materia_prima` | Registro de materia prima por agregado |
+| `ingresos` | Ingresos bancarios |
+| `egresos` | Egresos con clasificación y subcategoría |
+| `guia_despacho` | Guías de despacho (Prealca/Premezclado) |
+| `facturas` | Facturas de venta |
+| `orden_compra` | Órdenes de compra |
+| `retenciones_impuestos` | Retenciones de IVA |
 
-```bash
-# Crear base de datos
-mysql -u root -p
-CREATE DATABASE prealca;
-CREATE USER 'prealca'@'localhost' IDENTIFIED BY 'tu_contraseña';
-GRANT ALL PRIVILEGES ON prealca.* TO 'prealca'@'localhost';
-FLUSH PRIVILEGES;
-```
+## API Routes
 
-### 3. Variables de Entorno
+### Autenticación
+- `POST /api/auth/login` - Login
+- `GET /api/auth/session` - Verificar sesión
+- `POST /api/auth/signout` - Cerrar sesión
 
-Copia `.env.example` a `.env.local` y configura:
+### Choferes
+- `GET /api/choferes` - Listar choferes
+- `POST /api/choferes` - Crear chofer
+- `PUT /api/choferes` - Actualizar chofer
+- `DELETE /api/choferes?id=X` - Eliminar chofer
+- `GET /api/choferes/alertas` - Documentos vencidos/por vencer
 
-```env
-# MySQL
-DB_HOST=localhost
-DB_USER=prealca
-DB_PASSWORD=tu_contraseña
-DB_NAME=prealca
+### Retenciones
+- `GET /api/retenciones` - Listar (filtro por cliente_id, factura_id)
+- `POST /api/retenciones` - Crear retención
+- `GET /api/retenciones/facturas-contribuyentes` - Facturas de contribuyentes especiales
 
-# Better Auth
-BETTER_AUTH_SECRET=tu_secret_key_de_32_caracteres
-
-# Currency API (opcional, para tasa de cambio)
-EXCHANGE_RATE_API_KEY=tu_api_key
-EXCHANGE_RATE_API_URL=https://api.example.com/rates
-```
-
-Genera BETTER_AUTH_SECRET:
-```bash
-openssl rand -base64 32
-```
-
-### 4. Instalación de Dependencias
-
-```bash
-cd /vercel/share/v0-project
-pnpm install
-```
-
-### 5. Inicializar Base de Datos
-
-```bash
-# Crear tablas
-pnpm drizzle-kit push:mysql
-
-# Crear usuarios de prueba
-pnpm ts-node scripts/init-db.ts
-```
-
-### 6. Ejecutar Aplicación
-
-```bash
-pnpm dev
-```
-
-Abre http://localhost:3000 en tu navegador.
+### Otros
+- `GET/POST /api/clientes`, `/api/proveedores`, `/api/vendedores`, `/api/bancos`
+- `GET/POST /api/egresos`, `/api/ingresos`, `/api/facturas`
+- `GET/POST /api/guia-despacho`, `/api/orden-compra`
+- `GET/POST /api/materia-prima`, `/api/agregados`
+- `GET /api/alerta` - Productos con stock < 200 M³
+- `GET /api/bcv` - Tasa oficial BCV
+- `GET /api/stats` - Estadísticas generales
 
 ## Usuarios de Prueba
 
 | Email | Contraseña | Rol |
 |-------|-----------|-----|
-| admin@prealca.com | password123 | Admin |
-| cris@prealca.com | password123 | Registro |
-| andry@prealca.com | password123 | Documentador |
+| franco123@gmail.com | password123 | Admin |
+| franco@gmail.com | password123 | Registro |
 
-## Estructura de Base de Datos
+## Instalación
 
-### Tablas Principales
+### Requisitos
+- Node.js 18+
+- MySQL 8.0+ (o MySQL remoto)
 
-1. **users** - Usuarios del sistema
-2. **sessions** - Sesiones de autenticación (Better Auth)
-3. **proveedores** - Información de proveedores
-4. **clientes** - Información de clientes
-5. **bancos** - Bancos y cuentas
-6. **productos** - Catálogo de productos
-7. **unidades** - Unidades de transporte
-8. **ingresos** - Ingresos bancarios
-9. **egresos** - Gastos y egresos
-10. **guias_despacho** - Guías de despacho
-11. **facturas** - Facturas de venta
-12. **retenciones** - Retenciones de impuestos
+### Configuración
 
-## API Routes a Implementar
+```bash
+# Clonar repositorio
+git clone https://github.com/rfusco22/Panel_Prealca.git
+cd Panel_Prealca
 
-### Autenticación
-- `POST /api/auth/[...auth]` - Todas las operaciones de Better Auth
+# Instalar dependencias
+npm install
 
-### Proveedores
-- `GET /api/proveedores` - Listar proveedores
-- `POST /api/proveedores` - Crear proveedor
-- `PUT /api/proveedores/:id` - Actualizar
-- `DELETE /api/proveedores/:id` - Eliminar
+# Configurar variables de entorno (.env)
+DB_HOST=tu_host
+DB_USER=tu_usuario
+DB_PASSWORD=tu_contraseña
+DB_NAME=tu_base_de_datos
+DB_PORT=3306
 
-### Clientes
-- `GET /api/clientes` - Listar clientes
-- `POST /api/clientes` - Crear cliente
-- `PUT /api/clientes/:id` - Actualizar
-- `DELETE /api/clientes/:id` - Eliminar
+# Ejecutar
+npm run dev
+```
 
-### Bancos
-- `GET /api/bancos` - Listar bancos
-- `POST /api/bancos` - Crear banco
-- `PUT /api/bancos/:id` - Actualizar
-- `DELETE /api/bancos/:id` - Eliminar
-
-### Ingresos
-- `GET /api/ingresos` - Listar ingresos
-- `POST /api/ingresos` - Crear ingreso (con conversión automática)
-- `PUT /api/ingresos/:id` - Actualizar
-- `DELETE /api/ingresos/:id` - Eliminar
-
-### Egresos
-- `GET /api/egresos` - Listar egresos
-- `POST /api/egresos` - Crear egreso
-- `PUT /api/egresos/:id` - Actualizar
-- `DELETE /api/egresos/:id` - Eliminar
-
-### Guías de Despacho
-- `GET /api/guias-despacho` - Listar guías
-- `POST /api/guias-despacho` - Crear guía
-- `PUT /api/guias-despacho/:id` - Actualizar
-- `DELETE /api/guias-despacho/:id` - Eliminar
-
-### Facturas
-- `GET /api/facturas` - Listar facturas
-- `POST /api/facturas` - Crear factura
-- `PUT /api/facturas/:id` - Actualizar
-- `DELETE /api/facturas/:id` - Eliminar
-- `GET /api/facturas/:id/pdf` - Descargar PDF
-
-### Retenciones
-- `GET /api/retenciones` - Listar retenciones
-- `POST /api/retenciones` - Crear retención
-- `DELETE /api/retenciones/:id` - Eliminar
-
-### Reportes
-- `GET /api/reportes/ingresos` - Datos para reporte
-- `GET /api/reportes/egresos` - Datos para reporte
-- `GET /api/reportes/ventas` - Datos para reporte
-- `GET /api/reportes/retenciones` - Datos para reporte
+Abrir http://localhost:3000
 
 ## Funcionalidades Automáticas
 
-1. **Conversión de Moneda**: Al ingresar montos en Bolívares, se convierte automáticamente a Dólares
-2. **Cálculo de IVA**: IVA 16% se calcula automáticamente en Ingresos, Egresos, Facturas y Guías
-3. **Retención de Impuestos**: El 75% del IVA se retiene automáticamente para contribuyentes especiales
-4. **Validación de Unicidad**: RIF de proveedores y clientes deben ser únicos
-5. **Autocompletado**: Los datos se cargan automáticamente desde catálogos
+1. **Tasa BCV**: Conversión automática Bs ↔ $ usando API oficial
+2. **Cálculo de IVA**: 16% automático en guías y facturas
+3. **Retención**: 75% del IVA para contribuyentes especiales
+4. **Alertas de Stock**: Productos < 200 M³ en 30 días
+5. **Alertas de Documentos**: Choferes con documentos vencidos/por vencer
+6. **Impresión**: Generación HTML para guías, facturas, órdenes de compra
 
 ## Reglas de Negocio
 
-1. **Contado = Ingreso Automático**: Si una factura es "Contado", crea automáticamente un ingreso
-2. **Tipos de Guía**: Prealca (vinculada a factura) o Premezclado (independiente)
-3. **Estatus de Documentos**: Pendiente, Aprobado, Cancelado, Anulado
-4. **Clasificación de Gastos**: Mantenimiento, Producción, Administración, Otros
-5. **Períodos de Reporte**: Mensual, Trimestral, Anual
-
-## Exportación de Datos
-
-### Excel (XLSX)
-- Formato profesional con encabezados
-- Múltiples hojas por reporte
-- Fórmulas para cálculos
-- Ancho de columnas optimizado
-
-### PDF
-- Encabezado con título y fecha
-- Tablas automáticas con jsPDF-autotable
-- Numeración de páginas
-- Estilos profesionales
-
-## Próximas Fases
-
-### Fase 6: Optimización y Testing
-- Unit tests con Jest
-- Integration tests
-- Performance optimization
-- Caching strategy
-
-### Fase 7: DevOps y Despliegue
-- Docker configuration
-- GitHub Actions CI/CD
-- Database backups
-- Monitoring y alertas
+1. **Prealca vs Premezclado**: Si lleva IVA → Prealca. Si no → Premezclado
+2. **Contribuyente Especial**: Solo clientes con `es_contribuyente_especial = 1` aplican para retenciones
+3. **Stock Crítico**: Productos con < 200 M³ despachados en 30 días generan alerta
+4. **Vencimiento de Documentos**: Alerta 7 días antes del vencimiento de licencia, certificado o RIF
 
 ## Mantenimiento
 
-### Actualizar Dependencias
 ```bash
-pnpm update
+# Actualizar dependencias
+npm update
+
+# Backup de BD
+mysqldump -u usuario -p base_de_datos > backup_$(date +%Y%m%d).sql
+
+# Limpiar caché
+rm -rf .next
 ```
-
-### Hacer Backup de BD
-```bash
-mysqldump -u prealca -p prealca > backup_$(date +%Y%m%d).sql
-```
-
-### Limpiar Logs
-```bash
-rm -rf .next logs/*
-```
-
-## Documentación Adicional
-
-- `SETUP.md` - Instrucciones detalladas de instalación
-- `API_IMPLEMENTATION.md` - Patrones para implementar APIs
-- `PHASE_COMPLETION.md` - Estado actual del proyecto
-- `SIGUIENTE_PASOS.md` - Roadmap de implementación
-
-## Soporte y Contacto
-
-Para problemas o consultas, contacta al equipo de desarrollo.
 
 ## Licencia
 
