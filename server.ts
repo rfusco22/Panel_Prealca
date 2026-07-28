@@ -12,6 +12,7 @@ const handle = app.getRequestHandler();
 
 const connectedSockets = new Map<string, number>();
 const onlineUserIds = new Set<number>();
+const lastSeenMap = new Map<number, number>();
 
 app.prepare().then(() => {
   const httpServer = createServer(async (req, res) => {
@@ -27,25 +28,28 @@ app.prepare().then(() => {
   (globalThis as any).__socketio = io;
 
   io.on('connection', (socket) => {
-    console.log(`[Socket] Client connected: ${socket.id}`);
-
     socket.on('user:identify', (userId: number) => {
       connectedSockets.set(socket.id, userId);
       onlineUserIds.add(userId);
-      console.log(`[Socket] User ${userId} identified. Online: [${[...onlineUserIds].join(',')}]`);
-      io.emit('presence:update', { onlineUserIds: [...onlineUserIds] });
+      lastSeenMap.delete(userId);
+      io.emit('presence:update', {
+        onlineUserIds: [...onlineUserIds],
+        lastSeen: Object.fromEntries(lastSeenMap),
+      });
     });
 
-    socket.on('disconnect', (reason) => {
+    socket.on('disconnect', () => {
       const userId = connectedSockets.get(socket.id);
       connectedSockets.delete(socket.id);
-      // Only remove if no other sockets for this user
       const stillConnected = [...connectedSockets.values()].includes(userId!);
       if (!stillConnected && userId) {
         onlineUserIds.delete(userId);
+        lastSeenMap.set(userId, Date.now());
       }
-      console.log(`[Socket] User ${userId} disconnected (${reason}). Online: [${[...onlineUserIds].join(',')}]`);
-      io.emit('presence:update', { onlineUserIds: [...onlineUserIds] });
+      io.emit('presence:update', {
+        onlineUserIds: [...onlineUserIds],
+        lastSeen: Object.fromEntries(lastSeenMap),
+      });
     });
   });
 

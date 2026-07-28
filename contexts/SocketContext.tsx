@@ -8,12 +8,14 @@ interface SocketContextType {
   socket: any;
   connected: boolean;
   onlineUserIds: number[];
+  lastSeen: Record<number, number>;
 }
 
 const SocketContext = createContext<SocketContextType>({
   socket: null,
   connected: false,
   onlineUserIds: [],
+  lastSeen: {},
 });
 
 export function useSocket() {
@@ -24,6 +26,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   const [socket, setSocket] = useState<any>(null);
   const [connected, setConnected] = useState(false);
   const [onlineUserIds, setOnlineUserIds] = useState<number[]>([]);
+  const [lastSeen, setLastSeen] = useState<Record<number, number>>({});
 
   useEffect(() => {
     const newSocket = ioClient({
@@ -54,8 +57,9 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       setConnected(false);
     });
 
-    newSocket.on('presence:update', (data: { onlineUserIds: number[] }) => {
+    newSocket.on('presence:update', (data: { onlineUserIds: number[], lastSeen: Record<number, number> }) => {
       setOnlineUserIds(data.onlineUserIds);
+      setLastSeen(data.lastSeen);
     });
 
     setSocket(newSocket);
@@ -66,7 +70,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <SocketContext.Provider value={{ socket, connected, onlineUserIds }}>
+    <SocketContext.Provider value={{ socket, connected, onlineUserIds, lastSeen }}>
       {children}
     </SocketContext.Provider>
   );

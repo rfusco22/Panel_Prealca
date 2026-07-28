@@ -42,7 +42,14 @@ export default function AdminUsersPage() {
     estado: "activo",
   });
 
-  const { socket, onlineUserIds } = useSocket();
+  const { socket, onlineUserIds, lastSeen } = useSocket();
+  const [, setTick] = useState(0);
+
+  // Force re-render every second for live countdown
+  useEffect(() => {
+    const interval = setInterval(() => setTick(t => t + 1), 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     fetchUsers();
@@ -157,21 +164,20 @@ export default function AdminUsersPage() {
     }
   };
 
-  const formatFecha = (fecha: string | null) => {
-    if (!fecha) return "Nunca";
-    const d = new Date(fecha);
-    const ahora = new Date();
-    const diffMs = ahora.getTime() - d.getTime();
+  const formatFecha = (fecha: string | null, lastSeenTs?: number) => {
+    const ts = lastSeenTs || (fecha ? new Date(fecha).getTime() : 0);
+    if (!ts) return "Nunca";
+    const diffMs = Date.now() - ts;
     const diffSec = Math.floor(diffMs / 1000);
     const diffMin = Math.floor(diffSec / 60);
     const diffH = Math.floor(diffMin / 60);
     const diffD = Math.floor(diffH / 24);
-    if (diffSec < 30) return "Hace unos segundos";
+    if (diffSec < 1) return "En línea";
     if (diffSec < 60) return `Hace ${diffSec} seg`;
     if (diffMin < 60) return `Hace ${diffMin} min`;
     if (diffH < 24) return `Hace ${diffH}h`;
     if (diffD < 7) return `Hace ${diffD}d`;
-    return d.toLocaleDateString("es-VE", { day: "2-digit", month: "short", year: "numeric" });
+    return new Date(ts).toLocaleDateString("es-VE", { day: "2-digit", month: "short", year: "numeric" });
   };
 
   const getRoleInfo = (role: string) => ROLES.find(r => r.value === role) || ROLES[1];
@@ -276,7 +282,7 @@ export default function AdminUsersPage() {
                         <div className="flex items-center gap-1.5">
                           <Clock size={12} className="text-slate-400" />
                           <span className={`text-xs font-medium ${isOnline ? 'text-emerald-600' : 'text-slate-500'}`}>
-                            {isOnline ? "En línea" : formatFecha(user.last_login)}
+                            {isOnline ? "En línea" : formatFecha(user.last_login, lastSeen[user.id])}
                           </span>
                         </div>
                       </td>
