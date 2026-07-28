@@ -10,6 +10,9 @@ const port = parseInt(process.env.PORT || '3000', 10);
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
 
+const connectedUsers = new Map<string, number>();
+const onlineUserIds = new Set<number>();
+
 app.prepare().then(() => {
   const httpServer = createServer(async (req, res) => {
     const parsedUrl = parse(req.url!, true);
@@ -17,25 +20,28 @@ app.prepare().then(() => {
   });
 
   const io = new Server(httpServer, {
-    cors: {
-      origin: '*',
-      methods: ['GET', 'POST'],
-    },
+    cors: { origin: '*', methods: ['GET', 'POST'] },
     path: '/api/socketio',
   });
 
-  // Store io instance globally so API routes can access it
   (globalThis as any).__socketio = io;
 
   io.on('connection', (socket) => {
-    console.log(`[Socket] Client connected: ${socket.id}`);
+    socket.on('user:identify', (userId: number) => {
+      connectedUsers.set(socket.id, userId);
+      onlineUserIds.add(userId);
+      io.emit('presence:update', { onlineUserIds: Array.from(onlineUserIds) });
+    });
 
     socket.on('disconnect', () => {
-      console.log(`[Socket] Client disconnected: ${socket.id}`);
+      const userId = connectedUsers.get(socket.id);
+      connectedUsers.delete(socket.id);
+      if (userId && !Array.from(connectedUsers.values()).includes(userId)) {
+        onlineUserIds.delete(userId);
+      }
+      io.emit('presence:update', { onlineUserIds: Array.from(onlineUserIds) });
     });
   });
-
-  console.log(`[Socket] Socket.io server running on port ${port}`);
 
   httpServer.listen(port, hostname, () => {
     console.log(`> Ready on http://${hostname}:${port}`);

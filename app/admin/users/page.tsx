@@ -42,7 +42,7 @@ export default function AdminUsersPage() {
     estado: "activo",
   });
 
-  const { socket } = useSocket();
+  const { socket, onlineUserIds } = useSocket();
 
   useEffect(() => {
     fetchUsers();
@@ -162,10 +162,12 @@ export default function AdminUsersPage() {
     const d = new Date(fecha);
     const ahora = new Date();
     const diffMs = ahora.getTime() - d.getTime();
-    const diffMin = Math.floor(diffMs / 60000);
+    const diffSec = Math.floor(diffMs / 1000);
+    const diffMin = Math.floor(diffSec / 60);
     const diffH = Math.floor(diffMin / 60);
     const diffD = Math.floor(diffH / 24);
-    if (diffMin < 1) return "Ahora mismo";
+    if (diffSec < 30) return "Hace unos segundos";
+    if (diffSec < 60) return `Hace ${diffSec} seg`;
     if (diffMin < 60) return `Hace ${diffMin} min`;
     if (diffH < 24) return `Hace ${diffH}h`;
     if (diffD < 7) return `Hace ${diffD}d`;
@@ -209,7 +211,7 @@ export default function AdminUsersPage() {
           { label: "Total Usuarios", value: users.length, color: "text-slate-900" },
           { label: "Activos", value: users.filter(u => u.estado === "activo").length, color: "text-emerald-600" },
           { label: "Inactivos", value: users.filter(u => u.estado !== "activo").length, color: "text-red-500" },
-          { label: "En línea ahora", value: users.filter(u => u.last_login && (new Date().getTime() - new Date(u.last_login).getTime()) < 900000).length, color: "text-blue-600" },
+          { label: "En línea ahora", value: users.filter(u => onlineUserIds.includes(u.id)).length, color: "text-blue-600" },
         ].map((s, i) => (
           <div key={i} className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{s.label}</p>
@@ -245,7 +247,7 @@ export default function AdminUsersPage() {
                 {users.map((user) => {
                   const roleInfo = getRoleInfo(user.role);
                   const RoleIcon = roleInfo.icon;
-                  const isOnline = user.last_login && (new Date().getTime() - new Date(user.last_login).getTime()) < 900000;
+                  const isOnline = onlineUserIds.includes(user.id);
                   return (
                     <tr key={user.id} className="hover:bg-slate-50/80 transition-colors group">
                       <td className="px-6 py-4">
