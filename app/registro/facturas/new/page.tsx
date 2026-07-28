@@ -1,11 +1,9 @@
+'use client';
+
 import { FacturaForm } from '@/components/forms/factura-form';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
-
-export const metadata = {
-  title: 'Nueva Factura - PREALCA',
-};
 
 export default function NewFacturaPage() {
   return (
@@ -19,9 +17,7 @@ export default function NewFacturaPage() {
         <h1 className="text-3xl font-bold text-gray-900">Nueva Factura</h1>
       </div>
 
-      <div className="max-w-2xl">
-        <FacturaForm />
-      </div>
+      <FacturaForm />
     </div>
   );
 }

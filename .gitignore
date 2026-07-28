@@ -8,6 +8,10 @@ __v0_jsx-dev-runtime.ts
 
 # Environment variables
 .env*.local
+.env
+
+# SSH keys
+.ssh_id_rsa
 
 # Common ignores
 node_modules

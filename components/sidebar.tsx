@@ -22,16 +22,13 @@ const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/admin" },
   { id: "ingresos", label: "Ingresos", icon: TrendingUp, href: "/admin/ingresos" },
   { id: "egresos", label: "Egresos", icon: TrendingDown, href: "/admin/egresos" },
-  // Nota: Ajusta la ruta "/admin/vendedores" a "/registro/vendedores" si corresponde a ese rol específico
-  { id: "vendedores", label: "Vendedores", icon: Users, href: "/admin/vendedores" }, 
-  { id: "bancos", label: "Gestión de Bancos", icon: Building2, href: "/admin/bancos" },
   { id: "productos", label: "Productos", icon: Package, href: "/admin/productos" },
   { id: "unidades", label: "Unidades", icon: Truck, href: "/admin/unidades" },
   { id: "retenciones", label: "Retenciones", icon: Receipt, href: "/admin/retenciones" },
   { id: "reportes", label: "Reportes", icon: PieChart, href: "/admin/reportes" },
+  { id: "usuarios", label: "Usuarios", icon: Users, href: "/admin/users" },
   { id: "agregados", label: "Agregados", icon: Settings, href: "/admin/agregados" },
   { id: "settings", label: "Configuración", icon: Settings, href: "/admin/settings" },
-  { id: "clientes", label: "Clientes", icon: Users, href: "/admin/clientes" },
 ];
 
 export function Sidebar({ 

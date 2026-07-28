@@ -1,37 +1,40 @@
-import { ReactNode } from 'react';
-import { Sidebar } from '@/components/sidebar';
-import { TopBar } from '@/components/top-bar'; // Importamos el TopBar
-import { getIronSession } from 'iron-session';
-import { cookies } from 'next/headers';
-import { sessionOptions, SessionData } from '@/lib/session';
+'use client';
 
-export default async function AdminLayout({
-  children,
-}: {
-  children: ReactNode;
-}) {
-  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-  const userRole = session.role || 'Usuario';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState, ReactNode } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { Sidebar } from '@/components/sidebar';
+import { TopBar } from '@/components/top-bar';
+
+export default function AdminLayout({ children }: { children: ReactNode }) {
+  const router = useRouter();
+  const { session, loading } = useAuth();
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  useEffect(() => {
+    if (!loading && (!session || session.user.role !== 'admin')) {
+      router.push('/auth/login');
+    }
+  }, [session, loading, router]);
+
+  if (loading || !session || session.user.role !== 'admin') {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-slate-50">
+        <span className="text-sm font-bold text-slate-500 animate-pulse">Cargando panel...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
-      
-      {/* Sidebar Fijo a la izquierda */}
-      <Sidebar userRole={userRole} />
-
-      {/* Contenedor Principal (Lado Derecho) */}
+      <Sidebar userRole={session.user.role} isCollapsed={isCollapsed} />
       <div className="flex-1 flex flex-col overflow-hidden relative">
-        
-        {/* Top Bar fijado en la parte superior del contenido */}
-        <TopBar userRole={userRole} />
-
-        {/* Área scrolleable donde van las páginas (Dashboard, Config, etc.) */}
+        <TopBar userRole={session.user.role} isCollapsed={isCollapsed} onToggleSidebar={() => setIsCollapsed(!isCollapsed)} />
         <main className="flex-1 overflow-y-auto relative">
           <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 md:px-8">
             {children}
           </div>
         </main>
-
       </div>
     </div>
   );

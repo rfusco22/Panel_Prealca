@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 
-export default function IngresosTable() {
+function IngresosTable() {
   // 1. Inicializar siempre con un arreglo vacío
   const [data, setData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -95,3 +95,6 @@ export default function IngresosTable() {
     </div>
   );
 }
+
+export { IngresosTable };
+export default IngresosTable;

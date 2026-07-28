@@ -1,48 +1,50 @@
 import { NextResponse } from 'next/server';
+import { getIronSession } from 'iron-session';
 import { cookies } from 'next/headers';
-import jwt from 'jsonwebtoken';
+import { query } from '@/lib/db';
+import { sessionOptions, SessionData } from '@/lib/session';
 
-// Evitamos que Next.js almacene en caché esta ruta (fundamental para la sesión)
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const cookieStore = cookies();
-    
-    // Buscamos la cookie del token. (Si en tu login la llamaste de otra forma, 
-    // por ejemplo 'auth_token', cámbialo aquí).
-    const token = cookieStore.get('token')?.value || cookieStore.get('session')?.value;
+    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
 
-    // Si no existe la cookie, el usuario no está autenticado
-    if (!token) {
+    if (!session.userId) {
       return NextResponse.json(
         { user: null, message: 'No hay sesión activa' },
         { status: 401 }
       );
     }
 
-    // Esta clave debe ser exactamente la misma que usaste en app/api/auth/login/route.ts
-    const secret = process.env.JWT_SECRET || 'tu_secreto_super_seguro';
+    const users = await query(
+      'SELECT id, email, role, nombre FROM users WHERE id = ?',
+      [session.userId]
+    ) as any[];
 
-    // Verificamos y decodificamos el token
-    const decoded = jwt.verify(token, secret) as jwt.JwtPayload;
+    if (users.length === 0) {
+      return NextResponse.json(
+        { user: null, message: 'Usuario no encontrado' },
+        { status: 401 }
+      );
+    }
 
-    // Retornamos el objeto 'user' para que tu hook useAuth.ts y tu Layout lo reciban
+    const user = users[0];
+
     return NextResponse.json({
       user: {
-        id: decoded.id,
-        email: decoded.email,
-        role: decoded.role, // Este es el campo clave que valida tu Layout ('registro', 'admin', etc.)
-        nombre: decoded.nombre || '',
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        nombre: user.nombre,
       }
     }, { status: 200 });
 
   } catch (error) {
     console.error('Error validando la sesión:', error);
-    
-    // Si el token caducó o es incorrecto, lo rechazamos
+
     return NextResponse.json(
-      { user: null, message: 'Token inválido o expirado' },
+      { user: null, message: 'Sesión inválida o expirada' },
       { status: 401 }
     );
   }

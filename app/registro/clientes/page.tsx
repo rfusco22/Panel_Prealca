@@ -1,78 +1,57 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { ClientesTable } from '@/components/tables/clientes-table';
-import Link from 'next/link';
-import { Plus } from 'lucide-react';
-
-interface Cliente {
-  id: number;
-  nombre: string;
-  rif: string;
-  direccion?: string;
-  esContribuyenteEspecial: boolean;
-}
+import { useState } from "react";
+import ClienteForm from "@/components/forms/cliente-form";
+import ClientesTable from "@/components/tables/clientes-table";
+import { Plus, X } from "lucide-react";
 
 export default function ClientesPage() {
-  const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  useEffect(() => {
-    fetchClientes();
-  }, []);
-
-  const fetchClientes = async () => {
-    try {
-      setLoading(true);
-      // Aquí iría la llamada a la API
-      setClientes([]);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Error al cargar clientes';
-      setError(message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDelete = async (id: number) => {
-    try {
-      setClientes(clientes.filter(c => c.id !== id));
-    } catch (err) {
-      console.error('[v0] Error deleting cliente:', err);
-      throw err;
-    }
+  const cerrarModal = () => {
+    setIsModalOpen(false);
+    setRefreshKey((k) => k + 1);
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900">Clientes</h1>
-        <Link href="/registro/clientes/new">
-          <Button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2">
-            <Plus size={20} />
-            Nuevo Cliente
-          </Button>
-        </Link>
+    <div className="flex-1 space-y-6 p-4 md:p-8 pt-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Directorio de Clientes</h1>
+          <p className="text-slate-500 mt-1">Gestiona las empresas y clientes registrados en el sistema.</p>
+        </div>
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="bg-slate-900 hover:bg-slate-800 text-white rounded-lg shadow-sm px-5 py-2.5 flex items-center gap-2 transition-all font-medium"
+        >
+          <Plus size={18} />
+          Nuevo Cliente
+        </button>
       </div>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded">
-          {error}
-        </div>
-      )}
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden p-6">
+        <ClientesTable key={refreshKey} />
+      </div>
 
-      {loading ? (
-        <div className="text-center py-12">
-          <p className="text-gray-600">Cargando clientes...</p>
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={cerrarModal}></div>
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between shrink-0">
+              <div>
+                <h3 className="text-xl font-bold text-slate-900">Registrar Nuevo Cliente</h3>
+                <p className="text-sm text-slate-500 mt-1">Ingresa los datos fiscales y de contacto de la empresa o cliente.</p>
+              </div>
+              <button onClick={cerrarModal} className="text-slate-400 hover:text-slate-700 p-2 rounded-full transition-colors bg-slate-50 hover:bg-slate-100">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto bg-white">
+              <ClienteForm onClose={cerrarModal} />
+            </div>
+          </div>
         </div>
-      ) : (
-        <ClientesTable
-          data={clientes}
-          onDelete={handleDelete}
-          editLink={(id) => `/registro/clientes/${id}/edit`}
-        />
       )}
     </div>
   );

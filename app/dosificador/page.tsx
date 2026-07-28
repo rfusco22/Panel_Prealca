@@ -1,47 +1,81 @@
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
+"use client";
 
-export const metadata = {
-  title: 'Dashboard Documentador - PREALCA',
-};
+import { useState, useEffect } from "react";
+import { LayoutDashboard, AlertTriangle, Package, FileText, TrendingUp, TrendingDown } from "lucide-react";
+import Link from "next/link";
 
-export default function DocumentadorPage() {
+export default function DosificadorDashboard() {
+  const [stats, setStats] = useState({ guias: 0, materiaPrima: 0, alertas: 0 });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const [guiasRes, mpRes, alertaRes] = await Promise.all([
+          fetch("/api/guia-despacho"),
+          fetch("/api/materia-prima"),
+          fetch("/api/alerta"),
+        ]);
+        if (guiasRes.ok) {
+          const g = await guiasRes.json();
+          setStats(s => ({ ...s, guias: Array.isArray(g) ? g.length : (g.guias || g.data || []).length }));
+        }
+        if (mpRes.ok) {
+          const m = await mpRes.json();
+          setStats(s => ({ ...s, materiaPrima: Array.isArray(m) ? m.length : (m.materiaPrima || m.data || []).length }));
+        }
+        if (alertaRes.ok) {
+          const a = await alertaRes.json();
+          setStats(s => ({ ...s, alertas: (a.productos || []).length }));
+        }
+      } catch {}
+    };
+    fetchStats();
+  }, []);
+
+  const modules = [
+    { title: "Alerta", description: "Productos con stock bajo 200 M³", href: "/dosificador/alerta", icon: AlertTriangle, color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-200" },
+    { title: "Materia Prima", description: "Registrar cantidades de agregados", href: "/dosificador/materia-prima", icon: Package, color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-200" },
+    { title: "Guías de Despacho", description: "Crear y gestionar guías", href: "/dosificador/guia-despacho", icon: FileText, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-200" },
+  ];
+
   return (
-    <div className="space-y-6">
-      <h1 className="text-4xl font-bold text-gray-900">Dashboard de Documentador</h1>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-600">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Guías de Despacho</h2>
-          <p className="text-gray-600 text-sm mb-4">Crear y gestionar guías de despacho de productos</p>
-          <Link href="/documentador/guia-despacho">
-            <Button className="bg-blue-600 hover:bg-blue-700">Ver Guías</Button>
-          </Link>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-600">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Consultar Datos</h2>
-          <p className="text-gray-600 text-sm mb-4">Consultar productos, clientes e información disponible</p>
-          <Link href="/documentador/consultas">
-            <Button className="bg-green-600 hover:bg-green-700">Consultar</Button>
-          </Link>
-        </div>
+    <div className="flex-1 space-y-6 p-4 md:p-8 pt-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900">Dashboard</h1>
+        <p className="text-slate-500 mt-1">Vista general del flujo de materiales.</p>
       </div>
 
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-8">
-        <h3 className="font-semibold text-blue-900 mb-2">Actividad Reciente</h3>
-        <div className="space-y-2 text-sm text-blue-800">
-          <p>• Guías de despacho creadas hoy: --</p>
-          <p>• Últimas guías registradas: --</p>
-          <p>• Productos disponibles: --</p>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {[
+          { label: "Guías del Mes", value: stats.guias, icon: FileText, color: "text-emerald-600" },
+          { label: "Materia Prima", value: stats.materiaPrima, icon: Package, color: "text-blue-600" },
+          { label: "Alertas Activas", value: stats.alertas, icon: AlertTriangle, color: stats.alertas > 0 ? "text-red-600" : "text-slate-900" },
+        ].map((s, i) => (
+          <div key={i} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{s.label}</p>
+              <s.icon size={18} className={s.color} />
+            </div>
+            <p className={`text-3xl font-black ${s.color}`}>{s.value}</p>
+          </div>
+        ))}
       </div>
 
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-        <p className="text-yellow-800">
-          <strong>Nota:</strong> El módulo de documentador está limitado a la creación de guías de despacho y consulta de información. 
-          No tiene acceso a módulos de gestión administrativa.
-        </p>
+      <div>
+        <h2 className="text-lg font-bold text-slate-900 mb-4">Módulos</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {modules.map((m) => (
+            <Link key={m.href} href={m.href}>
+              <div className={`bg-white border ${m.border} rounded-2xl p-6 hover:shadow-md transition-all cursor-pointer group`}>
+                <div className={`${m.bg} ${m.color} p-3 rounded-xl w-fit mb-4 group-hover:scale-110 transition-transform`}>
+                  <m.icon size={24} />
+                </div>
+                <h3 className="font-bold text-slate-900 mb-1">{m.title}</h3>
+                <p className="text-sm text-slate-500">{m.description}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
       </div>
     </div>
   );

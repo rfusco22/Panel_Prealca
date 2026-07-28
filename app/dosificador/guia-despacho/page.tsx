@@ -1,17 +1,43 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
-
-export const metadata = {
-  title: 'Guías de Despacho - PREALCA',
-};
+import { GuiaDespachoTable } from '@/components/tables/guia-despacho-table';
 
 export default function GuiaDespachoPage() {
+  const [guias, setGuias] = useState<any[]>([]);
+
+  const fetchGuias = async () => {
+    try {
+      const res = await fetch('/api/guia-despacho');
+      const data = await res.json();
+      if (data.success) setGuias(data.guias);
+    } catch (err) {
+      console.error('[v0] Error fetching guías:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchGuias();
+  }, []);
+
+  const handleDelete = async (id: number) => {
+    const res = await fetch(`/api/guia-despacho?id=${id}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (data.success) {
+      setGuias((prev) => prev.filter((g) => g.id !== id));
+    } else {
+      alert('Error al eliminar guía de despacho');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-gray-900">Guías de Despacho</h1>
-        <Link href="/documentador/guia-despacho/new">
+        <Link href="/dosificador/guia-despacho/new">
           <Button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2">
             <Plus size={20} />
             Nueva Guía
@@ -19,22 +45,11 @@ export default function GuiaDespachoPage() {
         </Link>
       </div>
 
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-        <p className="text-blue-900">Este módulo permitirá crear guías de despacho con:</p>
-        <ul className="list-disc list-inside mt-3 space-y-2 text-blue-800">
-          <li>Tipo de guía (Prealca / Premezclado)</li>
-          <li>Selección de cliente y producto</li>
-          <li>Cantidad en m³ y precio por m³</li>
-          <li>Cálculo automático de IVA (16%)</li>
-          <li>Asignación de chofer y unidad de transporte</li>
-          <li>Historial de guías emitidas</li>
-          <li>Vinculación con Facturas (solo tipo Prealca)</li>
-        </ul>
-      </div>
-
-      <div className="bg-white rounded-lg shadow p-6 text-center">
-        <p className="text-gray-500">Módulo en construcción...</p>
-      </div>
+      <GuiaDespachoTable
+        data={guias}
+        onDelete={handleDelete}
+        editLink={(id) => `/dosificador/guia-despacho/${id}/edit`}
+      />
     </div>
   );
 }

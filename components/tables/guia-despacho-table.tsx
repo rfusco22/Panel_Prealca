@@ -1,22 +1,19 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Trash2, Edit2, Eye } from 'lucide-react';
+import { Trash2, Edit2 } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 
 interface GuiaDespacho {
   id: number;
-  clienteId: number;
-  unidadId: number;
-  desdeLugar: string;
-  hastaLugar: string;
-  descripcion?: string;
-  m3?: number;
-  pesoBruto?: number;
-  pesoBrutoKg?: number;
-  fecha: Date;
-  estatus: string;
+  fecha: string;
+  tipo: string;
+  clienteNombre: string;
+  productoNombre: string;
+  cantidadM3: number;
+  total: number;
+  chofer: string;
 }
 
 interface GuiaDespachoTableProps {
@@ -57,12 +54,12 @@ export function GuiaDespachoTable({ data, onDelete, editLink }: GuiaDespachoTabl
           <thead className="bg-gray-100 border-b">
             <tr>
               <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Fecha</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Tipo</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Cliente</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Desde</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Hasta</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Producto</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">M³</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Peso (kg)</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Estatus</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Total Bs</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Chofer</th>
               <th className="px-6 py-3 text-center text-sm font-semibold text-gray-900">Acciones</th>
             </tr>
           </thead>
@@ -72,28 +69,28 @@ export function GuiaDespachoTable({ data, onDelete, editLink }: GuiaDespachoTabl
                 <td className="px-6 py-3 text-sm text-gray-900">
                   {new Date(guia.fecha).toLocaleDateString('es-ES')}
                 </td>
-                <td className="px-6 py-3 text-sm text-gray-600">Cliente #{guia.clienteId}</td>
-                <td className="px-6 py-3 text-sm text-gray-600">{guia.desdeLugar}</td>
-                <td className="px-6 py-3 text-sm text-gray-600">{guia.hastaLugar}</td>
-                <td className="px-6 py-3 text-sm text-gray-900 font-medium">
-                  {guia.m3 ? guia.m3.toFixed(2) : '-'}
-                </td>
-                <td className="px-6 py-3 text-sm text-gray-900">
-                  {guia.pesoBrutoKg ? guia.pesoBrutoKg.toLocaleString('es-ES') : '-'}
-                </td>
                 <td className="px-6 py-3 text-sm">
                   <span
                     className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      guia.estatus === 'Completada'
-                        ? 'bg-green-100 text-green-800'
-                        : guia.estatus === 'Pendiente'
-                          ? 'bg-yellow-100 text-yellow-800'
+                      guia.tipo === 'Prealca'
+                        ? 'bg-blue-100 text-blue-800'
+                        : guia.tipo === 'Premezclado'
+                          ? 'bg-purple-100 text-purple-800'
                           : 'bg-gray-100 text-gray-800'
                     }`}
                   >
-                    {guia.estatus}
+                    {guia.tipo}
                   </span>
                 </td>
+                <td className="px-6 py-3 text-sm text-gray-600">{guia.clienteNombre}</td>
+                <td className="px-6 py-3 text-sm text-gray-600">{guia.productoNombre}</td>
+                <td className="px-6 py-3 text-sm text-gray-900 font-medium">
+                  {guia.cantidadM3 ? guia.cantidadM3.toFixed(2) : '-'}
+                </td>
+                <td className="px-6 py-3 text-sm text-gray-900 font-medium">
+                  {guia.total ? guia.total.toLocaleString('es-ES', { minimumFractionDigits: 2 }) : '-'}
+                </td>
+                <td className="px-6 py-3 text-sm text-gray-600">{guia.chofer || '-'}</td>
                 <td className="px-6 py-3 text-center">
                   <div className="flex gap-2 justify-center">
                     <Link href={editLink(guia.id)}>

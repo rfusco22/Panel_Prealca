@@ -1,39 +1,19 @@
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import { Plus } from 'lucide-react';
+"use client";
 
-export const metadata = {
-  title: 'Retenciones de Impuestos - PREALCA',
-};
+import RetencionesTable from "@/components/tables/retenciones-table";
 
 export default function RetencionesPage() {
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900">Retenciones de Impuestos</h1>
-        <Link href="/admin/retenciones/new">
-          <Button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2">
-            <Plus size={20} />
-            Nueva Retención
-          </Button>
-        </Link>
+    <div className="flex-1 space-y-6 p-4 md:p-8 pt-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Retenciones de Impuestos</h1>
+          <p className="text-slate-500 mt-1">Consulta y filtra las retenciones de IVA de clientes contribuyentes especiales.</p>
+        </div>
       </div>
 
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-        <p className="text-blue-900">Este módulo permitirá gestionar retenciones de impuestos:</p>
-        <ul className="list-disc list-inside mt-3 space-y-2 text-blue-800">
-          <li>Solo aplica a clientes contribuyentes especiales</li>
-          <li>Retención del 75% del IVA de la factura</li>
-          <li>Vinculación automática con facturas</li>
-          <li>Cálculo automático del monto retenido</li>
-          <li>Historial de retenciones emitidas</li>
-          <li>Reporte de retenciones por período</li>
-          <li>Exportación de comprobantes</li>
-        </ul>
-      </div>
-
-      <div className="bg-white rounded-lg shadow p-6 text-center">
-        <p className="text-gray-500">Módulo en construcción...</p>
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden p-6">
+        <RetencionesTable />
       </div>
     </div>
   );

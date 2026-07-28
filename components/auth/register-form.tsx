@@ -76,7 +76,7 @@ export function RegisterForm() {
           onChange={(e) => setFormData({...formData, role: e.target.value})}
         >
           <option value="registro">Operador de Registro</option>
-          <option value="documentador">Documentador</option>
+          <option value="dosificador">Dosificador</option>
           <option value="admin">Administrador</option>
         </select>
       </div>

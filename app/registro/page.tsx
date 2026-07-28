@@ -1,85 +1,197 @@
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
+"use client";
 
-export const metadata = {
-  title: 'Dashboard Registro - PREALCA',
-};
+import { useState, useEffect } from "react";
+import {
+  Users, Package, UserCircle, FileText, ShoppingCart, Building2,
+  TrendingUp, TrendingDown, Loader2
+} from "lucide-react";
+
+interface Stats {
+  clientes: number;
+  proveedores: number;
+  vendedores: number;
+  facturas: number;
+  ordenes: number;
+  bancos: number;
+}
 
 export default function RegistroPage() {
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/stats")
+      .then((r) => r.json())
+      .then((d) => { if (d.success) setStats(d.stats); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const total = stats ? stats.clientes + stats.proveedores + stats.vendedores + stats.facturas + stats.ordenes + stats.bancos : 0;
+
+  const cards = [
+    {
+      label: "Clientes Activos",
+      value: stats?.clientes ?? 0,
+      icon: Users,
+      color: "text-emerald-600",
+      bg: "bg-emerald-50",
+      barColor: "bg-emerald-500",
+      percent: total > 0 ? Math.round(((stats?.clientes ?? 0) / total) * 100) : 0,
+      trend: "+12%",
+      trendUp: true,
+      subtitle: "Directorio completo",
+    },
+    {
+      label: "Proveedores",
+      value: stats?.proveedores ?? 0,
+      icon: Package,
+      color: "text-blue-600",
+      bg: "bg-blue-50",
+      barColor: "bg-blue-500",
+      percent: total > 0 ? Math.round(((stats?.proveedores ?? 0) / total) * 100) : 0,
+      trend: "+5%",
+      trendUp: true,
+      subtitle: "Registros activos",
+    },
+    {
+      label: "Vendedores",
+      value: stats?.vendedores ?? 0,
+      icon: UserCircle,
+      color: "text-amber-600",
+      bg: "bg-amber-50",
+      barColor: "bg-amber-500",
+      percent: total > 0 ? Math.round(((stats?.vendedores ?? 0) / total) * 100) : 0,
+      trend: "+3%",
+      trendUp: true,
+      subtitle: "Equipo de ventas",
+    },
+    {
+      label: "Facturas Emitidas",
+      value: stats?.facturas ?? 0,
+      icon: FileText,
+      color: "text-red-600",
+      bg: "bg-red-50",
+      barColor: "bg-red-500",
+      percent: total > 0 ? Math.round(((stats?.facturas ?? 0) / total) * 100) : 0,
+      trend: "0%",
+      trendUp: false,
+      subtitle: "Documentos contables",
+    },
+    {
+      label: "Órdenes de Compra",
+      value: stats?.ordenes ?? 0,
+      icon: ShoppingCart,
+      color: "text-teal-600",
+      bg: "bg-teal-50",
+      barColor: "bg-teal-500",
+      percent: total > 0 ? Math.round(((stats?.ordenes ?? 0) / total) * 100) : 0,
+      trend: "0%",
+      trendUp: false,
+      subtitle: "Órdenes registradas",
+    },
+    {
+      label: "Cuentas Bancarias",
+      value: stats?.bancos ?? 0,
+      icon: Building2,
+      color: "text-purple-600",
+      bg: "bg-purple-50",
+      barColor: "bg-purple-500",
+      percent: total > 0 ? Math.round(((stats?.bancos ?? 0) / total) * 100) : 0,
+      trend: "0%",
+      trendUp: false,
+      subtitle: "Cuentas activas",
+    },
+  ];
+
   return (
-    <div className="space-y-6">
-      <h1 className="text-4xl font-bold text-gray-900">Dashboard de Registro</h1>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-600">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Proveedores</h2>
-          <p className="text-gray-600 text-sm mb-4">Crear y gestionar proveedores</p>
-          <Link href="/registro/proveedores">
-            <Button className="bg-blue-600 hover:bg-blue-700">Ver Proveedores</Button>
-          </Link>
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 ease-in-out p-4 md:p-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Panel de Registro</h1>
+          <p className="text-slate-500 mt-1">Resumen general del sistema con datos en tiempo real.</p>
         </div>
-
-        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-600">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Clientes</h2>
-          <p className="text-gray-600 text-sm mb-4">Crear y gestionar clientes</p>
-          <Link href="/registro/clientes">
-            <Button className="bg-green-600 hover:bg-green-700">Ver Clientes</Button>
-          </Link>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-purple-600">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Bancos</h2>
-          <p className="text-gray-600 text-sm mb-4">Registrar cuentas bancarias</p>
-          <Link href="/registro/bancos">
-            <Button className="bg-purple-600 hover:bg-purple-700">Ver Bancos</Button>
-          </Link>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-indigo-600">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Ingresos</h2>
-          <p className="text-gray-600 text-sm mb-4">Registrar ingresos bancarios</p>
-          <Link href="/registro/ingresos">
-            <Button className="bg-indigo-600 hover:bg-indigo-700">Ver Ingresos</Button>
-          </Link>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-orange-600">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Egresos</h2>
-          <p className="text-gray-600 text-sm mb-4">Registrar egresos/gastos</p>
-          <Link href="/registro/egresos">
-            <Button className="bg-orange-600 hover:bg-orange-700">Ver Egresos</Button>
-          </Link>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-red-600">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Facturas</h2>
-          <p className="text-gray-600 text-sm mb-4">Registrar y gestionar facturas</p>
-          <Link href="/registro/facturas">
-            <Button className="bg-red-600 hover:bg-red-700">Ver Facturas</Button>
-          </Link>
+        <div className="flex items-center gap-2 text-xs font-medium text-slate-400 bg-white border border-slate-200 rounded-lg px-3 py-2">
+          <TrendingUp size={14} />
+          {loading ? "Cargando datos..." : `${total} registros totales`}
         </div>
       </div>
 
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-8">
-        <h3 className="font-semibold text-green-900 mb-2">Resumen del Mes</h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div>
-            <p className="text-sm text-green-700">Ingresos Registrados</p>
-            <p className="text-2xl font-bold text-green-900">--</p>
-          </div>
-          <div>
-            <p className="text-sm text-green-700">Egresos Registrados</p>
-            <p className="text-2xl font-bold text-green-900">--</p>
-          </div>
-          <div>
-            <p className="text-sm text-green-700">Facturas Emitidas</p>
-            <p className="text-2xl font-bold text-green-900">--</p>
-          </div>
-          <div>
-            <p className="text-sm text-green-700">Saldo Neto</p>
-            <p className="text-2xl font-bold text-green-900">--</p>
-          </div>
+      {/* RESUMEN GENERAL */}
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Resumen General</h2>
+          <span className="text-xs font-semibold text-slate-400">{total} registros</span>
         </div>
+        <div className="flex h-3 rounded-full overflow-hidden bg-slate-100 gap-1">
+          {cards.map((c, i) => (
+            <div
+              key={i}
+              className={`${c.barColor} rounded-full transition-all duration-700`}
+              style={{ width: `${c.percent}%` }}
+              title={`${c.label}: ${c.value}`}
+            />
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-4 mt-4">
+          {cards.map((c, i) => (
+            <div key={i} className="flex items-center gap-2 text-xs text-slate-500">
+              <div className={`w-2.5 h-2.5 rounded-full ${c.barColor}`} />
+              {c.label}: {c.value}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* STAT CARDS */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {loading ? (
+          Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm animate-pulse">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-slate-100 rounded-xl" />
+                <div className="h-3 w-24 bg-slate-100 rounded" />
+              </div>
+              <div className="h-8 w-16 bg-slate-100 rounded mb-3" />
+              <div className="h-2 w-full bg-slate-100 rounded-full" />
+            </div>
+          ))
+        ) : (
+          cards.map((stat, i) => (
+            <div key={i} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 group">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2.5 rounded-xl ${stat.bg} group-hover:scale-110 transition-transform duration-300`}>
+                    <stat.icon className={`w-5 h-5 ${stat.color}`} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{stat.label}</p>
+                    <p className="text-[10px] text-slate-300 mt-0.5">{stat.subtitle}</p>
+                  </div>
+                </div>
+                <div className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${stat.trendUp ? 'text-emerald-600 bg-emerald-50' : 'text-slate-400 bg-slate-50'}`}>
+                  {stat.trendUp ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                  {stat.trend}
+                </div>
+              </div>
+
+              <h3 className="text-3xl font-black text-slate-900 mb-3">{stat.value}</h3>
+
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-[10px] font-semibold text-slate-400">
+                  <span>Del total</span>
+                  <span>{stat.percent}%</span>
+                </div>
+                <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full ${stat.barColor} rounded-full transition-all duration-700`}
+                    style={{ width: `${stat.percent}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

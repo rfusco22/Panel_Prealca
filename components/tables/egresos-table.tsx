@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Loader2 } from "lucide-react";
 
-export default function EgresosTable() {
+function EgresosTable() {
   const [data, setData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -10,86 +11,83 @@ export default function EgresosTable() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('/api/egresos');
-        if (!response.ok) throw new Error("Fallo al obtener los datos del servidor");
-        
+        const response = await fetch("/api/egresos");
+        if (!response.ok) throw new Error("Fallo al obtener los datos");
         const result = await response.json();
-        
-        // Extracción segura del arreglo
         const arregloDatos = Array.isArray(result) ? result : (result.egresos || result.data || []);
-        
         setData(arregloDatos);
-      } catch (err) {
-        console.error("Error cargando egresos:", err);
-        setError("Ocurrió un error al cargar el historial de egresos.");
-        setData([]); 
+      } catch {
+        setError("Error al cargar el historial de egresos.");
+        setData([]);
       } finally {
         setIsLoading(false);
       }
     };
-
     fetchData();
   }, []);
 
   if (isLoading) {
     return (
-      <div className="text-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto mb-4"></div>
-        <p className="text-gray-500 font-medium">Cargando historial de egresos...</p>
+      <div className="p-12 text-center">
+        <Loader2 size={24} className="animate-spin text-slate-300 mx-auto mb-3" />
+        <p className="text-slate-500 font-medium text-sm">Cargando historial de egresos...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="text-center py-12 bg-red-50 rounded-lg">
-        <p className="text-red-600 font-medium">{error}</p>
+      <div className="p-12 text-center bg-red-50 rounded-xl">
+        <p className="text-red-600 font-medium text-sm">{error}</p>
       </div>
     );
   }
 
   if (!data || data.length === 0) {
     return (
-      <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-lg bg-gray-50">
-        <p className="text-gray-500">No hay egresos registrados en el sistema.</p>
+      <div className="p-12 text-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50">
+        <p className="text-slate-500 font-medium">No hay egresos registrados en el sistema.</p>
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto rounded-md border border-gray-200">
-      <table className="min-w-full divide-y divide-gray-200 text-sm text-left">
-        <thead className="bg-gray-100">
+    <div className="overflow-x-auto">
+      <table className="w-full text-left text-sm">
+        <thead className="bg-slate-50/80 text-[10px] uppercase font-extrabold text-slate-500 tracking-widest border-b border-slate-200">
           <tr>
-            <th className="px-4 py-3 font-semibold text-gray-700">ID</th>
-            <th className="px-4 py-3 font-semibold text-gray-700">Fecha</th>
-            <th className="px-4 py-3 font-semibold text-gray-700">Proveedor</th>
-            <th className="px-4 py-3 font-semibold text-gray-700">Clasificación</th>
-            <th className="px-4 py-3 font-semibold text-gray-700">Banco / Ref.</th>
-            <th className="px-4 py-3 font-semibold text-gray-700">Monto (Bs)</th>
-            <th className="px-4 py-3 font-semibold text-gray-700">Monto ($)</th>
+            <th className="px-6 py-4">Fecha</th>
+            <th className="px-6 py-4">Proveedor</th>
+            <th className="px-6 py-4">Clasificación</th>
+            <th className="px-6 py-4">Subcategoría</th>
+            <th className="px-6 py-4">Banco / Ref.</th>
+            <th className="px-6 py-4 text-right">Monto (Bs)</th>
+            <th className="px-6 py-4 text-right">Monto ($)</th>
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
+        <tbody className="divide-y divide-slate-100">
           {data.map((egreso) => (
-            <tr key={egreso.id} className="hover:bg-gray-50 transition-colors">
-              <td className="px-4 py-3 text-gray-500">#{egreso.id}</td>
-              <td className="px-4 py-3 whitespace-nowrap">
-                {new Date(egreso.fecha || egreso.createdAt).toLocaleDateString('es-VE')}
+            <tr key={egreso.id} className="hover:bg-slate-50/80 transition-colors">
+              <td className="px-6 py-4 whitespace-nowrap font-medium text-slate-900">
+                {new Date(egreso.fecha || egreso.createdAt).toLocaleDateString("es-VE")}
               </td>
-              <td className="px-4 py-3 font-medium text-gray-900">{egreso.nombreProveedor}</td>
-              <td className="px-4 py-3">
-                <span className="bg-gray-200 text-gray-700 px-2 py-1 rounded-md text-xs font-semibold">
+              <td className="px-6 py-4 font-bold text-slate-800">{egreso.nombreProveedor}</td>
+              <td className="px-6 py-4">
+                <span className="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-full text-xs font-bold">
                   {egreso.clasificacionGasto}
                 </span>
-                <div className="text-xs text-gray-500 mt-1">{egreso.subCategoria}</div>
               </td>
-              <td className="px-4 py-3 text-gray-600">
-                {egreso.banco} <br/>
-                <span className="text-xs">{egreso.referencia}</span>
+              <td className="px-6 py-4 font-medium text-slate-600">{egreso.subCategoria}</td>
+              <td className="px-6 py-4 text-slate-600">
+                {egreso.banco}
+                <div className="text-xs text-slate-400 mt-0.5">Ref: {egreso.referencia}</div>
               </td>
-              <td className="px-4 py-3 font-semibold text-red-700">Bs. {Number(egreso.montoBs).toLocaleString('es-VE')}</td>
-              <td className="px-4 py-3 text-gray-700">${Number(egreso.montoDivisa).toLocaleString('es-VE')}</td>
+              <td className="px-6 py-4 text-right font-bold text-red-600">
+                Bs. {Number(egreso.montoBs).toLocaleString("es-VE", { minimumFractionDigits: 2 })}
+              </td>
+              <td className="px-6 py-4 text-right font-mono font-bold text-emerald-600">
+                $ {Number(egreso.montoDivisa).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+              </td>
             </tr>
           ))}
         </tbody>
@@ -97,3 +95,6 @@ export default function EgresosTable() {
     </div>
   );
 }
+
+export { EgresosTable };
+export default EgresosTable;
