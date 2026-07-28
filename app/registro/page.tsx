@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSocket } from "@/contexts/SocketContext";
 import {
   Users, Package, UserCircle, FileText, ShoppingCart, Building2,
   TrendingUp, TrendingDown, Loader2
@@ -18,14 +19,53 @@ interface Stats {
 export default function RegistroPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
+  const { socket } = useSocket();
 
-  useEffect(() => {
+  const fetchStats = () => {
     fetch("/api/stats")
       .then((r) => r.json())
       .then((d) => { if (d.success) setStats(d.stats); })
       .catch(() => {})
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchStats();
   }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleUpdate = () => {
+      fetchStats();
+    };
+
+    socket.on("proveedores:created", handleUpdate);
+    socket.on("proveedores:updated", handleUpdate);
+    socket.on("proveedores:deleted", handleUpdate);
+    socket.on("clientes:created", handleUpdate);
+    socket.on("vendedores:created", handleUpdate);
+    socket.on("facturas:created", handleUpdate);
+    socket.on("orden-compra:created", handleUpdate);
+    socket.on("orden-compra:deleted", handleUpdate);
+    socket.on("bancos:created", handleUpdate);
+    socket.on("bancos:updated", handleUpdate);
+    socket.on("bancos:deleted", handleUpdate);
+
+    return () => {
+      socket.off("proveedores:created", handleUpdate);
+      socket.off("proveedores:updated", handleUpdate);
+      socket.off("proveedores:deleted", handleUpdate);
+      socket.off("clientes:created", handleUpdate);
+      socket.off("vendedores:created", handleUpdate);
+      socket.off("facturas:created", handleUpdate);
+      socket.off("orden-compra:created", handleUpdate);
+      socket.off("orden-compra:deleted", handleUpdate);
+      socket.off("bancos:created", handleUpdate);
+      socket.off("bancos:updated", handleUpdate);
+      socket.off("bancos:deleted", handleUpdate);
+    };
+  }, [socket]);
 
   const total = stats ? stats.clientes + stats.proveedores + stats.vendedores + stats.facturas + stats.ordenes + stats.bancos : 0;
 

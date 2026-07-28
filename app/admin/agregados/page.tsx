@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus, X, Trash2, Edit2, AlertCircle, Boxes, Scale, ChevronDown } from 'lucide-react';
+import { useSocket } from '@/contexts/SocketContext';
 
 interface Agregado {
   id: number;
@@ -34,9 +35,28 @@ export default function AdminAgregadosPage() {
     unidadMedida: UNIDADES_MEDIDA[0]
   });
 
+  const { socket } = useSocket();
+
   useEffect(() => {
     fetchAgregados();
   }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleUpdate = () => {
+      fetchAgregados();
+    };
+
+    socket.on('agregados:created', handleUpdate);
+    socket.on('agregados:updated', handleUpdate);
+    socket.on('agregados:deleted', handleUpdate);
+    return () => {
+      socket.off('agregados:created', handleUpdate);
+      socket.off('agregados:updated', handleUpdate);
+      socket.off('agregados:deleted', handleUpdate);
+    };
+  }, [socket]);
 
   const fetchAgregados = async () => {
     try {

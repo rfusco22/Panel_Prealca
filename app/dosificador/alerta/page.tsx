@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { Loader2, AlertTriangle, TrendingDown } from "lucide-react";
+import { useSocket } from '@/contexts/SocketContext';
 
 export default function AlertaPage() {
+  const { socket } = useSocket();
   const [productos, setProductos] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -22,6 +24,22 @@ export default function AlertaPage() {
     };
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleUpdate = () => {
+      fetchData();
+    };
+
+    socket.on('guia-despacho:created', handleUpdate);
+    socket.on('guia-despacho:deleted', handleUpdate);
+
+    return () => {
+      socket.off('guia-despacho:created', handleUpdate);
+      socket.off('guia-despacho:deleted', handleUpdate);
+    };
+  }, [socket]);
 
   return (
     <div className="flex-1 space-y-6 p-4 md:p-8 pt-6 animate-in fade-in slide-in-from-bottom-4 duration-700">

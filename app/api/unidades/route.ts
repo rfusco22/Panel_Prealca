@@ -3,6 +3,7 @@ import { query } from '@/lib/db';
 import { getIronSession } from 'iron-session';
 import { cookies } from 'next/headers';
 import { sessionOptions, SessionData } from '@/lib/session';
+import { emitSocketEvent } from '@/lib/socket-server';
 
 // GET: Obtener todas las unidades
 export async function GET() {
@@ -50,6 +51,8 @@ export async function POST(request: Request) {
       VALUES (?, ?, ?, ?, ?, ?)
     `, [numeroUnidad, placa, marca, modelo, ano, color]);
 
+    emitSocketEvent('unidades:created');
+
     return NextResponse.json({ success: true, id: result.insertId });
   } catch (error) {
     console.error('Error POST unidades:', error);
@@ -76,6 +79,8 @@ export async function PUT(request: Request) {
       WHERE id = ?
     `, [numeroUnidad, placa, marca, modelo, ano, color, id]);
 
+    emitSocketEvent('unidades:updated');
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error PUT unidades:', error);
@@ -97,6 +102,8 @@ export async function DELETE(request: Request) {
     }
 
     await query('DELETE FROM unidades WHERE id = ?', [id]);
+
+    emitSocketEvent('unidades:deleted');
 
     return NextResponse.json({ success: true });
   } catch (error) {

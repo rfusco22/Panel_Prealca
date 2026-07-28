@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { emitSocketEvent } from '@/lib/socket-server';
 
 // OBTENER TODOS LOS VENDEDORES (Para el Select)
 export async function GET() {
@@ -30,6 +31,7 @@ export async function POST(req: Request) {
 
     const resultado: any = await query(sql, valores);
 
+    emitSocketEvent('vendedores:created');
     return NextResponse.json({ 
       success: true, 
       mensaje: 'Vendedor registrado correctamente.',

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSocket } from "@/contexts/SocketContext";
 import ProveedorForm from "@/components/forms/proveedor-form";
 import { Plus, X } from "lucide-react";
 
@@ -18,10 +19,29 @@ export default function ProveedoresPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { socket } = useSocket();
 
   useEffect(() => {
     fetchProveedores();
   }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleUpdate = () => {
+      fetchProveedores();
+    };
+
+    socket.on("proveedores:created", handleUpdate);
+    socket.on("proveedores:updated", handleUpdate);
+    socket.on("proveedores:deleted", handleUpdate);
+
+    return () => {
+      socket.off("proveedores:created", handleUpdate);
+      socket.off("proveedores:updated", handleUpdate);
+      socket.off("proveedores:deleted", handleUpdate);
+    };
+  }, [socket]);
 
   const fetchProveedores = async () => {
     try {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSocket } from '@/contexts/SocketContext';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
@@ -8,6 +9,7 @@ import { FacturasTable } from '@/components/tables/facturas-table';
 
 export default function FacturasPage() {
   const [facturas, setFacturas] = useState<any[]>([]);
+  const { socket } = useSocket();
 
   const fetchFacturas = async () => {
     try {
@@ -22,6 +24,20 @@ export default function FacturasPage() {
   useEffect(() => {
     fetchFacturas();
   }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleUpdate = () => {
+      fetchFacturas();
+    };
+
+    socket.on("facturas:created", handleUpdate);
+
+    return () => {
+      socket.off("facturas:created", handleUpdate);
+    };
+  }, [socket]);
 
   const handleDelete = async (id: number) => {
     setFacturas((prev) => prev.filter((f) => f.id !== id));

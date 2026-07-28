@@ -3,6 +3,7 @@ import { query } from '@/lib/db';
 import { getIronSession } from 'iron-session';
 import { cookies } from 'next/headers';
 import { sessionOptions, SessionData } from '@/lib/session';
+import { emitSocketEvent } from '@/lib/socket-server';
 
 export async function GET() {
   try {
@@ -42,6 +43,7 @@ export async function POST(request: Request) {
       VALUES (?, ?, ?, ?, ?, ?)
     `, [guiaDespachoId || null, clienteId, formaPago, comprobanteRetencion || null, total, session.userId]);
 
+    emitSocketEvent('facturas:created');
     return NextResponse.json({
       success: true,
       mensaje: 'Factura creada correctamente',

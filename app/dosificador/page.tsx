@@ -3,8 +3,10 @@
 import { useState, useEffect } from "react";
 import { LayoutDashboard, AlertTriangle, Package, FileText, TrendingUp, TrendingDown } from "lucide-react";
 import Link from "next/link";
+import { useSocket } from '@/contexts/SocketContext';
 
 export default function DosificadorDashboard() {
+  const { socket } = useSocket();
   const [stats, setStats] = useState({ guias: 0, materiaPrima: 0, alertas: 0 });
 
   useEffect(() => {
@@ -31,6 +33,30 @@ export default function DosificadorDashboard() {
     };
     fetchStats();
   }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleUpdate = () => {
+      fetchStats();
+    };
+
+    socket.on('guia-despacho:created', handleUpdate);
+    socket.on('guia-despacho:deleted', handleUpdate);
+    socket.on('materia-prima:created', handleUpdate);
+    socket.on('productos:created', handleUpdate);
+    socket.on('productos:updated', handleUpdate);
+    socket.on('alerta:updated', handleUpdate);
+
+    return () => {
+      socket.off('guia-despacho:created', handleUpdate);
+      socket.off('guia-despacho:deleted', handleUpdate);
+      socket.off('materia-prima:created', handleUpdate);
+      socket.off('productos:created', handleUpdate);
+      socket.off('productos:updated', handleUpdate);
+      socket.off('alerta:updated', handleUpdate);
+    };
+  }, [socket]);
 
   const modules = [
     { title: "Alerta", description: "Productos con stock bajo 200 M³", href: "/dosificador/alerta", icon: AlertTriangle, color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-200" },

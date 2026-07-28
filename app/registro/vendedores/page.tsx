@@ -1,12 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSocket } from "@/contexts/SocketContext";
 import VendedorForm from "@/components/forms/vendedor-form";
 import VendedoresTable from "@/components/tables/vendedores-table";
 import { Plus, X } from "lucide-react";
 
 export default function VendedoresPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const { socket } = useSocket();
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleUpdate = () => {
+      setRefreshKey((k) => k + 1);
+    };
+
+    socket.on("vendedores:created", handleUpdate);
+
+    return () => {
+      socket.off("vendedores:created", handleUpdate);
+    };
+  }, [socket]);
 
   const cerrarModal = () => {
     setIsModalOpen(false);
@@ -29,7 +46,7 @@ export default function VendedoresPage() {
       </div>
 
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden p-6">
-        <VendedoresTable />
+        <VendedoresTable key={refreshKey} />
       </div>
 
       {isModalOpen && (

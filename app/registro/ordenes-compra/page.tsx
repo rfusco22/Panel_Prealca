@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSocket } from '@/contexts/SocketContext';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
@@ -8,6 +9,7 @@ import { OrdenesCompraTable } from '@/components/tables/ordenes-compra-table';
 
 export default function OrdenesCompraPage() {
   const [ordenes, setOrdenes] = useState<any[]>([]);
+  const { socket } = useSocket();
 
   const fetchOrdenes = async () => {
     try {
@@ -22,6 +24,22 @@ export default function OrdenesCompraPage() {
   useEffect(() => {
     fetchOrdenes();
   }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleUpdate = () => {
+      fetchOrdenes();
+    };
+
+    socket.on("orden-compra:created", handleUpdate);
+    socket.on("orden-compra:deleted", handleUpdate);
+
+    return () => {
+      socket.off("orden-compra:created", handleUpdate);
+      socket.off("orden-compra:deleted", handleUpdate);
+    };
+  }, [socket]);
 
   const handleDelete = async (id: number) => {
     const res = await fetch(`/api/orden-compra?id=${id}`, { method: 'DELETE' });

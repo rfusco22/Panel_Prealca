@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Package, ArrowDown, ArrowUp, Box, ChevronDown, ChevronUp } from 'lucide-react';
+import { useSocket } from '@/contexts/SocketContext';
 
 interface MateriaPrima {
   agregadoId: number;
@@ -37,9 +38,32 @@ export default function StockPage() {
   const [loading, setLoading] = useState(true);
   const [expandedProduct, setExpandedProduct] = useState<number | null>(null);
 
+  const { socket } = useSocket();
+
   useEffect(() => {
     fetchStock();
   }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleUpdate = () => {
+      fetchStock();
+    };
+
+    socket.on('materia-prima:created', handleUpdate);
+    socket.on('guia-despacho:created', handleUpdate);
+    socket.on('guia-despacho:deleted', handleUpdate);
+    socket.on('productos:created', handleUpdate);
+    socket.on('productos:updated', handleUpdate);
+    return () => {
+      socket.off('materia-prima:created', handleUpdate);
+      socket.off('guia-despacho:created', handleUpdate);
+      socket.off('guia-despacho:deleted', handleUpdate);
+      socket.off('productos:created', handleUpdate);
+      socket.off('productos:updated', handleUpdate);
+    };
+  }, [socket]);
 
   const fetchStock = async () => {
     try {

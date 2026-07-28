@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus, X, Trash2, Edit2, AlertCircle, Package, Layers, Beaker, ShieldAlert, Check } from 'lucide-react';
+import { useSocket } from '@/contexts/SocketContext';
 
 interface FormulaItem {
   agregadoId: number;
@@ -46,9 +47,28 @@ export default function AdminProductosPage() {
   // Estado Dinámico para la Fórmula
   const [formulaData, setFormulaData] = useState<FormulaItem[]>([]);
 
+  const { socket } = useSocket();
+
   useEffect(() => {
     initData();
   }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleUpdate = () => {
+      initData();
+    };
+
+    socket.on('productos:created', handleUpdate);
+    socket.on('productos:updated', handleUpdate);
+    socket.on('productos:deleted', handleUpdate);
+    return () => {
+      socket.off('productos:created', handleUpdate);
+      socket.off('productos:updated', handleUpdate);
+      socket.off('productos:deleted', handleUpdate);
+    };
+  }, [socket]);
 
   const initData = async () => {
     try {

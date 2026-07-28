@@ -1,16 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import IngresoForm from "@/components/forms/ingreso-form";
 import IngresosTable from "@/components/tables/ingresos-table"; 
 import { Plus, X } from "lucide-react";
+import { useSocket } from '@/contexts/SocketContext';
 
 export default function IngresosPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const { socket } = useSocket();
 
   const cerrarModal = () => {
     setIsModalOpen(false);
+    setRefreshKey((k) => k + 1);
   };
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleUpdate = () => {
+      setRefreshKey((k) => k + 1);
+    };
+
+    socket.on('ingresos:created', handleUpdate);
+    return () => {
+      socket.off('ingresos:created', handleUpdate);
+    };
+  }, [socket]);
 
   return (
     <div className="flex-1 space-y-6 p-4 md:p-8 pt-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -33,7 +51,7 @@ export default function IngresosPage() {
 
       {/* Tabla Principal */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden p-6">
-        <IngresosTable />
+        <IngresosTable key={refreshKey} />
       </div>
 
       {/* --- MODAL MAESTRO FLUIDO (ESTILO PREMIUM) --- */}

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSocket } from "@/contexts/SocketContext";
 import ClienteForm from "@/components/forms/cliente-form";
 import ClientesTable from "@/components/tables/clientes-table";
 import { Plus, X } from "lucide-react";
@@ -8,6 +9,21 @@ import { Plus, X } from "lucide-react";
 export default function ClientesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const { socket } = useSocket();
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleUpdate = () => {
+      setRefreshKey((k) => k + 1);
+    };
+
+    socket.on("clientes:created", handleUpdate);
+
+    return () => {
+      socket.off("clientes:created", handleUpdate);
+    };
+  }, [socket]);
 
   const cerrarModal = () => {
     setIsModalOpen(false);

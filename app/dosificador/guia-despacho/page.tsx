@@ -5,8 +5,10 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { GuiaDespachoTable } from '@/components/tables/guia-despacho-table';
+import { useSocket } from '@/contexts/SocketContext';
 
 export default function GuiaDespachoPage() {
+  const { socket } = useSocket();
   const [guias, setGuias] = useState<any[]>([]);
 
   const fetchGuias = async () => {
@@ -22,6 +24,22 @@ export default function GuiaDespachoPage() {
   useEffect(() => {
     fetchGuias();
   }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleUpdate = () => {
+      fetchGuias();
+    };
+
+    socket.on('guia-despacho:created', handleUpdate);
+    socket.on('guia-despacho:deleted', handleUpdate);
+
+    return () => {
+      socket.off('guia-despacho:created', handleUpdate);
+      socket.off('guia-despacho:deleted', handleUpdate);
+    };
+  }, [socket]);
 
   const handleDelete = async (id: number) => {
     const res = await fetch(`/api/guia-despacho?id=${id}`, { method: 'DELETE' });

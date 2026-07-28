@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import bcrypt from 'bcryptjs';
+import { emitSocketEvent } from '@/lib/socket-server';
 
 export async function GET() {
   try {
@@ -27,6 +28,8 @@ export async function POST(req: Request) {
       'INSERT INTO users (email, password_hash, nombre, role, estado) VALUES (?, ?, ?, ?, ?)',
       [data.email, passwordHash, data.nombre, data.role, data.estado || 'activo']
     );
+
+    emitSocketEvent('users:created');
 
     return NextResponse.json({
       success: true,
@@ -62,6 +65,8 @@ export async function PUT(req: Request) {
       );
     }
 
+    emitSocketEvent('users:updated');
+
     return NextResponse.json({ success: true, mensaje: 'Usuario actualizado correctamente' }, { status: 200 });
   } catch (error: any) {
     console.error('Error actualizando usuario:', error);
@@ -78,6 +83,9 @@ export async function DELETE(req: Request) {
     }
 
     await query('DELETE FROM users WHERE id = ?', [id]);
+
+    emitSocketEvent('users:deleted');
+
     return NextResponse.json({ success: true, mensaje: 'Usuario eliminado' }, { status: 200 });
   } catch (error) {
     console.error('Error eliminando usuario:', error);

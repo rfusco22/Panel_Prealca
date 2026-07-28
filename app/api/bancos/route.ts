@@ -3,6 +3,7 @@ import { query } from '@/lib/db';
 import { getIronSession } from 'iron-session';
 import { cookies } from 'next/headers';
 import { sessionOptions, SessionData } from '@/lib/session'; // <-- Importamos SessionData aquí
+import { emitSocketEvent } from '@/lib/socket-server';
 
 // GET: Obtener todos los bancos registrados
 export async function GET() {
@@ -56,6 +57,8 @@ export async function POST(request: Request) {
       VALUES (?, ?, ?, ?)
     `, [nombreBanco, numeroCuenta, titularCuenta, cedula]);
 
+    emitSocketEvent('bancos:created');
+
     return NextResponse.json({ 
       success: true, 
       message: 'Banco registrado exitosamente',
@@ -87,6 +90,8 @@ export async function DELETE(request: Request) {
     // Ejecutamos el borrado en MySQL
     await query('DELETE FROM bancos WHERE id = ?', [id]);
 
+    emitSocketEvent('bancos:deleted');
+
     return NextResponse.json({ success: true, message: 'Banco eliminado' });
 
   } catch (error) {
@@ -116,6 +121,8 @@ export async function PUT(request: Request) {
       SET nombre_banco = ?, numero_cuenta = ?, titular_cuenta = ?, cedula = ?
       WHERE id = ?
     `, [nombreBanco, numeroCuenta, titularCuenta, cedula, id]);
+
+    emitSocketEvent('bancos:updated');
 
     return NextResponse.json({ success: true, message: 'Banco actualizado' });
 

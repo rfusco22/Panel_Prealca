@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { emitSocketEvent } from '@/lib/socket-server';
 
 export async function GET(req: Request) {
   try {
@@ -68,6 +69,7 @@ export async function POST(req: Request) {
 
     const resultado: any = await query(sql, valores);
 
+    emitSocketEvent('retenciones:created');
     return NextResponse.json({
       success: true,
       mensaje: 'Retención registrada correctamente.',

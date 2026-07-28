@@ -6,6 +6,7 @@ import {
   Building2, Package, Truck, Receipt, Settings, PieChart,
   TrendingUp, TrendingDown, Wallet, Users, ArrowRight, FileText, ShoppingCart, UserCircle, Loader2, Shield
 } from "lucide-react";
+import { useSocket } from '@/contexts/SocketContext';
 
 interface Stats {
   clientes: number;
@@ -20,13 +21,52 @@ export default function AdminPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const { socket } = useSocket();
+
+  const fetchStats = () => {
     fetch("/api/stats")
       .then((r) => r.json())
       .then((d) => { if (d.success) setStats(d.stats); })
       .catch(() => {})
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchStats();
   }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleUpdate = () => {
+      fetchStats();
+    };
+
+    socket.on('productos:created', handleUpdate);
+    socket.on('productos:updated', handleUpdate);
+    socket.on('productos:deleted', handleUpdate);
+    socket.on('clientes:created', handleUpdate);
+    socket.on('proveedores:created', handleUpdate);
+    socket.on('ingresos:created', handleUpdate);
+    socket.on('egresos:created', handleUpdate);
+    socket.on('facturas:created', handleUpdate);
+    socket.on('users:created', handleUpdate);
+    socket.on('users:updated', handleUpdate);
+    socket.on('users:deleted', handleUpdate);
+    return () => {
+      socket.off('productos:created', handleUpdate);
+      socket.off('productos:updated', handleUpdate);
+      socket.off('productos:deleted', handleUpdate);
+      socket.off('clientes:created', handleUpdate);
+      socket.off('proveedores:created', handleUpdate);
+      socket.off('ingresos:created', handleUpdate);
+      socket.off('egresos:created', handleUpdate);
+      socket.off('facturas:created', handleUpdate);
+      socket.off('users:created', handleUpdate);
+      socket.off('users:updated', handleUpdate);
+      socket.off('users:deleted', handleUpdate);
+    };
+  }, [socket]);
 
   const total = stats ? stats.clientes + stats.proveedores + stats.vendedores + stats.facturas + stats.ordenes + stats.bancos : 0;
 

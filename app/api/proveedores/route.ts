@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { emitSocketEvent } from '@/lib/socket-server';
 
 export async function GET() {
   try {
@@ -46,6 +47,8 @@ export async function POST(req: Request) {
     ];
 
     const resultado: any = await query(sql, valores);
+
+    emitSocketEvent('proveedores:created');
 
     return NextResponse.json({
       success: true,
@@ -98,6 +101,8 @@ export async function PUT(req: Request) {
 
     await query(sql, valores);
 
+    emitSocketEvent('proveedores:updated');
+
     return NextResponse.json({
       success: true,
       mensaje: 'Proveedor actualizado correctamente.',
@@ -133,6 +138,8 @@ export async function DELETE(req: Request) {
     }
 
     await query('DELETE FROM proveedores WHERE id = ?', [id]);
+
+    emitSocketEvent('proveedores:deleted');
 
     return NextResponse.json({ success: true });
 

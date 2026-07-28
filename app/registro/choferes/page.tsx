@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSocket } from "@/contexts/SocketContext";
 import ChoferForm from "@/components/forms/chofer-form";
 import ChoferesTable from "@/components/tables/choferes-table";
 import { Plus, X } from "lucide-react";
@@ -8,6 +9,25 @@ import { Plus, X } from "lucide-react";
 export default function ChoferesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const { socket } = useSocket();
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleUpdate = () => {
+      setRefreshKey((k) => k + 1);
+    };
+
+    socket.on("choferes:created", handleUpdate);
+    socket.on("choferes:updated", handleUpdate);
+    socket.on("choferes:deleted", handleUpdate);
+
+    return () => {
+      socket.off("choferes:created", handleUpdate);
+      socket.off("choferes:updated", handleUpdate);
+      socket.off("choferes:deleted", handleUpdate);
+    };
+  }, [socket]);
 
   const cerrarModal = () => {
     setIsModalOpen(false);

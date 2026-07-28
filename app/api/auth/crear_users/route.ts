@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db'; // Usamos tu función query directa
 import bcrypt from 'bcryptjs';
+import { emitSocketEvent } from '@/lib/socket-server';
 
 export async function POST(req: Request) {
   try {
@@ -20,6 +21,8 @@ export async function POST(req: Request) {
       'INSERT INTO users (email, password_hash, nombre, role, estado) VALUES (?, ?, ?, ?, ?)',
       [email, passwordHash, nombre, role || 'registro', 'activo']
     );
+
+    emitSocketEvent('users:created');
 
     return NextResponse.json({ success: true, message: 'Usuario creado exitosamente' }, { status: 201 });
 

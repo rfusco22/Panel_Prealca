@@ -3,6 +3,7 @@ import { query } from '@/lib/db';
 import { getIronSession } from 'iron-session';
 import { cookies } from 'next/headers';
 import { sessionOptions, SessionData } from '@/lib/session';
+import { emitSocketEvent } from '@/lib/socket-server';
 
 export async function GET() {
   try {
@@ -52,6 +53,8 @@ export async function POST(request: Request) {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [tipo, clienteId, productoId, cantidadM3, precioM3, ivaAplicado ? 1 : 0, ivaMonto, total, chofer, unidadId || null, session.userId]);
 
+    emitSocketEvent('guia-despacho:created');
+
     return NextResponse.json({ success: true, id: result.insertId }, { status: 201 });
   } catch (error) {
     console.error('Error POST guia_despacho:', error);
@@ -72,6 +75,8 @@ export async function DELETE(request: Request) {
     }
 
     await query('DELETE FROM guia_despacho WHERE id = ?', [id]);
+
+    emitSocketEvent('guia-despacho:deleted');
 
     return NextResponse.json({ success: true });
   } catch (error) {

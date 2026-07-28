@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 // 1. Cambiamos la importación para traer tu función específica 'query'
 import { query } from '@/lib/db'; 
+import { emitSocketEvent } from '@/lib/socket-server';
 
 export async function POST(request: Request) {
   try {
@@ -71,6 +72,7 @@ export async function POST(request: Request) {
     // 2. Ejecutamos usando tu función, pasándole el string SQL y el array de valores
     await query(sql, values);
 
+    emitSocketEvent('ingresos:created');
     return NextResponse.json({ 
       success: true, 
       mensaje: "Ingreso guardado exitosamente en la base de datos." 

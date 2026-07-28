@@ -5,6 +5,7 @@ import {
   Plus, X, Users, Loader2, Trash2, Edit2, AlertCircle, CheckCircle2,
   Shield, UserCircle, FileText, Clock, Mail, Key
 } from "lucide-react";
+import { useSocket } from '@/contexts/SocketContext';
 
 interface User {
   id: number;
@@ -41,9 +42,28 @@ export default function AdminUsersPage() {
     estado: "activo",
   });
 
+  const { socket } = useSocket();
+
   useEffect(() => {
     fetchUsers();
   }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleUpdate = () => {
+      fetchUsers();
+    };
+
+    socket.on('users:created', handleUpdate);
+    socket.on('users:updated', handleUpdate);
+    socket.on('users:deleted', handleUpdate);
+    return () => {
+      socket.off('users:created', handleUpdate);
+      socket.off('users:updated', handleUpdate);
+      socket.off('users:deleted', handleUpdate);
+    };
+  }, [socket]);
 
   const fetchUsers = async () => {
     try {

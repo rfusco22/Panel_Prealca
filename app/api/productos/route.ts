@@ -3,6 +3,7 @@ import { query } from '@/lib/db';
 import { getIronSession } from 'iron-session';
 import { cookies } from 'next/headers';
 import { sessionOptions, SessionData } from '@/lib/session';
+import { emitSocketEvent } from '@/lib/socket-server';
 
 // GET: Obtener todos los productos con sus agregados (Fórmula)
 export async function GET() {
@@ -70,6 +71,8 @@ export async function POST(request: Request) {
       }
     }
 
+    emitSocketEvent('productos:created');
+
     return NextResponse.json({ success: true, id: productoId });
   } catch (error) {
     console.error('Error POST productos:', error);
@@ -105,6 +108,8 @@ export async function PUT(request: Request) {
       }
     }
 
+    emitSocketEvent('productos:updated');
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error PUT productos:', error);
@@ -122,6 +127,8 @@ export async function DELETE(request: Request) {
     const id = searchParams.get('id');
 
     await query('DELETE FROM productos WHERE id = ?', [id]);
+
+    emitSocketEvent('productos:deleted');
 
     return NextResponse.json({ success: true });
   } catch (error) {

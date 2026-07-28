@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useSocket } from '@/contexts/SocketContext';
 import { Button } from '@/components/ui/button';
 import { Plus, X, Landmark, Trash2, Edit2, AlertCircle, Building2, ChevronDown, Check } from 'lucide-react';
 import Image from 'next/image';
@@ -57,6 +58,7 @@ export default function RegistroBancosPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   
   const selectRef = useRef<HTMLDivElement>(null);
+  const { socket } = useSocket();
 
   const [formData, setFormData] = useState({
     bancoCodigo: '',
@@ -76,6 +78,24 @@ export default function RegistroBancosPage() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleUpdate = () => {
+      fetchBancos();
+    };
+
+    socket.on("bancos:created", handleUpdate);
+    socket.on("bancos:updated", handleUpdate);
+    socket.on("bancos:deleted", handleUpdate);
+
+    return () => {
+      socket.off("bancos:created", handleUpdate);
+      socket.off("bancos:updated", handleUpdate);
+      socket.off("bancos:deleted", handleUpdate);
+    };
+  }, [socket]);
 
   const fetchBancos = async () => {
     try {

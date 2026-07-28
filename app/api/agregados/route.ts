@@ -3,6 +3,7 @@ import { query } from '@/lib/db';
 import { getIronSession } from 'iron-session';
 import { cookies } from 'next/headers';
 import { sessionOptions, SessionData } from '@/lib/session';
+import { emitSocketEvent } from '@/lib/socket-server';
 
 export async function GET() {
   try {
@@ -42,6 +43,8 @@ export async function POST(request: Request) {
       VALUES (?, ?)
     `, [nombre, unidadMedida]);
 
+    emitSocketEvent('agregados:created');
+
     return NextResponse.json({ success: true, id: result.insertId });
   } catch (error) {
     console.error('Error POST agregados:', error);
@@ -67,6 +70,8 @@ export async function PUT(request: Request) {
       WHERE id = ?
     `, [nombre, unidadMedida, id]);
 
+    emitSocketEvent('agregados:updated');
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error PUT agregados:', error);
@@ -85,6 +90,8 @@ export async function DELETE(request: Request) {
     if (!id) return NextResponse.json({ error: 'ID es requerido' }, { status: 400 });
 
     await query('DELETE FROM agregados WHERE id = ?', [id]);
+
+    emitSocketEvent('agregados:deleted');
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus, X, Landmark, Trash2, Edit2, AlertCircle, Building2, ChevronDown, Check } from 'lucide-react';
 import Image from 'next/image';
+import { useSocket } from '@/contexts/SocketContext';
 
 interface Banco {
   id: number;
@@ -66,6 +67,8 @@ export default function AdminBancosPage() {
     documentoNumero: ''
   });
 
+  const { socket } = useSocket();
+
   useEffect(() => {
     fetchBancos();
     const handleClickOutside = (event: MouseEvent) => {
@@ -76,6 +79,23 @@ export default function AdminBancosPage() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleUpdate = () => {
+      fetchBancos();
+    };
+
+    socket.on('bancos:created', handleUpdate);
+    socket.on('bancos:updated', handleUpdate);
+    socket.on('bancos:deleted', handleUpdate);
+    return () => {
+      socket.off('bancos:created', handleUpdate);
+      socket.off('bancos:updated', handleUpdate);
+      socket.off('bancos:deleted', handleUpdate);
+    };
+  }, [socket]);
 
   const fetchBancos = async () => {
     try {

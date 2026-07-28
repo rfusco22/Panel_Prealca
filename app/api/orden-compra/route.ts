@@ -3,6 +3,7 @@ import { query } from '@/lib/db';
 import { getIronSession } from 'iron-session';
 import { cookies } from 'next/headers';
 import { sessionOptions, SessionData } from '@/lib/session';
+import { emitSocketEvent } from '@/lib/socket-server';
 
 export async function GET() {
   try {
@@ -47,6 +48,8 @@ export async function POST(request: Request) {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [tipo, proveedorId, productoId, cantidadM3, precioM3, ivaAplicado ? 1 : 0, ivaMonto, total, session.userId]);
 
+    emitSocketEvent('orden-compra:created');
+
     return NextResponse.json({ success: true, id: result.insertId }, { status: 201 });
   } catch (error) {
     console.error('Error POST orden_compra:', error);
@@ -67,6 +70,8 @@ export async function DELETE(request: Request) {
     }
 
     await query('DELETE FROM orden_compra WHERE id = ?', [id]);
+
+    emitSocketEvent('orden-compra:deleted');
 
     return NextResponse.json({ success: true });
   } catch (error) {

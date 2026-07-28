@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Package, ArrowDown, ArrowUp, Box, ChevronDown, ChevronUp } from 'lucide-react';
+import { useSocket } from '@/contexts/SocketContext';
 
 interface MateriaPrima {
   agregadoId: number;
@@ -32,6 +33,7 @@ interface StockProducto {
 }
 
 export default function DosificadorStockPage() {
+  const { socket } = useSocket();
   const [materiaPrima, setMateriaPrima] = useState<MateriaPrima[]>([]);
   const [productos, setProductos] = useState<StockProducto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,6 +42,28 @@ export default function DosificadorStockPage() {
   useEffect(() => {
     fetchStock();
   }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleUpdate = () => {
+      fetchStock();
+    };
+
+    socket.on('materia-prima:created', handleUpdate);
+    socket.on('guia-despacho:created', handleUpdate);
+    socket.on('guia-despacho:deleted', handleUpdate);
+    socket.on('productos:created', handleUpdate);
+    socket.on('productos:updated', handleUpdate);
+
+    return () => {
+      socket.off('materia-prima:created', handleUpdate);
+      socket.off('guia-despacho:created', handleUpdate);
+      socket.off('guia-despacho:deleted', handleUpdate);
+      socket.off('productos:created', handleUpdate);
+      socket.off('productos:updated', handleUpdate);
+    };
+  }, [socket]);
 
   const fetchStock = async () => {
     try {

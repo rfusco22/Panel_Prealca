@@ -343,6 +343,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus, X, Trash2, Edit2, AlertCircle, Truck, Hash, Tag, Car, Calendar, Palette } from 'lucide-react';
+import { useSocket } from '@/contexts/SocketContext';
 
 interface Unidad {
   id: number;
@@ -374,9 +375,28 @@ export default function AdminUnidadesPage() {
     color: ''
   });
 
+  const { socket } = useSocket();
+
   useEffect(() => {
     fetchUnidades();
   }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleUpdate = () => {
+      fetchUnidades();
+    };
+
+    socket.on('unidades:created', handleUpdate);
+    socket.on('unidades:updated', handleUpdate);
+    socket.on('unidades:deleted', handleUpdate);
+    return () => {
+      socket.off('unidades:created', handleUpdate);
+      socket.off('unidades:updated', handleUpdate);
+      socket.off('unidades:deleted', handleUpdate);
+    };
+  }, [socket]);
 
   const fetchUnidades = async () => {
     try {

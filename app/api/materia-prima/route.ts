@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { emitSocketEvent } from '@/lib/socket-server';
 
 export async function GET() {
   try {
@@ -38,6 +39,7 @@ export async function POST(req: Request) {
 
     const resultado: any = await query(sql, valores);
 
+    emitSocketEvent('materia-prima:created');
     return NextResponse.json({
       success: true,
       mensaje: 'Materia prima registrada correctamente.',

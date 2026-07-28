@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { emitSocketEvent } from '@/lib/socket-server';
 
 export async function GET() {
   try {
@@ -39,6 +40,8 @@ export async function POST(req: Request) {
     ];
 
     const resultado: any = await query(sql, valores);
+
+    emitSocketEvent('choferes:created');
 
     return NextResponse.json({
       success: true,
@@ -85,6 +88,8 @@ export async function PUT(req: Request) {
 
     await query(sql, valores);
 
+    emitSocketEvent('choferes:updated');
+
     return NextResponse.json({ success: true, mensaje: 'Chofer actualizado.' }, { status: 200 });
   } catch (error: any) {
     console.error("Error actualizando chofer:", error);
@@ -99,6 +104,9 @@ export async function DELETE(req: Request) {
     if (!id) return NextResponse.json({ error: 'ID requerido' }, { status: 400 });
 
     await query('DELETE FROM choferes WHERE id = ?', [id]);
+
+    emitSocketEvent('choferes:deleted');
+
     return NextResponse.json({ success: true, mensaje: 'Chofer eliminado.' }, { status: 200 });
   } catch (error) {
     console.error("Error eliminando chofer:", error);

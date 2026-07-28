@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { Loader2, Plus, X, CheckCircle2 } from "lucide-react";
+import { useSocket } from '@/contexts/SocketContext';
 
 export default function MateriaPrimaPage() {
+  const { socket } = useSocket();
   const [agregados, setAgregados] = useState<any[]>([]);
   const [materiaPrima, setMateriaPrima] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -25,6 +27,20 @@ export default function MateriaPrimaPage() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleUpdate = () => {
+      fetchData();
+    };
+
+    socket.on('materia-prima:created', handleUpdate);
+
+    return () => {
+      socket.off('materia-prima:created', handleUpdate);
+    };
+  }, [socket]);
 
   const fetchData = async () => {
     setIsLoading(true);

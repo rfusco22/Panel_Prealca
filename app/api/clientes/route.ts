@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { emitSocketEvent } from '@/lib/socket-server';
 
 export async function GET() {
   try {
@@ -37,6 +38,7 @@ export async function POST(req: Request) {
       data.esContribuyenteEspecial ? 1 : 0,
     ];
     const resultado: any = await query(sql, valores);
+    emitSocketEvent('clientes:created');
     return NextResponse.json({
       success: true,
       mensaje: 'Cliente registrado correctamente en el sistema.',
