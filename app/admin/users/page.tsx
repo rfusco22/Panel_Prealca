@@ -282,7 +282,7 @@ export default function AdminUsersPage() {
                         <div className="flex items-center gap-1.5">
                           <Clock size={12} className="text-slate-400" />
                           <span className={`text-xs font-medium ${isOnline ? 'text-emerald-600' : 'text-slate-500'}`}>
-                            {isOnline ? "En línea" : formatFecha(user.last_login, lastSeen[user.id])}
+                            {isOnline ? "En línea" : formatFecha(user.last_login, lastSeen?.[user.id])}
                           </span>
                         </div>
                       </td>
