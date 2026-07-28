@@ -91,10 +91,20 @@ export default function DosificadorStockPage() {
 
   const getMaterialLimitante = (formula: FormulaItem[]) => {
     if (!formula || formula.length === 0) return 'Sin fórmula';
-    const limitantes = formula
-      .filter(f => Number(f.disponible) <= Number(f.cantidadRequerida))
-      .map(f => f.agregadoNombre);
-    return limitantes.length > 0 ? limitantes.join(', ') : 'Ninguno';
+    let minRatio = Infinity;
+    let limitante = '';
+    for (const f of formula) {
+      const disp = Number(f.disponible);
+      const req = Number(f.cantidadRequerida);
+      if (req > 0) {
+        const ratio = disp / req;
+        if (ratio < minRatio) {
+          minRatio = ratio;
+          limitante = f.agregadoNombre;
+        }
+      }
+    }
+    return limitante || 'Ninguno';
   };
 
   if (loading) {
