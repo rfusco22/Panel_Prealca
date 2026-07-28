@@ -25,7 +25,7 @@ const menuItems = [
   { id: "ingresos", label: "Ingresos", icon: TrendingUp, href: "/admin/ingresos" },
   { id: "egresos", label: "Egresos", icon: TrendingDown, href: "/admin/egresos" },
   { id: "productos", label: "Productos", icon: Package, href: "/admin/productos" },
-  { id: "stock", label: "Stock", icon: Boxes, href: "/admin/stock" },
+  { id: "stock", label: "Inventario por Producto", icon: Boxes, href: "/admin/stock" },
   { id: "unidades", label: "Unidades", icon: Truck, href: "/admin/unidades" },
   { id: "retenciones", label: "Retenciones", icon: Receipt, href: "/admin/retenciones" },
   { id: "reportes", label: "Reportes", icon: PieChart, href: "/admin/reportes" },

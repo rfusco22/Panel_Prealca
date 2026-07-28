@@ -10,7 +10,7 @@ const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/dosificador" },
   { id: "alerta", label: "Alerta", icon: AlertTriangle, href: "/dosificador/alerta" },
   { id: "materia-prima", label: "Materia Prima", icon: Package, href: "/dosificador/materia-prima" },
-  { id: "stock", label: "Stock", icon: Boxes, href: "/dosificador/stock" },
+  { id: "stock", label: "Inventario por Producto", icon: Boxes, href: "/dosificador/stock" },
   { id: "guias", label: "Guías de Despacho", icon: FileText, href: "/dosificador/guia-despacho" },
 ];
 
