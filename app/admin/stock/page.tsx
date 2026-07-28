@@ -68,9 +68,9 @@ export default function StockPage() {
     return { label: 'DISPONIBLE', color: 'bg-emerald-100 text-emerald-700' };
   };
 
-  const totalEntradas = materiaPrima.reduce((sum, m) => sum + m.totalEntradas, 0);
-  const totalConsumido = materiaPrima.reduce((sum, m) => sum + m.totalConsumido, 0);
-  const totalDisponible = materiaPrima.reduce((sum, m) => sum + m.disponible, 0);
+  const totalEntradas = Number(materiaPrima.reduce((sum, m) => sum + Number(m.totalEntradas), 0));
+  const totalConsumido = Number(materiaPrima.reduce((sum, m) => sum + Number(m.totalConsumido), 0));
+  const totalDisponible = Number(materiaPrima.reduce((sum, m) => sum + Number(m.disponible), 0));
 
   if (loading) {
     return (
