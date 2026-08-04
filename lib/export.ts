@@ -101,7 +101,7 @@ export function generateIngresoReport(ingresos: any[]) {
     `Cliente ${ingreso.clienteId}`,
     ingreso.vendedor || '-',
     ingreso.precioBolivares.toFixed(2),
-    (ingreso.precioDolares || 0).toFixed(2),
+    (ingreso.precioDolares || 0).toFixed(4),
     (ingreso.ivaMonto || 0).toFixed(2),
     ingreso.esAnticipo ? 'Sí' : 'No',
   ]);
@@ -127,7 +127,7 @@ export function generateEgresoReport(egresos: any[]) {
     egreso.clasificacionGasto,
     egreso.tipoGasto,
     egreso.montoBolivares.toFixed(2),
-    (egreso.montoDolares || 0).toFixed(2),
+    (egreso.montoDolares || 0).toFixed(4),
   ]);
 
   return { title: 'Reporte de Egresos', columns, data };
