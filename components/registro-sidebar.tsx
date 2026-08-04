@@ -51,7 +51,7 @@ export function RegistroSidebar({
           <div className="absolute top-6 left-6 w-24 h-24 bg-blue-500/20 rounded-full blur-2xl pointer-events-none"></div>
           <div className={`flex items-center gap-4 relative z-10 ${isCollapsed ? 'justify-center' : ''}`}>
             <div className="h-14 w-14 bg-gradient-to-br from-white to-slate-100 rounded-2xl flex items-center justify-center p-1.5 shadow-[0_0_20px_rgba(59,130,246,0.15)] border border-white/10 shrink-0">
-              <Image src="/logo.jpeg" alt="PREALCA" width={56} height={56} className="w-full h-full object-contain drop-shadow-sm" />
+              <Image src="/logo.jpeg" alt="PREALCA" width={56} height={56} style={{ width: '100%', height: '100%' }} className="object-contain drop-shadow-sm" />
             </div>
             {!isCollapsed && (
               <div className="flex flex-col justify-center whitespace-nowrap">

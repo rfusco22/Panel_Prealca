@@ -42,7 +42,7 @@ export function TopBar({ userRole = 'admin', onToggleSidebar }: TopBarProps) {
             alt="PREALCA"
             width={32}
             height={32}
-            className="h-8 w-auto object-contain"
+            className="object-contain"
           />
           {/* Si quieres que diga PREALCA al lado del logo, descomenta la siguiente línea */}
           {/* <span className="font-bold text-xl tracking-tight text-gray-900 hidden sm:block">PREALCA</span> */}

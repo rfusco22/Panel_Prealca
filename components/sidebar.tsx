@@ -14,7 +14,8 @@ import {
   TrendingUp,
   TrendingDown,
   Warehouse,
-  Boxes
+  Boxes,
+  ShoppingCart
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -26,6 +27,7 @@ const menuItems = [
   { id: "egresos", label: "Egresos", icon: TrendingDown, href: "/admin/egresos" },
   { id: "productos", label: "Productos", icon: Package, href: "/admin/productos" },
   { id: "stock", label: "Inventario por Producto", icon: Boxes, href: "/admin/stock" },
+  { id: "pedidos", label: "Pedidos", icon: ShoppingCart, href: "/admin/pedidos" },
   { id: "unidades", label: "Unidades", icon: Truck, href: "/admin/unidades" },
   { id: "retenciones", label: "Retenciones", icon: Receipt, href: "/admin/retenciones" },
   { id: "reportes", label: "Reportes", icon: PieChart, href: "/admin/reportes" },

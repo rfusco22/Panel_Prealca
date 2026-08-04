@@ -1,61 +1,50 @@
-import { Button } from '@/components/ui/button';
+'use client';
 
-export const metadata = {
-  title: 'Reportes - PREALCA',
-};
+import Link from 'next/link';
+import { DollarSign, TrendingDown, ShoppingCart, Shield, Activity, Globe, BarChart3, ArrowRight } from 'lucide-react';
+
+const reports = [
+  { title: 'Reporte de Ingresos', desc: 'Análisis detallado de ingresos por período, banco y vendedor', href: '/admin/reportes/ingresos', icon: DollarSign, color: 'bg-emerald-50 text-emerald-600' },
+  { title: 'Reporte de Egresos', desc: 'Análisis de gastos por clasificación, tipo y proveedor', href: '/admin/reportes/egresos', icon: TrendingDown, color: 'bg-red-50 text-red-600' },
+  { title: 'Reporte de Ventas', desc: 'Estadísticas de facturas, guías y productos vendidos', href: '/admin/reportes/ventas', icon: ShoppingCart, color: 'bg-blue-50 text-blue-600' },
+  { title: 'Reporte de Retenciones', desc: 'Detalle de retenciones de IVA por cliente y período', href: '/admin/reportes/retenciones', icon: Shield, color: 'bg-purple-50 text-purple-600' },
+  { title: 'Estado Financiero', desc: 'Balance de ingresos vs egresos con gráficos', href: '/admin/reportes/financiero', icon: Activity, color: 'bg-orange-50 text-orange-600' },
+  { title: 'Conversión de Monedas', desc: 'Tasa de cambio oficial del BCV', href: '/admin/reportes/monedas', icon: Globe, color: 'bg-cyan-50 text-cyan-600' },
+];
 
 export default function ReportesPage() {
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-900">Reportes y Estadísticas</h1>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Reporte de Ingresos</h2>
-          <p className="text-gray-600 text-sm mb-4">Análisis detallado de ingresos por período, banco y cliente</p>
-          <Button className="bg-blue-600 hover:bg-blue-700 text-white">Ver Reporte</Button>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Reporte de Egresos</h2>
-          <p className="text-gray-600 text-sm mb-4">Análisis de gastos por clasificación, tipo y proveedor</p>
-          <Button className="bg-blue-600 hover:bg-blue-700 text-white">Ver Reporte</Button>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Reporte de Ventas</h2>
-          <p className="text-gray-600 text-sm mb-4">Estadísticas de facturas, guías y productos vendidos</p>
-          <Button className="bg-blue-600 hover:bg-blue-700 text-white">Ver Reporte</Button>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Reporte de Retenciones</h2>
-          <p className="text-gray-600 text-sm mb-4">Detalle de retenciones de IVA por cliente y período</p>
-          <Button className="bg-blue-600 hover:bg-blue-700 text-white">Ver Reporte</Button>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Estado Financiero</h2>
-          <p className="text-gray-600 text-sm mb-4">Balance de ingresos vs egresos con gráficos</p>
-          <Button className="bg-blue-600 hover:bg-blue-700 text-white">Ver Reporte</Button>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Conversión de Monedas</h2>
-          <p className="text-gray-600 text-sm mb-4">Historial de tasas de cambio y conversiones realizadas</p>
-          <Button className="bg-blue-600 hover:bg-blue-700 text-white">Ver Reporte</Button>
+      <div className="flex items-center gap-3">
+        <div className="p-2.5 bg-slate-900 rounded-xl"><BarChart3 className="w-6 h-6 text-white" /></div>
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Reportes y Estadísticas</h1>
+          <p className="text-sm text-slate-500">Exportación a Excel y PDF · Gráficos interactivos · Filtros por fecha</p>
         </div>
       </div>
 
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-        <h3 className="font-semibold text-yellow-900 mb-2">Próximas funcionalidades</h3>
-        <ul className="list-disc list-inside text-yellow-800 space-y-1 text-sm">
-          <li>Exportación a Excel y PDF de todos los reportes</li>
-          <li>Gráficos interactivos con Recharts</li>
-          <li>Filtros avanzados por rango de fechas</li>
-          <li>Comparativas períodos anteriores</li>
-          <li>Programación de reportes automáticos</li>
-        </ul>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {reports.map((r) => {
+          const Icon = r.icon;
+          return (
+            <Link key={r.href} href={r.href}>
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 hover:shadow-md hover:border-slate-300 transition-all cursor-pointer group h-full flex flex-col">
+                <div className="flex items-start gap-4 mb-4">
+                  <div className={`p-3 rounded-xl ${r.color} shrink-0`}>
+                    <Icon size={22} />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-700 transition">{r.title}</h3>
+                    <p className="text-sm text-slate-500 mt-1">{r.desc}</p>
+                  </div>
+                </div>
+                <div className="mt-auto flex items-center gap-1.5 text-sm font-semibold text-blue-600 group-hover:text-blue-800 transition">
+                  Ver Reporte <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+            </Link>
+          );
+        })}
       </div>
     </div>
   );

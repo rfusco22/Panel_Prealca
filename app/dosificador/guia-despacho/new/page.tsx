@@ -6,19 +6,23 @@ import { GuiaDespachoForm } from '@/components/forms/guia-despacho-form';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
-import { printDocument, generateGuiaDespachoHtml } from '@/lib/document-templates';
+import { printDocument, generateGuiaDespachoHtml, generatePrealcaHtml } from '@/lib/document-templates';
 
 export default function NewGuiaDespachoPage() {
   const router = useRouter();
-  const [clientes, setClientes] = useState<Array<{ id: number; nombre: string; rif?: string; direccion?: string }>>([]);
+  const [clientes, setClientes] = useState<Array<{ id: number; nombre: string; rif?: string; direccion?: string; telefono?: string }>>([]);
   const [productos, setProductos] = useState<Array<{ id: number; nombre: string; resistencia?: string }>>([]);
   const [unidades, setUnidades] = useState<Array<{ id: number; nombre: string; tipo: string; placa?: string }>>([]);
+  const [choferes, setChoferes] = useState<Array<{ id: number; nombre: string }>>([]);
+  const [pedidos, setPedidos] = useState<Array<{ id: number; clienteId: number; clienteNombre: string; productoId: number; productoNombre: string; totalM3: number; acumuladoM3: number }>>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     fetchClientes();
     fetchProductos();
     fetchUnidades();
+    fetchChoferes();
+    fetchPedidos();
   }, []);
 
   const fetchClientes = async () => {
@@ -45,9 +49,35 @@ export default function NewGuiaDespachoPage() {
     try {
       const res = await fetch('/api/unidades');
       const data = await res.json();
-      setUnidades(Array.isArray(data) ? data : []);
+      const raw = Array.isArray(data) ? data : [];
+      setUnidades(raw.map((u: any) => ({
+        id: u.id,
+        nombre: u.marca || u.numeroUnidad || '',
+        tipo: u.placa || '',
+        placa: u.placa || '',
+      })));
     } catch (err) {
       console.error('[v0] Error loading unidades:', err);
+    }
+  };
+
+  const fetchChoferes = async () => {
+    try {
+      const res = await fetch('/api/choferes');
+      const data = await res.json();
+      setChoferes(data.success ? data.choferes : []);
+    } catch (err) {
+      console.error('[v0] Error loading choferes:', err);
+    }
+  };
+
+  const fetchPedidos = async () => {
+    try {
+      const res = await fetch('/api/pedidos/available');
+      const data = await res.json();
+      setPedidos(data.success ? data.pedidos : []);
+    } catch (err) {
+      console.error('[v0] Error loading pedidos:', err);
     }
   };
 
@@ -57,7 +87,7 @@ export default function NewGuiaDespachoPage() {
       const res = await fetch('/api/guia-despacho', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, pedidoId: formData.pedidoId || null }),
       });
 
       const result = await res.json();
@@ -68,25 +98,47 @@ export default function NewGuiaDespachoPage() {
       const cliente = clientes.find(c => c.id === Number(formData.clienteId));
       const producto = productos.find(p => p.id === Number(formData.productoId));
       const unidad = unidades.find(u => u.id === Number(formData.unidadId));
-      const subtotal = Number(formData.cantidadM3) * Number(formData.precioM3);
+      const esPrealca = formData.tipo === 'Prealca';
 
-      printDocument(generateGuiaDespachoHtml({
-        guiaNumber: `GD-${result.id}`,
-        fecha: new Date().toISOString(),
-        clienteNombre: cliente?.nombre || 'N/A',
-        clienteRif: cliente?.rif || 'N/A',
-        clienteDireccion: cliente?.direccion || 'N/A',
-        chofer: formData.chofer || 'N/A',
-        placa: unidad?.placa || 'N/A',
-        items: [{
-          nombreProducto: producto?.nombre || formData.tipo,
-          cantidad: Number(formData.cantidadM3),
-          unidadMedida: 'M³',
-          precioUnitario: Number(formData.precioM3),
-          subtotalItem: subtotal,
-        }],
-        total: Number(formData.total),
-      }));
+      if (esPrealca) {
+        printDocument(generatePrealcaHtml({
+          guiaNumber: `GD-${result.id}`,
+          fecha: new Date().toISOString(),
+          clienteNombre: cliente?.nombre || '',
+          clienteRif: cliente?.rif || '',
+          clienteDireccion: cliente?.direccion || '',
+          clienteTelefono: cliente?.telefono || '',
+          operador: formData.chofer || '',
+          unidad: unidad?.placa || '',
+          items: producto ? [{
+            resistencia: producto.resistencia || '',
+            pulgada: producto.pulgada || '',
+            cantidad: Number(formData.cantidadM3),
+          }] : [],
+        }));
+      } else {
+        printDocument(generateGuiaDespachoHtml({
+          guiaNumber: `GD-${result.id}`,
+          fecha: new Date().toISOString(),
+          clienteNombre: cliente?.nombre || '',
+          clienteRif: cliente?.rif || '',
+          clienteDireccion: cliente?.direccion || '',
+          chofer: formData.chofer || '',
+          placa: unidad?.placa || '',
+          vanM3: Number(formData.cantidadM3),
+          deM3: 0,
+          items: producto ? [{
+            nombreProducto: producto.nombre || `${producto.resistencia || ''} - ${producto.pulgada || ''}`,
+            resistencia: producto.resistencia || '',
+            pulgada: producto.pulgada || '',
+            cantidad: Number(formData.cantidadM3),
+            unidadMedida: 'M³',
+            precioUnitario: 0,
+            subtotalItem: 0,
+          }] : [],
+          total: 0,
+        }));
+      }
 
       router.push('/dosificador/guia-despacho');
     } catch (err) {
@@ -113,6 +165,8 @@ export default function NewGuiaDespachoPage() {
         clientes={clientes}
         productos={productos}
         unidades={unidades}
+        choferes={choferes}
+        pedidos={pedidos}
       />
     </div>
   );

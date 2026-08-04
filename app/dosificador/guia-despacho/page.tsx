@@ -33,23 +33,11 @@ export default function GuiaDespachoPage() {
     };
 
     socket.on('guia-despacho:created', handleUpdate);
-    socket.on('guia-despacho:deleted', handleUpdate);
 
     return () => {
       socket.off('guia-despacho:created', handleUpdate);
-      socket.off('guia-despacho:deleted', handleUpdate);
     };
   }, [socket]);
-
-  const handleDelete = async (id: number) => {
-    const res = await fetch(`/api/guia-despacho?id=${id}`, { method: 'DELETE' });
-    const data = await res.json();
-    if (data.success) {
-      setGuias((prev) => prev.filter((g) => g.id !== id));
-    } else {
-      alert('Error al eliminar guía de despacho');
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -65,8 +53,6 @@ export default function GuiaDespachoPage() {
 
       <GuiaDespachoTable
         data={guias}
-        onDelete={handleDelete}
-        editLink={(id) => `/dosificador/guia-despacho/${id}/edit`}
       />
     </div>
   );

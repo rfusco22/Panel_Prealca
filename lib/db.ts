@@ -6,6 +6,11 @@ const pool = mysql.createPool({
   user: process.env.DB_USER || 'prealcac_panel',
   password: process.env.DB_PASSWORD || 'GEhKYatVdCaVav+8',
   database: process.env.DB_NAME || 'prealcac_panel',
+  waitForConnections: true,
+  connectionLimit: 10,
+  idleTimeout: 60000,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 0,
 });
 
 export async function query(sql: string, params?: any[]) {

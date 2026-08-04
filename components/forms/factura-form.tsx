@@ -19,8 +19,8 @@ interface FacturaFormProps {
   };
 }
 
-function formatCurrencyBs(value: number) {
-  return value.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' Bs';
+function formatBs(value: number) {
+  return value.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 export function FacturaForm({ initialData }: FacturaFormProps) {
@@ -37,12 +37,18 @@ export function FacturaForm({ initialData }: FacturaFormProps) {
   const [esContribuyenteEspecial, setEsContribuyenteEspecial] = useState(false);
   const [selectedClienteId, setSelectedClienteId] = useState<string>(initialData?.clienteId || '');
   const [isPrinting, setIsPrinting] = useState(false);
+  const [nota, setNota] = useState('');
+  const [vence, setVence] = useState('');
+  const [guias, setGuias] = useState<any[]>([]);
 
   const items = initialData?.items || [];
   const subtotalGeneral = initialData?.total || 0;
   const totalIva = items.reduce((sum, item) => sum + calculateIVA(item.subtotalItem), 0);
   const ivaRetenido = esContribuyenteEspecial ? calculateRetention(subtotalGeneral) : 0;
   const totalPagar = subtotalGeneral + totalIva - ivaRetenido;
+
+  const cliente = clientes.find((c: any) => String(c.id) === selectedClienteId);
+  const vendedor = cliente?.vendedor || '';
 
   useEffect(() => {
     fetch('/api/clientes').then(r => r.json()).then(d => {
@@ -51,31 +57,36 @@ export function FacturaForm({ initialData }: FacturaFormProps) {
     fetch('/api/bancos').then(r => r.json()).then(d => {
       if (d.success) setBancos(d.bancos || []);
     }).catch(() => {});
+    fetch('/api/guia-despacho').then(r => r.json()).then(d => {
+      if (d.success) setGuias(d.guias || []);
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {
     if (selectedClienteId) {
-      const cliente = clientes.find((c: any) => String(c.id) === selectedClienteId);
-      if (cliente) setEsContribuyenteEspecial(!!cliente.es_contribuyente_especial);
+      const c = clientes.find((cl: any) => String(cl.id) === selectedClienteId);
+      if (c) setEsContribuyenteEspecial(!!c.es_contribuyente_especial);
     }
   }, [selectedClienteId, clientes]);
 
   const handlePrint = () => {
     setIsPrinting(true);
-    const cliente = clientes.find((c: any) => String(c.id) === selectedClienteId);
     printDocument(generateFacturaHtml({
-      invoiceNumber: 'NUEVA',
+      facturaNumber: 'NUEVA',
       fecha: new Date().toISOString(),
+      vence: vence || undefined,
       clienteNombre: cliente?.nombre || initialData?.clienteNombre || '—',
       clienteRif: cliente?.rif || '—',
       clienteDireccion: cliente?.direccion || '—',
-      items,
+      vendedor,
+      formaPago: tipoPago || '—',
+      nota,
+      items: items.map(i => ({ codigo: '', descripcion: i.nombreMaterial, cantidad: i.cantidad, precioUnitario: i.precioUnitario, subtotalItem: i.subtotalItem })),
+      total: totalPagar,
       subtotalGeneral,
-      totalIva,
       ivaRetenido,
-      totalPagar,
+      totalIva,
       esContribuyenteEspecial,
-      montoRetencionIva: ivaRetenido,
     }));
     setTimeout(() => setIsPrinting(false), 500);
   };
@@ -91,7 +102,7 @@ export function FacturaForm({ initialData }: FacturaFormProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           clienteId: selectedClienteId,
-          clienteNombre: clientes.find((c: any) => String(c.id) === selectedClienteId)?.nombre,
+          clienteNombre: cliente?.nombre,
           items, total: totalPagar, tipoPago, metodoPago, bancoId, numeroReferencia,
           montoRetencion: ivaRetenido, montoIva: totalIva, esContribuyenteEspecial,
         }),
@@ -108,7 +119,6 @@ export function FacturaForm({ initialData }: FacturaFormProps) {
 
   const inputCls = "w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 text-sm font-medium text-slate-900 shadow-sm placeholder:text-slate-400 bg-white transition-all";
   const labelCls = "block text-xs font-semibold text-slate-600 mb-1.5";
-  const errorCls = "text-red-500 text-xs mt-1 font-medium flex items-center gap-1";
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[calc(100vh-160px)]">
@@ -138,11 +148,39 @@ export function FacturaForm({ initialData }: FacturaFormProps) {
                 {clientes.map((c: any) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
               </select>
             </div>
+            {vendedor && (
+              <div>
+                <label className={labelCls}>Vendedor</label>
+                <input type="text" value={vendedor} readOnly className={inputCls + ' bg-slate-50'} />
+              </div>
+            )}
           </div>
 
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5">
             <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
               <span className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white text-sm font-bold shrink-0">2</span>
+              <h3 className="text-lg font-semibold text-slate-900">Datos de la Factura</h3>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div>
+                <label className={labelCls}>Fecha de Vencimiento</label>
+                <input type="date" value={vence} onChange={e => setVence(e.target.value)} className={inputCls} />
+              </div>
+              <div>
+                <label className={labelCls}>Guía de Despacho</label>
+                <select value={nota} onChange={e => setNota(e.target.value)} className={inputCls}>
+                  <option value="">Seleccionar guía...</option>
+                  {guias.map((g: any) => (
+                    <option key={g.id} value={g.id}>GD-{g.id} — {g.clienteNombre} — {Number(g.cantidadM3).toFixed(2)} M³</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5">
+            <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
+              <span className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white text-sm font-bold shrink-0">3</span>
               <h3 className="text-lg font-semibold text-slate-900">Forma de Pago</h3>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -185,27 +223,27 @@ export function FacturaForm({ initialData }: FacturaFormProps) {
 
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5">
             <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
-              <span className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white text-sm font-bold shrink-0">3</span>
-              <h3 className="text-lg font-semibold text-slate-900">Resumen de Cálculos</h3>
+              <span className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white text-sm font-bold shrink-0">4</span>
+              <h3 className="text-lg font-semibold text-slate-900">Resumen</h3>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="bg-white rounded-xl border border-slate-200 p-4">
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Subtotal</p>
-                <p className="text-lg font-bold text-slate-900">{formatCurrencyBs(subtotalGeneral)}</p>
+                <p className="text-lg font-bold text-slate-900">{formatBs(subtotalGeneral)} Bs</p>
               </div>
               <div className="bg-white rounded-xl border border-slate-200 p-4">
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">IVA 16%</p>
-                <p className="text-lg font-bold text-blue-600">{formatCurrencyBs(totalIva)}</p>
+                <p className="text-lg font-bold text-blue-600">{formatBs(totalIva)} Bs</p>
               </div>
               {esContribuyenteEspecial && <div className="bg-white rounded-xl border border-slate-200 p-4">
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Retención 75%</p>
-                <p className="text-lg font-bold text-red-600">- {formatCurrencyBs(ivaRetenido)}</p>
+                <p className="text-lg font-bold text-red-600">- {formatBs(ivaRetenido)} Bs</p>
               </div>}
             </div>
             <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-5">
               <div className="flex justify-between items-center">
                 <p className="text-base font-bold text-blue-800">TOTAL A PAGAR</p>
-                <p className="text-2xl font-black text-blue-900">{formatCurrencyBs(totalPagar)}</p>
+                <p className="text-2xl font-black text-blue-900">{formatBs(totalPagar)} Bs</p>
               </div>
             </div>
             {esContribuyenteEspecial && (
@@ -245,87 +283,127 @@ export function FacturaForm({ initialData }: FacturaFormProps) {
           </button>
         </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
-          <div className="p-8 text-sm text-slate-800 leading-relaxed">
-            <div className="flex justify-between items-start mb-6 pb-4 border-b border-slate-200">
-              <div className="flex items-start gap-4">
-                <img src="/logo.jpeg" alt="Prealca Logo" className="w-[100px] h-auto" />
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
+          <div className="p-8 text-sm text-slate-800 leading-relaxed" style={{ fontFamily: "'Poppins', sans-serif" }}>
+            {/* Top header: Logo + Factura number */}
+            <div className="flex justify-between items-start mb-8">
+              <div className="flex items-center gap-3">
+                <img src="/logo.jpeg" alt="Prealca Logo" className="w-20 h-auto" />
+                <div>
+                  <p className="text-base font-bold text-slate-900">PREALCA</p>
+                  <p className="text-xs text-slate-500">RIF.: J-30913171-0</p>
+                </div>
               </div>
-              <div className="text-right text-xs text-slate-600 mt-2">
-                <p>Av. 2 parcela E-37, Zona Ind. Sta Cruz</p>
-                <p>Estado Aragua</p>
-                <p>Telf: 04128936930 / Roberto Quintero</p>
+              <div className="text-right">
+                <p className="text-sm font-bold">FACTURA <span className="font-normal text-base">NUEVA</span></p>
+                <p className="text-xs">Fecha: {new Date().toLocaleDateString('es-VE')}</p>
+                {vence && <p className="text-xs">Vence: {new Date(vence + 'T00:00:00').toLocaleDateString('es-VE')}</p>}
               </div>
             </div>
 
-            <p className="text-xs text-slate-500 mb-2">RIF.: J-30913171-0</p>
-            <h4 className="text-center font-bold text-base text-slate-900 mb-4 tracking-wide">FACTURA</h4>
-            <div className="flex justify-between items-center mb-5">
-              <p className="text-xs text-slate-500"><span className="font-semibold">N°:</span> NUEVA</p>
-              <p className="text-xs text-slate-500"><span className="font-semibold">Fecha:</span> {new Date().toLocaleDateString('es-VE')}</p>
+            {/* Client info */}
+            <div className="mb-8">
+              <table className="w-full">
+                <tbody>
+                  <tr>
+                    <td className="py-0.5 font-bold text-xs w-24">Cliente:</td>
+                    <td className="py-0.5 text-xs">{cliente?.nombre || '—'}</td>
+                  </tr>
+                  <tr>
+                    <td className="py-0.5 font-bold text-xs">Dirección:</td>
+                    <td className="py-0.5 text-xs">{cliente?.direccion || '—'}</td>
+                  </tr>
+                  <tr>
+                    <td className="py-0.5 font-bold text-xs">Rif:</td>
+                    <td className="py-0.5 text-xs">{cliente?.rif || '—'}</td>
+                  </tr>
+                  {vendedor && (
+                    <tr>
+                      <td className="py-0.5 font-bold text-xs">Vendedor:</td>
+                      <td className="py-0.5 text-xs">{vendedor}</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
 
-            <div className="mb-4 space-y-1.5">
-              <p className="text-sm"><strong>CLIENTE:</strong> {clientes.find((c: any) => String(c.id) === selectedClienteId)?.nombre || initialData?.clienteNombre || '—'}</p>
-              <p className="text-sm"><strong>R.I.F./C.I.:</strong> {clientes.find((c: any) => String(c.id) === selectedClienteId)?.rif || '—'}</p>
-              <p className="text-sm"><strong>Dirección:</strong> {clientes.find((c: any) => String(c.id) === selectedClienteId)?.direccion || '—'}</p>
-            </div>
-
-            <table className="w-full border-collapse mb-5 text-sm">
+            {/* Items table */}
+            <table className="w-full border-collapse mb-10">
               <thead>
-                <tr className="bg-slate-100">
-                  <th className="border border-slate-300 px-3 py-2.5 text-left font-bold text-slate-900">Descripción</th>
-                  <th className="border border-slate-300 px-3 py-2.5 text-right font-bold text-slate-900">Cantidad</th>
-                  <th className="border border-slate-300 px-3 py-2.5 text-left font-bold text-slate-900">Unidad</th>
-                  <th className="border border-slate-300 px-3 py-2.5 text-right font-bold text-slate-900">Precio Unit.</th>
-                  <th className="border border-slate-300 px-3 py-2.5 text-right font-bold text-slate-900">Total</th>
+                <tr style={{ background: '#d9d9d9' }}>
+                  <th className="px-2 py-2 text-left text-xs font-bold border-b-2 border-gray-400">Codigo</th>
+                  <th className="px-2 py-2 text-left text-xs font-bold border-b-2 border-gray-400">Descripcion</th>
+                  <th className="px-2 py-2 text-center text-xs font-bold border-b-2 border-gray-400">Cantidad</th>
+                  <th className="px-2 py-2 text-right text-xs font-bold border-b-2 border-gray-400">Precio Unitario</th>
+                  <th className="px-2 py-2 text-right text-xs font-bold border-b-2 border-gray-400">Total</th>
                 </tr>
               </thead>
               <tbody>
                 {items.length > 0 ? items.map((item, idx) => (
                   <tr key={idx}>
-                    <td className="border border-slate-300 px-3 py-2.5">{item.nombreMaterial}</td>
-                    <td className="border border-slate-300 px-3 py-2.5 text-right">{item.cantidad.toLocaleString('es-VE')}</td>
-                    <td className="border border-slate-300 px-3 py-2.5">{item.unidadMedida}</td>
-                    <td className="border border-slate-300 px-3 py-2.5 text-right">{formatCurrencyBs(item.precioUnitario)}</td>
-                    <td className="border border-slate-300 px-3 py-2.5 text-right">{formatCurrencyBs(item.subtotalItem)}</td>
+                    <td className="px-2 py-2 text-xs border-b border-gray-200"></td>
+                    <td className="px-2 py-2 text-xs border-b border-gray-200">{item.nombreMaterial}</td>
+                    <td className="px-2 py-2 text-xs text-center border-b border-gray-200">{item.cantidad.toLocaleString('es-VE')}</td>
+                    <td className="px-2 py-2 text-xs text-right border-b border-gray-200">{formatBs(item.precioUnitario)}</td>
+                    <td className="px-2 py-2 text-xs text-right border-b border-gray-200">{formatBs(item.subtotalItem)}</td>
                   </tr>
                 )) : (
-                  <tr><td colSpan={5} className="border border-slate-300 px-3 py-8 text-center text-slate-400">Sin items para mostrar</td></tr>
+                  <tr><td colSpan={5} className="px-2 py-8 text-center text-xs text-slate-400 border-b border-gray-200">Sin items para mostrar</td></tr>
                 )}
               </tbody>
             </table>
 
-            <div className="flex justify-end">
-              <div className="w-72 space-y-1.5 text-sm">
-                <div className="flex justify-between">
-                  <span><strong>SUB TOTAL:</strong></span>
-                  <span>{formatCurrencyBs(subtotalGeneral)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span><strong>I.V.A. 16%:</strong></span>
-                  <span>{formatCurrencyBs(totalIva)}</span>
-                </div>
-                {esContribuyenteEspecial && <div className="flex justify-between">
-                  <span><strong>RETIENCION I.V.A 75%:</strong></span>
-                  <span>-{formatCurrencyBs(ivaRetenido)}</span>
-                </div>}
-                <div className="flex justify-between font-black text-base border-t border-slate-200 pt-2">
-                  <span>TOTAL:</span>
-                  <span>{formatCurrencyBs(totalPagar)}</span>
-                </div>
+            {/* Bottom section: two columns */}
+            <div className="flex border border-gray-800 text-xs">
+              {/* Left: Nota + payment details */}
+              <div className="flex-1 p-3 border-r border-gray-800 space-y-1">
+                <p className="font-semibold">GUIA DE DESPACHO: {nota ? `GD-${nota}` : '—'}</p>
+                <p><strong>TASA OFICIAL (BCV)</strong> —</p>
+                <p><strong>FORMA DE PAGO:</strong> {tipoPago || '—'} {metodoPago && `- ${metodoPago}`}</p>
+                <p><strong>RET. IVA</strong> Bs.{formatBs(ivaRetenido)}</p>
+                <p><strong>POR COBRAR</strong> Bs.{formatBs(totalPagar)}</p>
+                <p><strong>TRANSFERENCIA</strong> Bs.{formatBs(0)}</p>
+              </div>
+              {/* Right: Totals */}
+              <div className="w-64">
+                <table className="w-full">
+                  <tbody>
+                    <tr className="border-b border-gray-300">
+                      <td className="py-1 px-3 font-semibold">SUB TOTAL</td>
+                      <td className="py-1 px-3 text-right">{formatBs(subtotalGeneral)}</td>
+                    </tr>
+                    <tr className="border-b border-gray-300">
+                      <td className="py-1 px-3 font-semibold">EXCENTO</td>
+                      <td className="py-1 px-3 text-right">{formatBs(0)}</td>
+                    </tr>
+                    <tr className="border-b border-gray-300">
+                      <td className="py-1 px-3 font-semibold">BASE IMPONIBLE</td>
+                      <td className="py-1 px-3 text-right">{formatBs(subtotalGeneral)}</td>
+                    </tr>
+                    <tr className="border-b border-gray-300">
+                      <td className="py-1 px-3 font-semibold">I.V.A. 16%</td>
+                      <td className="py-1 px-3 text-right">{formatBs(totalIva)}</td>
+                    </tr>
+                    <tr className="border-b border-gray-300 font-bold">
+                      <td className="py-1 px-3 font-bold border-t-2 border-gray-800">TOTAL A PAGAR</td>
+                      <td className="py-1 px-3 text-right border-t-2 border-gray-800">{formatBs(totalPagar)}</td>
+                    </tr>
+                    <tr className="border-b border-gray-300">
+                      <td className="py-1 px-3 font-semibold">B.I. IGTF</td>
+                      <td className="py-1 px-3 text-right">{formatBs(0)}</td>
+                    </tr>
+                    <tr className="border-b border-gray-300">
+                      <td className="py-1 px-3 font-semibold">IGTF 3%</td>
+                      <td className="py-1 px-3 text-right">—</td>
+                    </tr>
+                    <tr className="font-bold">
+                      <td className="py-1 px-3 font-bold border-t-2 border-gray-800">TOTAL A PAGAR IGTF</td>
+                      <td className="py-1 px-3 text-right border-t-2 border-gray-800">—</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
-
-            {tipoPago && (
-              <div className="mt-4 pt-3 border-t border-slate-200 space-y-1.5 text-xs">
-                <p><strong>TIPO PAGO:</strong> {tipoPago} {metodoPago && `- ${metodoPago}`}</p>
-                {bancoId && bancos.find((b: any) => String(b.id) === bancoId) && (
-                  <p><strong>BANCO:</strong> {bancos.find((b: any) => String(b.id) === bancoId)?.nombre}</p>
-                )}
-                {numeroReferencia && <p><strong>N° REFERENCIA:</strong> {numeroReferencia}</p>}
-              </div>
-            )}
           </div>
         </div>
       </div>

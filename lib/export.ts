@@ -1,4 +1,4 @@
-import XLSX from 'xlsx';
+import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
@@ -157,4 +157,26 @@ export function generateFacturaReport(facturas: any[]) {
   ]);
 
   return { title: 'Reporte de Facturas', columns, data };
+}
+
+export function generateRetencionReport(retenciones: any[]) {
+  const columns = [
+    'Fecha',
+    'Cliente',
+    'RIF',
+    'Factura N°',
+    'Monto Retenido',
+    '% Retención',
+  ];
+
+  const data = retenciones.map((r) => [
+    new Date(r.fecha).toLocaleDateString('es-ES'),
+    r.cliente_nombre || '-',
+    r.cliente_rif || '-',
+    `F-${r.factura_id}`,
+    Number(r.monto_retenido).toFixed(2),
+    Number(r.porcentaje_retencion || 75).toFixed(0) + '%',
+  ]);
+
+  return { title: 'Reporte de Retenciones', columns, data };
 }
