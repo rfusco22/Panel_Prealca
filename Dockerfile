@@ -1,6 +1,6 @@
-FROM node:20-alpine
+FROM node:22-alpine
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@9 --activate
 
 WORKDIR /app
 
@@ -17,4 +17,4 @@ EXPOSE 3000
 ENV NODE_ENV=production
 ENV PORT=3000
 
-CMD ["node", "--import", "tsx", "server.ts"]
+CMD ["pnpm", "start"]
