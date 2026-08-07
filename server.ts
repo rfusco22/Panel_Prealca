@@ -79,11 +79,3 @@ app.prepare().then(() => {
 process.on('unhandledRejection', (err) => {
   console.error('Unhandled rejection:', err);
 });
-
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully');
-  io.close();
-  httpServer.close(() => {
-    process.exit(0);
-  });
-});
