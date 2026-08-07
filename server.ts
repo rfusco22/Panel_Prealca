@@ -14,10 +14,12 @@ const lastSeenMap = new Map<number, number>();
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
 
+let appReady = false;
+
 const httpServer = createServer(async (req: IncomingMessage, res: ServerResponse) => {
-  if (req.url === '/api/health') {
+  if (!appReady) {
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ status: 'ok' }));
+    res.end(JSON.stringify({ status: 'starting' }));
     return;
   }
   try {
@@ -68,6 +70,7 @@ httpServer.listen(port, hostname, () => {
 });
 
 app.prepare().then(() => {
+  appReady = true;
   console.log('> Next.js app prepared');
 }).catch((err) => {
   console.error('Next.js prepare error:', err);
