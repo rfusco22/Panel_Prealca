@@ -16,6 +16,11 @@ const lastSeenMap = new Map<number, number>();
 
 app.prepare().then(() => {
   const httpServer = createServer(async (req, res) => {
+    if (req.url === '/api/health') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ status: 'ok' }));
+      return;
+    }
     const parsedUrl = parse(req.url!, true);
     await handle(req, res, parsedUrl);
   });
