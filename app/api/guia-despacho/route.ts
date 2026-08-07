@@ -1,0 +1,119 @@
+import { NextResponse } from 'next/server';
+import { query } from '@/lib/db';
+import { getIronSession } from 'iron-session';
+import { cookies } from 'next/headers';
+import { sessionOptions, SessionData } from '@/lib/session';
+import { emitSocketEvent } from '@/lib/socket-server';
+
+async function ensurePedidoColumn() {
+  try {
+    await query(`ALTER TABLE guia_despacho ADD COLUMN pedido_id INT NULL`);
+  } catch {
+    // Column already exists
+  }
+}
+
+export async function GET() {
+  try {
+    await ensurePedidoColumn();
+    const guias = await query(`
+      SELECT
+        gd.id,
+        gd.tipo,
+        gd.cliente_id AS clienteId,
+        c.nombre AS clienteNombre,
+        c.rif AS clienteRif,
+        c.direccion AS clienteDireccion,
+        c.telefono AS clienteTelefono,
+        gd.producto_id AS productoId,
+        CONCAT(p.resistencia, ' - ', p.pulgada) AS productoNombre,
+        p.resistencia,
+        p.pulgada,
+        gd.cantidad_m3 AS cantidadM3,
+        gd.precio_m3 AS precioM3,
+        gd.iva_aplicado AS ivaAplicado,
+        gd.iva_monto AS ivaMonto,
+        gd.total,
+        gd.chofer,
+        gd.unidad_id AS unidadId,
+        un.numero_unidad AS numeroUnidad,
+        un.placa,
+        gd.pedido_id AS pedidoId,
+        pe.cantidad_m3 AS pedidoTotalM3,
+        gd.usuario_id AS usuarioId,
+        gd.created_at AS fecha
+      FROM guia_despacho gd
+      LEFT JOIN clientes c ON gd.cliente_id = c.id
+      LEFT JOIN productos p ON gd.producto_id = p.id
+      LEFT JOIN unidades un ON gd.unidad_id = un.id
+      LEFT JOIN pedidos pe ON gd.pedido_id = pe.id
+      ORDER BY gd.id DESC
+    `);
+
+    return NextResponse.json({ success: true, guias }, { status: 200 });
+  } catch (error) {
+    console.error('Error GET guia_despacho:', error);
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    await ensurePedidoColumn();
+    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+    if (!session.userId) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+
+    const data = await request.json();
+    const { tipo, clienteId, productoId, cantidadM3, chofer, unidadId, pedidoId } = data;
+
+    const result: any = await query(`
+      INSERT INTO guia_despacho (tipo, cliente_id, producto_id, cantidad_m3, chofer, unidad_id, pedido_id, usuario_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `, [tipo, clienteId, productoId, cantidadM3, chofer, unidadId || null, pedidoId || null, session.userId]);
+
+    // Si tiene pedido, verificar si se completó
+    if (pedidoId) {
+      const [pedidoRows]: any = await query('SELECT cantidad_m3 FROM pedidos WHERE id = ?', [pedidoId]);
+      const pedidoTotal = Number(pedidoRows?.cantidad_m3 || 0);
+
+      const [sumRows]: any = await query('SELECT COALESCE(SUM(cantidad_m3), 0) AS totalGuias FROM guia_despacho WHERE pedido_id = ?', [pedidoId]);
+      const totalGuias = Number(sumRows?.totalGuias || 0);
+
+      if (totalGuias >= pedidoTotal) {
+        await query("UPDATE pedidos SET estado = 'completado' WHERE id = ?", [pedidoId]);
+        emitSocketEvent('pedidos:updated');
+      } else if (totalGuias > 0) {
+        await query("UPDATE pedidos SET estado = 'en_proceso' WHERE id = ?", [pedidoId]);
+        emitSocketEvent('pedidos:updated');
+      }
+    }
+
+    emitSocketEvent('guia-despacho:created');
+
+    return NextResponse.json({ success: true, id: result.insertId }, { status: 201 });
+  } catch (error) {
+    console.error('Error POST guia_despacho:', error);
+    return NextResponse.json({ error: 'Error al crear guía de despacho' }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+    if (!session.userId) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) return NextResponse.json({ error: 'ID es requerido' }, { status: 400 });
+
+    await query('DELETE FROM guia_despacho WHERE id = ?', [id]);
+
+    emitSocketEvent('guia-despacho:deleted');
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error DELETE guia_despacho:', error);
+    return NextResponse.json({ error: 'Error al eliminar guía de despacho' }, { status: 500 });
+  }
+}
