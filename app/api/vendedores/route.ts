@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { emitSocketEvent } from '@/lib/socket-server';
+import { registrarLog, getUsuarioFromRequest, getClientIp } from '@/lib/audit-log';
 
-// OBTENER TODOS LOS VENDEDORES (Para el Select)
 export async function GET() {
   try {
     const sql = `SELECT * FROM vendedores ORDER BY nombre ASC`;
@@ -14,35 +14,29 @@ export async function GET() {
   }
 }
 
-// CREAR NUEVO VENDEDOR
 export async function POST(req: Request) {
   try {
     const data = await req.json();
-
     if (!data.nombre || !data.cedula || !data.telefono || !data.direccion) {
       return NextResponse.json({ error: 'Todos los campos son obligatorios.' }, { status: 400 });
     }
-
-    const sql = `
-      INSERT INTO vendedores (nombre, cedula, telefono, direccion) 
-      VALUES (?, ?, ?, ?)
-    `;
+    const sql = `INSERT INTO vendedores (nombre, cedula, telefono, direccion) VALUES (?, ?, ?, ?)`;
     const valores = [data.nombre, data.cedula, data.telefono, data.direccion];
-
     const resultado: any = await query(sql, valores);
-
     emitSocketEvent('vendedores:created');
-    return NextResponse.json({ 
-      success: true, 
-      mensaje: 'Vendedor registrado correctamente.',
-      insertId: resultado.insertId 
-    }, { status: 201 });
 
+    const usuario = await getUsuarioFromRequest();
+    await registrarLog({
+      ...usuario, accion: 'crear', modulo: 'Vendedores', entidad_id: resultado.insertId,
+      descripcion: `Creó el vendedor "${data.nombre}" (Cédula: ${data.cedula})`,
+      datos_nuevos: { nombre: data.nombre, cedula: data.cedula, telefono: data.telefono },
+      ip_address: getClientIp(req),
+    });
+
+    return NextResponse.json({ success: true, mensaje: 'Vendedor registrado correctamente.', insertId: resultado.insertId }, { status: 201 });
   } catch (error: any) {
     console.error("Error creando vendedor:", error);
-    if (error.code === 'ER_DUP_ENTRY') {
-        return NextResponse.json({ error: 'Ya existe un vendedor con esta cédula.' }, { status: 409 });
-    }
+    if (error.code === 'ER_DUP_ENTRY') return NextResponse.json({ error: 'Ya existe un vendedor con esta cédula.' }, { status: 409 });
     return NextResponse.json({ error: 'Error interno del servidor.' }, { status: 500 });
   }
 }

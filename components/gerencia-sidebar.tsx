@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   LayoutDashboard, Users, UserCircle, Package, Truck, Receipt,
   Building2, FileText, ShoppingCart, TrendingUp, TrendingDown,
-  Boxes, HardHat, AlertTriangle, LogOut, Eye, ChevronDown, UsersRound
+  Boxes, HardHat, AlertTriangle, LogOut, Eye, ChevronDown, UsersRound, Shield
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -29,6 +29,7 @@ const topItems: MenuItem[] = [
   { id: "alerta", label: "Alertas", icon: AlertTriangle, href: "/gerencia/alerta" },
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/gerencia" },
   { id: "usuarios", label: "Gestión de Usuarios", icon: UsersRound, href: "/gerencia/users" },
+  { id: "auditoria", label: "Auditoría", icon: Shield, href: "/gerencia/audit-log" },
 ];
 
 const groups: MenuGroup[] = [

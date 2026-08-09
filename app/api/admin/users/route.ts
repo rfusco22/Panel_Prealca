@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import { emitSocketEvent } from '@/lib/socket-server';
+import { registrarLog, getUsuarioFromRequest, getClientIp } from '@/lib/audit-log';
 
 export async function GET() {
   try {
@@ -31,6 +32,17 @@ export async function POST(req: Request) {
 
     emitSocketEvent('users:created');
 
+    const usuario = await getUsuarioFromRequest();
+    await registrarLog({
+      ...usuario,
+      accion: 'crear',
+      modulo: 'Usuarios',
+      entidad_id: result.insertId,
+      descripcion: `Creó el usuario "${data.nombre}" con rol ${data.role}`,
+      datos_nuevos: { email: data.email, nombre: data.nombre, role: data.role, estado: data.estado || 'activo' },
+      ip_address: getClientIp(req),
+    });
+
     return NextResponse.json({
       success: true,
       mensaje: 'Usuario creado correctamente',
@@ -52,6 +64,9 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: 'ID de usuario requerido' }, { status: 400 });
     }
 
+    const anterior: any = await query('SELECT id, nombre, email, role, estado FROM users WHERE id = ?', [data.id]);
+    const old = anterior.length > 0 ? anterior[0] : null;
+
     if (data.password) {
       const passwordHash = await bcrypt.hash(data.password, 10);
       await query(
@@ -66,6 +81,18 @@ export async function PUT(req: Request) {
     }
 
     emitSocketEvent('users:updated');
+
+    const usuario = await getUsuarioFromRequest();
+    await registrarLog({
+      ...usuario,
+      accion: 'editar',
+      modulo: 'Usuarios',
+      entidad_id: data.id,
+      descripcion: `Editó el usuario "${data.nombre}"`,
+      datos_anteriores: old ? { nombre: old.nombre, role: old.role, estado: old.estado } : null,
+      datos_nuevos: { nombre: data.nombre, role: data.role, estado: data.estado },
+      ip_address: getClientIp(req),
+    });
 
     return NextResponse.json({ success: true, mensaje: 'Usuario actualizado correctamente' }, { status: 200 });
   } catch (error: any) {
@@ -82,9 +109,23 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: 'ID requerido' }, { status: 400 });
     }
 
+    const anterior: any = await query('SELECT id, nombre, email, role FROM users WHERE id = ?', [id]);
+    const old = anterior.length > 0 ? anterior[0] : null;
+
     await query('DELETE FROM users WHERE id = ?', [id]);
 
     emitSocketEvent('users:deleted');
+
+    const usuario = await getUsuarioFromRequest();
+    await registrarLog({
+      ...usuario,
+      accion: 'eliminar',
+      modulo: 'Usuarios',
+      entidad_id: parseInt(id),
+      descripcion: `Eliminó el usuario "${old?.nombre || id}"`,
+      datos_anteriores: old ? { nombre: old.nombre, email: old.email, role: old.role } : null,
+      ip_address: getClientIp(req),
+    });
 
     return NextResponse.json({ success: true, mensaje: 'Usuario eliminado' }, { status: 200 });
   } catch (error) {
