@@ -28,6 +28,36 @@ export async function POST(request: Request) {
     if (!session.userId) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     const data = await request.json();
     const { tipo, clienteId, productoId, cantidadM3, chofer, unidadId, pedidoId } = data;
+
+    // Validar stock disponible
+    const stockRows: any = await query(`
+      SELECT MIN(
+        CASE 
+          WHEN pf.cantidad = 0 THEN 999999999
+          ELSE (
+            COALESCE(
+              (SELECT SUM(mp.cantidad) FROM materia_prima mp WHERE mp.agregado_id = pf.agregado_id), 0
+            ) - COALESCE(
+              (SELECT SUM(gd.cantidad_m3 * pf2.cantidad) 
+               FROM guia_despacho gd 
+               INNER JOIN producto_formulas pf2 ON pf2.producto_id = gd.producto_id 
+               WHERE pf2.agregado_id = pf.agregado_id), 0
+            )
+          ) / pf.cantidad
+        END
+      ) AS stockDisponible
+      FROM producto_formulas pf
+      WHERE pf.producto_id = ?
+    `, [productoId]);
+
+    const stockDisponible = stockRows.length > 0 ? Number(stockRows[0].stockDisponible) : null;
+    if (stockDisponible !== null && stockDisponible <= 0) {
+      return NextResponse.json({ error: `No hay stock disponible para este producto. Stock actual: ${stockDisponible} M³` }, { status: 400 });
+    }
+    if (stockDisponible !== null && Number(cantidadM3) > stockDisponible) {
+      return NextResponse.json({ error: `La cantidad solicitada (${cantidadM3} M³) excede el stock disponible (${stockDisponible} M³)` }, { status: 400 });
+    }
+
     const result: any = await query(`INSERT INTO guia_despacho (tipo, cliente_id, producto_id, cantidad_m3, chofer, unidad_id, pedido_id, usuario_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, [tipo, clienteId, productoId, cantidadM3, chofer, unidadId || null, pedidoId || null, session.userId]);
 
     if (pedidoId) {

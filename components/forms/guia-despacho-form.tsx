@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Truck, User, Package, Ruler, AlertCircle, Eye, Printer, Loader2 } from 'lucide-react';
+import { Truck, User, Package, Ruler, AlertCircle, Eye, Printer, Loader2, Box } from 'lucide-react';
 import { printDocument, generateGuiaDespachoHtml, generatePrealcaHtml } from '@/lib/document-templates';
 
 const guiaSchema = z.object({
@@ -28,6 +28,7 @@ interface GuiaDespachoFormProps {
   unidades?: Array<{ id: number; nombre: string; tipo: string }>;
   choferes?: Array<{ id: number; nombre: string }>;
   pedidos?: Array<{ id: number; clienteId: number; clienteNombre: string; productoId: number; productoNombre: string; totalM3: number; acumuladoM3: number }>;
+  stockProductos?: Array<{ productoId: number; stockDisponible: number }>;
 }
 
 export function GuiaDespachoForm({
@@ -40,10 +41,31 @@ export function GuiaDespachoForm({
   unidades = [],
   choferes = [],
   pedidos = [],
+  stockProductos = [],
 }: GuiaDespachoFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [tipoMode, setTipoMode] = useState<'Premezclado' | 'Prealca'>('Premezclado');
+  const [stockMap, setStockMap] = useState<Record<number, number>>({});
+
+  useEffect(() => {
+    if (stockProductos.length > 0) {
+      const map: Record<number, number> = {};
+      stockProductos.forEach(s => { map[s.productoId] = s.stockDisponible; });
+      setStockMap(map);
+    } else {
+      fetch('/api/stock')
+        .then(res => res.json())
+        .then(data => {
+          if (data.productos) {
+            const map: Record<number, number> = {};
+            data.productos.forEach((p: any) => { map[p.productoId] = Number(p.stockDisponible); });
+            setStockMap(map);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [stockProductos]);
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm<GuiaFormData>({
     resolver: zodResolver(guiaSchema),
@@ -72,7 +94,19 @@ export function GuiaDespachoForm({
   });
 
   const handleFormSubmit = async (data: GuiaFormData) => {
-    setError(null); setSubmitting(true);
+    setError(null);
+
+    const stock = stockMap[Number(data.productoId)];
+    if (stock !== undefined && stock <= 0) {
+      setError(`No hay stock disponible para este producto. Stock actual: ${stock} M³`);
+      return;
+    }
+    if (stock !== undefined && Number(data.cantidadM3) > stock) {
+      setError(`La cantidad solicitada (${data.cantidadM3} M³) excede el stock disponible (${stock} M³)`);
+      return;
+    }
+
+    setSubmitting(true);
     try {
       await onSubmit({ ...data, tipo: tipoMode, total: 0, ivaMonto: 0 });
     } catch (err) {
@@ -211,6 +245,17 @@ export function GuiaDespachoForm({
                   </select>
                 </div>
                 {errors.productoId && <p className={errorCls}><AlertCircle size={12} />{errors.productoId.message}</p>}
+                {Number(productoId) > 0 && stockMap[Number(productoId)] !== undefined && (
+                  <div className={`mt-1.5 flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg ${
+                    stockMap[Number(productoId)] <= 0 ? 'bg-red-50 text-red-600' :
+                    stockMap[Number(productoId)] < 50 ? 'bg-amber-50 text-amber-600' :
+                    'bg-emerald-50 text-emerald-600'
+                  }`}>
+                    <Box size={12} />
+                    Stock disponible: {stockMap[Number(productoId)]} M³
+                    {stockMap[Number(productoId)] <= 0 && ' — AGOTADO'}
+                  </div>
+                )}
               </div>
               <div>
                 <label className={labelCls}>Unidad de Transporte</label>
