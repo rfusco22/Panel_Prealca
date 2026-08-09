@@ -153,17 +153,17 @@ export default function GerenciaAuditLogPage() {
       <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-4">
         <div className="flex-1">
           <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Buscar</label>
-          <input type="text" value={busqueda} onChange={e => setBusqueda(e.target.value)} placeholder="Buscar por descripción, usuario..." className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-violet-400" />
+          <input type="text" value={busqueda} onChange={e => setBusqueda(e.target.value)} placeholder="Buscar por descripción, usuario..." className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-violet-400 bg-white" />
         </div>
         <div className="flex-1">
           <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Módulo</label>
-          <select value={filtroModulo} onChange={e => setFiltroModulo(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-violet-400">
+          <select value={filtroModulo} onChange={e => setFiltroModulo(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-violet-400 bg-white">
             {MODULOS.map(m => <option key={m} value={m}>{m}</option>)}
           </select>
         </div>
         <div className="flex-1">
           <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Acción</label>
-          <select value={filtroAccion} onChange={e => setFiltroAccion(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-violet-400">
+          <select value={filtroAccion} onChange={e => setFiltroAccion(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-violet-400 bg-white">
             {ACCIONES.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
           </select>
         </div>
