@@ -28,7 +28,7 @@ export default function GerenciaLayout({ children }: { children: React.ReactNode
   }
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
+    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans" style={{ colorScheme: 'light' }}>
       <GerenciaSidebar userRole={session.user.role} userName={session.user.nombre} isCollapsed={isCollapsed} />
       <div className="flex-1 flex flex-col overflow-hidden relative">
         <TopBar userRole={session.user.role} isCollapsed={isCollapsed} onToggleSidebar={() => setIsCollapsed(!isCollapsed)} />

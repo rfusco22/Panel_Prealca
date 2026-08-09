@@ -28,7 +28,7 @@ export default function RegistroLayout({ children }: { children: React.ReactNode
   }
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
+    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans" style={{ colorScheme: 'light' }}>
       <RegistroSidebar userRole={session.user.role} isCollapsed={isCollapsed} />
       <div className="flex-1 flex flex-col overflow-hidden relative">
         <TopBar userRole={session.user.role} isCollapsed={isCollapsed} onToggleSidebar={() => setIsCollapsed(!isCollapsed)} />
