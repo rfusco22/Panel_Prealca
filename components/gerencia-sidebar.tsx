@@ -74,9 +74,11 @@ const groups: MenuGroup[] = [
 
 export function GerenciaSidebar({
   userRole,
+  userName,
   isCollapsed,
 }: {
   userRole: string;
+  userName: string;
   isCollapsed: boolean;
 }) {
   const pathname = usePathname();
@@ -129,7 +131,7 @@ export function GerenciaSidebar({
         <nav className="flex-1 px-4 space-y-1 mt-6 overflow-y-auto overflow-x-hidden">
           {!isCollapsed && (
             <p className="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4 whitespace-nowrap">
-              Solo Consulta
+              {userName}
             </p>
           )}
 
@@ -227,8 +229,8 @@ export function GerenciaSidebar({
             </div>
             {!isCollapsed && (
               <div className="flex-1 overflow-hidden whitespace-nowrap">
-                <p className="text-sm font-bold text-white truncate">Gerencia</p>
-                <p className={`text-[10px] ${accentColor} uppercase font-bold tracking-wider`}>Solo Consulta</p>
+                <p className="text-sm font-bold text-white truncate">{userName}</p>
+                <p className={`text-[10px] ${accentColor} uppercase font-bold tracking-wider`}>{userRole}</p>
               </div>
             )}
           </div>
