@@ -63,7 +63,7 @@ export function TopBar({ userRole = 'admin', onToggleSidebar }: TopBarProps) {
         <div className="flex items-center gap-4">
           <div className="text-right hidden sm:block">
             <p className="text-sm text-gray-500 capitalize font-medium">
-              {userRole === 'admin' ? 'Administrador' : userRole}
+              {userRole === 'admin' ? 'Administrador' : userRole === 'gerencia' ? 'Gerencia' : userRole}
             </p>
           </div>
 

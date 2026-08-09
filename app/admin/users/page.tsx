@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import {
   Plus, X, Users, Loader2, Trash2, Edit2, AlertCircle, CheckCircle2,
-  Shield, UserCircle, FileText, Clock, Mail, Key
+  Shield, UserCircle, FileText, Clock, Mail, Key, Eye
 } from "lucide-react";
 import { useSocket } from '@/contexts/SocketContext';
 
@@ -21,6 +21,7 @@ const ROLES = [
   { value: "admin", label: "Administrador", icon: Shield, color: "text-red-600", bg: "bg-red-50" },
   { value: "registro", label: "Registro", icon: UserCircle, color: "text-blue-600", bg: "bg-blue-50" },
   { value: "dosificador", label: "Dosificador", icon: FileText, color: "text-emerald-600", bg: "bg-emerald-50" },
+  { value: "gerencia", label: "Gerencia", icon: Eye, color: "text-violet-600", bg: "bg-violet-50" },
 ];
 
 export default function AdminUsersPage() {

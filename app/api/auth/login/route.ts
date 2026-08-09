@@ -48,7 +48,7 @@ export async function POST(req: Request) {
 
     await query('UPDATE users SET last_login = NOW() WHERE id = ?', [user.id]);
 
-    const redirectPath = user.role === 'admin' ? '/admin' : user.role === 'dosificador' ? '/dosificador' : '/registro';
+    const redirectPath = user.role === 'admin' ? '/admin' : user.role === 'dosificador' ? '/dosificador' : user.role === 'gerencia' ? '/gerencia' : '/registro';
 
     return NextResponse.json({
       success: true,

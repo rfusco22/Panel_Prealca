@@ -22,7 +22,7 @@ export const users = mysqlTable('users', {
   email: varchar('email', { length: 255 }).notNull().unique(),
   passwordHash: text('password_hash').notNull(),
   nombre: varchar('nombre', { length: 255 }).notNull(),
-  role: mysqlEnum('role', ['admin', 'registro', 'dosificador']).notNull().default('registro'),
+  role: mysqlEnum('role', ['admin', 'registro', 'dosificador', 'gerencia']).notNull().default('registro'),
   estado: varchar('estado', { length: 50 }).default('activo'),
   createdAt: datetime('created_at').default(sql`CURRENT_TIMESTAMP`),
   updatedAt: datetime('updated_at').$onUpdateFn(() => sql`CURRENT_TIMESTAMP`),

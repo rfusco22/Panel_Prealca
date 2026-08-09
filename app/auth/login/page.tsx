@@ -27,7 +27,7 @@ export default function LoginPage() {
   className="absolute inset-0 z-0 w-full h-full object-cover pointer-events-none select-none"
   preload="auto" // Forzamos la precarga
 >
-  <source src="/login2.mp4" type="video/mp4" />
+  <source src="/bg-login.mp4" type="video/mp4" />
 </video>
 
         {/* CAPA DE DEGRADADO SUTIL: Añade un acabado premium de iluminación */}
