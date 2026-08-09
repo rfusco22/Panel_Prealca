@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { LogOut, Menu, Globe, ChevronDown } from "lucide-react";
+import { LogOut, Menu } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
@@ -52,13 +52,6 @@ export function TopBar({ userRole = 'admin', onToggleSidebar }: TopBarProps) {
       {/* Lado Derecho */}
       <div className="flex items-center gap-6">
         
-        {/* Selector de Idioma (Visualmente idéntico al de Supricom) */}
-        <div className="hidden sm:flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors">
-          <Globe size={18} className="text-gray-600" />
-          <span>Español</span>
-          <ChevronDown size={16} className="text-gray-400" />
-        </div>
-
         {/* Info de Usuario y Logout */}
         <div className="flex items-center gap-4">
           <div className="text-right hidden sm:block">
