@@ -44,8 +44,8 @@ export default function LoginPage() {
         </div>
 
         {/* Marcador inferior de pie de página industrial */}
-        <div className="absolute bottom-6 left-12 right-12 z-20 flex justify-between text-[10px] font-mono text-zinc-400 tracking-widest bg-white/90 border border-zinc-200/60 backdrop-blur-xs px-4 py-1.5 rounded-xl shadow-xs">
-          <span>SISTEMA DE GESTIÓN DE MEZCLAS</span>
+        <div className="absolute bottom-6 left-12 right-12 z-20 flex justify-between text-[10px] font-mono text-zinc-800 tracking-widest bg-white/90 border border-zinc-200/60 backdrop-blur-xs px-4 py-1.5 rounded-xl shadow-xs">
+          <span>SISTEMA ADMINISTRATIVO</span>
           <span>© {new Date().getFullYear()} PREALCA C.A.</span>
         </div>
       </div>
@@ -59,11 +59,11 @@ export default function LoginPage() {
         <div className="w-full max-w-md my-auto space-y-8 relative z-10 animate-fade-in-up duration-500">
           
           {/* Cabecera de bienvenida al portal */}
-          <div className="space-y-3 text-center">
+          <div className="space-y-4 text-center">
             
             {/* LOGO PARA DISPOSITIVOS QUE NO MUESTRAN LA COLUMNA DE VIDEO (Móvil e iPad Pro) */}
-            <div className="xl:hidden flex flex-col items-center mb-8">
-              <div className="relative w-44 h-44 bg-white p-5 rounded-[2rem] border border-zinc-100 shadow-[0_20px_50px_rgba(0,0,0,0.05)] flex items-center justify-center transition-transform duration-300 hover:scale-105">
+            <div className="xl:hidden flex flex-col items-center mb-6">
+              <div className="relative w-36 h-36 bg-white p-4 rounded-3xl border border-zinc-100 shadow-2xl flex items-center justify-center transition-transform duration-300 hover:scale-105">
                 <Image
                   src={logoPrealca}
                   alt="PREALCA"
@@ -71,14 +71,13 @@ export default function LoginPage() {
                   className="object-contain max-w-full max-h-full h-auto w-auto"
                 />
               </div>
-              <div className="h-1 w-14 bg-red-600 rounded-full mt-4" />
             </div>
 
-            <h1 className="text-3xl sm:text-4xl font-black text-zinc-900 tracking-tight uppercase">
+            <h1 className="text-4xl sm:text-5xl font-black text-zinc-900 tracking-tight uppercase">
               Iniciar Sesión
             </h1>
-            <p className="text-sm text-zinc-500 font-medium">
-              ¡Hola! Bienvenido a tu Portal de Gestión <span className="text-red-600 font-bold tracking-wide">PREALCA</span>
+            <p className="text-base text-zinc-500 font-medium">
+              Bienvenido al <span className="text-red-600 font-bold tracking-wide">Portal Administrativo</span>
             </p>
           </div>
 
