@@ -52,43 +52,44 @@ async function fetchBCVEuro(): Promise<Tasa | null> {
   }
 }
 
-async function fetchUSDTPrice(): Promise<number> {
+async function fetchUSDTVES(): Promise<Tasa | null> {
   try {
-    const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=usd', { cache: 'no-store' });
-    if (!res.ok) throw new Error('CoinGecko error');
-    const data = await res.json();
-    return Number(data?.tether?.usd) || 1.0;
+    const res = await fetch('https://www.usdt.com.ve/api/v1/rates/current', { cache: 'no-store' });
+    if (!res.ok) throw new Error('USDT.com.ve API error');
+    const json = await res.json();
+    if (!json.success || !json.data?.binance) return null;
+
+    const { binance } = json.data;
+    const compra = Number(binance.buy_rate) || 0;
+    const venta = Number(binance.sell_rate) || 0;
+
+    if (compra <= 0 && venta <= 0) return null;
+
+    const promedio = compra > 0 && venta > 0
+      ? Math.round(((compra + venta) / 2) * 100) / 100
+      : compra || venta;
+
+    return {
+      moneda: 'USDT',
+      nombre: 'USDT/Tether',
+      compra: Math.round(compra * 100) / 100,
+      venta: Math.round(venta * 100) / 100,
+      promedio,
+      fuente: 'Binance P2P (usdt.com.ve)',
+      fecha: json.data.captured_at || new Date().toISOString(),
+    };
   } catch {
-    return 1.0;
+    return null;
   }
-}
-
-function fetchUSDTVES(usdtUsd: number, dolarVenta: number): Tasa | null {
-  if (usdtUsd <= 0 || dolarVenta <= 0) return null;
-
-  const promedio = Math.round(usdtUsd * dolarVenta * 100) / 100;
-
-  return {
-    moneda: 'USDT',
-    nombre: 'USDT/Tether',
-    compra: promedio,
-    venta: promedio,
-    promedio,
-    fuente: 'CoinGecko + BCV',
-    fecha: new Date().toISOString(),
-  };
 }
 
 export async function GET() {
   try {
-    const [dolar, euro, usdtUsd] = await Promise.all([
+    const [dolar, euro, usdt] = await Promise.all([
       fetchBCVDolar(),
       fetchBCVEuro(),
-      fetchUSDTPrice(),
+      fetchUSDTVES(),
     ]);
-
-    const dolarVenta = dolar?.venta || 0;
-    const usdt: Tasa | null = fetchUSDTVES(usdtUsd, dolarVenta);
 
     const tasas = [dolar, euro, usdt].filter((t): t is Tasa => t !== null && t.promedio > 0);
 
