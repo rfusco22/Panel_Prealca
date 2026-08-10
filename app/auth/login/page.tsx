@@ -77,7 +77,7 @@ export default function LoginPage() {
               Iniciar Sesión
             </h1>
             <p className="text-base text-zinc-500 font-medium">
-              Hola Bienvenido al sistema administrativo de <span className="text-red-600 font-bold tracking-wide">PREALCA</span>
+              ¡Hola! Bienvenido al Sistema Administrativo de <span className="text-red-600 font-bold tracking-wide">PREALCA</span>
             </p>
           </div>
 
