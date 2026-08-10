@@ -199,16 +199,22 @@ export default function BrechaCambiariaContent() {
                       <p className="text-3xl font-black text-slate-900 transition-all duration-300">Bs. {tasa.promedio.toFixed(2)}</p>
                       <p className="text-xs text-slate-400 mt-1">Promedio</p>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="bg-slate-50 rounded-xl p-3 text-center">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase">Compra</p>
-                        <p className="text-lg font-bold text-slate-700">Bs. {tasa.compra.toFixed(2)}</p>
+                    {(tasa.compra > 0 || tasa.venta > 0) && (
+                      <div className="grid grid-cols-2 gap-3">
+                        {tasa.compra > 0 && (
+                          <div className="bg-slate-50 rounded-xl p-3 text-center">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase">Compra</p>
+                            <p className="text-lg font-bold text-slate-700">Bs. {tasa.compra.toFixed(2)}</p>
+                          </div>
+                        )}
+                        {tasa.venta > 0 && (
+                          <div className="bg-slate-50 rounded-xl p-3 text-center">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase">Venta</p>
+                            <p className="text-lg font-bold text-slate-700">Bs. {tasa.venta.toFixed(2)}</p>
+                          </div>
+                        )}
                       </div>
-                      <div className="bg-slate-50 rounded-xl p-3 text-center">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase">Venta</p>
-                        <p className="text-lg font-bold text-slate-700">Bs. {tasa.venta.toFixed(2)}</p>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               );
