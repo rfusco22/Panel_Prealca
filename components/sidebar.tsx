@@ -15,7 +15,8 @@ import {
   TrendingDown,
   Warehouse,
   Boxes,
-  ShoppingCart
+  ShoppingCart,
+  ArrowLeftRight
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -23,6 +24,7 @@ import Image from "next/image";
 
 const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/admin" },
+  { id: "brecha", label: "Brecha Cambiaria", icon: ArrowLeftRight, href: "/admin/brecha-cambiaria" },
   { id: "ingresos", label: "Ingresos", icon: TrendingUp, href: "/admin/ingresos" },
   { id: "egresos", label: "Egresos", icon: TrendingDown, href: "/admin/egresos" },
   { id: "productos", label: "Productos", icon: Package, href: "/admin/productos" },
