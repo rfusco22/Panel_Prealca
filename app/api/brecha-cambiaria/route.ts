@@ -56,14 +56,17 @@ async function fetchBinanceP2P(fiat: string = 'VES', tradeType: string = 'BUY'):
   try {
     const response = await fetch('https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'Mozilla/5.0',
+      },
       body: JSON.stringify({
         fiat,
         page: 1,
         rows: 1,
         tradeType,
         asset: 'USDT',
-        countries: [],
+        payTypes: [],
         proMerchantAds: false,
         shieldMerchantAds: false,
         publisherType: null,
