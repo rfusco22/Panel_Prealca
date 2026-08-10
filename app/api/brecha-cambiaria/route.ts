@@ -52,74 +52,43 @@ async function fetchBCVEuro(): Promise<Tasa | null> {
   }
 }
 
-async function fetchBinanceP2P(fiat: string = 'VES', tradeType: string = 'BUY'): Promise<number> {
+async function fetchUSDTPrice(): Promise<number> {
   try {
-    const response = await fetch('https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'User-Agent': 'Mozilla/5.0',
-      },
-      body: JSON.stringify({
-        fiat,
-        page: 1,
-        rows: 1,
-        tradeType,
-        asset: 'USDT',
-        payTypes: [],
-        proMerchantAds: false,
-        shieldMerchantAds: false,
-        publisherType: null,
-      }),
-      cache: 'no-store',
-    });
-
-    if (!response.ok) throw new Error('Binance P2P error');
-    const data = await response.json();
-
-    if (data.data && data.data.length > 0) {
-      return Number(data.data[0].adv.price) || 0;
-    }
-    return 0;
+    const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=usd', { cache: 'no-store' });
+    if (!res.ok) throw new Error('CoinGecko error');
+    const data = await res.json();
+    return Number(data?.tether?.usd) || 1.0;
   } catch {
-    return 0;
+    return 1.0;
   }
 }
 
-async function fetchBinanceUSDT(): Promise<Tasa | null> {
-  try {
-    const [precioCompra, precioVenta] = await Promise.all([
-      fetchBinanceP2P('VES', 'BUY'),
-      fetchBinanceP2P('VES', 'SELL'),
-    ]);
+function fetchUSDTVES(usdtUsd: number, dolarVenta: number): Tasa | null {
+  if (usdtUsd <= 0 || dolarVenta <= 0) return null;
 
-    if (precioCompra === 0 && precioVenta === 0) return null;
+  const promedio = Math.round(usdtUsd * dolarVenta * 100) / 100;
 
-    const promedio = precioCompra > 0 && precioVenta > 0
-      ? (precioCompra + precioVenta) / 2
-      : precioCompra || precioVenta;
-
-    return {
-      moneda: 'USDT',
-      nombre: 'USDT Binance',
-      compra: Math.round(precioCompra * 100) / 100,
-      venta: Math.round(precioVenta * 100) / 100,
-      promedio: Math.round(promedio * 100) / 100,
-      fuente: 'Binance P2P',
-      fecha: new Date().toISOString(),
-    };
-  } catch {
-    return null;
-  }
+  return {
+    moneda: 'USDT',
+    nombre: 'USDT/Tether',
+    compra: promedio,
+    venta: promedio,
+    promedio,
+    fuente: 'CoinGecko + BCV',
+    fecha: new Date().toISOString(),
+  };
 }
 
 export async function GET() {
   try {
-    const [dolar, euro, usdt] = await Promise.all([
+    const [dolar, euro, usdtUsd] = await Promise.all([
       fetchBCVDolar(),
       fetchBCVEuro(),
-      fetchBinanceUSDT(),
+      fetchUSDTPrice(),
     ]);
+
+    const dolarVenta = dolar?.venta || 0;
+    const usdt: Tasa | null = fetchUSDTVES(usdtUsd, dolarVenta);
 
     const tasas = [dolar, euro, usdt].filter((t): t is Tasa => t !== null && t.promedio > 0);
 
