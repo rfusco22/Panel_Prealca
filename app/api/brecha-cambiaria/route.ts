@@ -52,57 +52,57 @@ async function fetchBCVEuro(): Promise<Tasa | null> {
   }
 }
 
+async function fetchBinanceP2P(fiat: string = 'VES', tradeType: string = 'BUY'): Promise<number> {
+  try {
+    const response = await fetch('https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fiat,
+        page: 1,
+        rows: 1,
+        tradeType,
+        asset: 'USDT',
+        countries: [],
+        proMerchantAds: false,
+        shieldMerchantAds: false,
+        publisherType: null,
+      }),
+      cache: 'no-store',
+    });
+
+    if (!response.ok) throw new Error('Binance P2P error');
+    const data = await response.json();
+
+    if (data.data && data.data.length > 0) {
+      return Number(data.data[0].adv.price) || 0;
+    }
+    return 0;
+  } catch {
+    return 0;
+  }
+}
+
 async function fetchBinanceUSDT(): Promise<Tasa | null> {
   try {
-    // Obtener precio de USDT en USD desde Binance
-    const res = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=USDCUSDT', { cache: 'no-store' });
-    if (!res.ok) throw new Error('Binance USDC/USDT error');
-    const data = await res.json();
-    const usdtEnUsd = Number(data.price) || 1;
+    const [precioCompra, precioVenta] = await Promise.all([
+      fetchBinanceP2P('VES', 'BUY'),
+      fetchBinanceP2P('VES', 'SELL'),
+    ]);
 
-    // Obtener tasa paralela de dólar (dólar paralelo suele ser ~10-15% más alto que BCV)
-    // Usamos dolarapi para obtener el dólar paralelo
-    let tasaParalela = 0;
-    try {
-      const resParalelo = await fetch('https://ve.dolarapi.com/v1/dolares', { cache: 'no-store' });
-      if (resParalelo.ok) {
-        const dataParalelo = await resParalelo.json();
-        if (Array.isArray(dataParalelo)) {
-          // Buscar dólar paralelo (no oficial)
-          const paralelo = dataParalelo.find((d: any) => d.nombre?.toLowerCase().includes('paralelo') || d.fuente?.toLowerCase().includes('paralelo'));
-          if (paralelo) {
-            tasaParalela = Number(paralelo.promedio) || Number(paralelo.venta) || 0;
-          }
-          // Si no hay paralelo, usar el más alto disponible
-          if (!tasaParalela && dataParalelo.length > 0) {
-            const mayor = dataParalelo.reduce((max: any, d: any) => (Number(d.promedio) || 0) > (Number(max.promedio) || 0) ? d : max, dataParalelo[0]);
-            tasaParalela = Number(mayor.promedio) || Number(mayor.venta) || 0;
-          }
-        }
-      }
-    } catch {}
+    if (precioCompra === 0 && precioVenta === 0) return null;
 
-    // Si no hay tasa paralela, usar la oficial
-    if (!tasaParalela) {
-      const resOficial = await fetch('https://ve.dolarapi.com/v1/dolares/oficial', { cache: 'no-store' });
-      if (resOficial.ok) {
-        const dataOficial = await resOficial.json();
-        tasaParalela = Number(dataOficial.promedio) || Number(dataOficial.venta) || 0;
-      }
-    }
-
-    if (!tasaParalela) return null;
-
-    // USDT/VES = USDT/USD * USD/VES(paralelo)
-    const precioUSDT = usdtEnUsd * tasaParalela;
+    const promedio = precioCompra > 0 && precioVenta > 0
+      ? (precioCompra + precioVenta) / 2
+      : precioCompra || precioVenta;
 
     return {
       moneda: 'USDT',
       nombre: 'USDT Binance',
-      compra: Math.round(precioUSDT * 100) / 100,
-      venta: Math.round(precioUSDT * 100) / 100,
-      promedio: Math.round(precioUSDT * 100) / 100,
-      fuente: 'Binance + Paralelo',
+      compra: Math.round(precioCompra * 100) / 100,
+      venta: Math.round(precioVenta * 100) / 100,
+      promedio: Math.round(promedio * 100) / 100,
+      fuente: 'Binance P2P',
       fecha: new Date().toISOString(),
     };
   } catch {
