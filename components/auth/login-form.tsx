@@ -1,11 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 
 export function LoginForm() {
-  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -84,17 +81,9 @@ export function LoginForm() {
 
       {/* Input de Contraseña */}
       <div className="space-y-1.5 group">
-        <div className="flex justify-between items-center">
-          <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-500">
-            Contraseña
-          </label>
-          <Link 
-            href="/auth/forget" 
-            className="text-xs font-semibold text-zinc-400 hover:text-red-600 transition-colors"
-          >
-            ¿La olvidaste?
-          </Link>
-        </div>
+        <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-500">
+          Contraseña
+        </label>
         <div className="relative">
           <input
             type="password"
@@ -106,28 +95,6 @@ export function LoginForm() {
             className="w-full h-12 px-4 rounded-xl border border-zinc-200 bg-zinc-50/50 text-sm font-medium transition-all outline-none placeholder:text-zinc-400 focus:bg-white focus:border-red-500 focus:ring-4 focus:ring-red-500/10 disabled:opacity-60"
           />
         </div>
-      </div>
-
-      {/* Recordar sesión Checkbox */}
-      <div className="flex items-center space-x-2 py-1">
-        <input
-          type="checkbox"
-          id="remember"
-          className="w-4 h-4 rounded border-zinc-300 text-red-600 focus:ring-red-500/20 accent-red-500 cursor-pointer"
-        />
-        <label htmlFor="remember" className="text-xs font-medium text-zinc-500 cursor-pointer select-none">
-          Mantener sesión activa en esta estación
-        </label>
-      </div>
-
-      {/* Botón de Registro */}
-      <div className="pt-2">
-        <Link
-          href="/auth/registro"
-          className="w-full h-12 flex items-center justify-center border-2 border-zinc-200 text-zinc-600 font-bold text-sm tracking-wide uppercase rounded-xl transition-all duration-300 hover:border-zinc-300 hover:bg-zinc-50 active:scale-[0.99]"
-        >
-          ¿No tienes cuenta? Regístrate
-        </Link>
       </div>
 
       {/* Botón de Envío Súper Animado */}
