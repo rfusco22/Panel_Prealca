@@ -17,7 +17,15 @@ export default function MateriaPrimaPage() {
   const [form, setForm] = useState({
     agregado_id: "",
     cantidad: "",
+    fecha: new Date().toISOString().split("T")[0],
   });
+
+  const getMaxDate = () => new Date().toISOString().split("T")[0];
+  const getMinDate = () => {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    return d.toISOString().split("T")[0];
+  };
 
   const getUnidadByAgregado = (id: string) => {
     const agg = agregados.find((a: any) => String(a.id) === id);
@@ -74,6 +82,7 @@ export default function MateriaPrimaPage() {
           agregado_id: parseInt(form.agregado_id),
           cantidad: parseFloat(form.cantidad),
           unidad: getUnidadByAgregado(form.agregado_id),
+          fecha: form.fecha,
           usuario_id: 1,
         }),
       });
@@ -85,7 +94,7 @@ export default function MateriaPrimaPage() {
       setTimeout(() => {
         setShowSuccess(false);
         setIsModalOpen(false);
-        setForm({ agregado_id: "", cantidad: "" });
+        setForm({ agregado_id: "", cantidad: "", fecha: new Date().toISOString().split("T")[0] });
         fetchData();
       }, 1500);
     } catch (err: any) {
@@ -201,6 +210,19 @@ export default function MateriaPrimaPage() {
                     <option key={a.id} value={a.id}>{a.nombre} — {a.unidadMedida || a.unidad_medida}</option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className={labelCls}>Fecha *</label>
+                <input
+                  type="date"
+                  required
+                  value={form.fecha}
+                  min={getMinDate()}
+                  max={getMaxDate()}
+                  onChange={(e) => setForm({ ...form, fecha: e.target.value })}
+                  className={inputCls}
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
