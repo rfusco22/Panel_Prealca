@@ -16,7 +16,11 @@ import {
   Warehouse,
   Boxes,
   ShoppingCart,
-  ArrowLeftRight
+  ArrowLeftRight,
+  AlertTriangle,
+  HardHat,
+  UserCircle,
+  FileText
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -24,12 +28,22 @@ import Image from "next/image";
 
 const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/admin" },
+  { id: "alerta", label: "Alertas", icon: AlertTriangle, href: "/registro/alerta" },
   { id: "brecha", label: "Brecha Cambiaria", icon: ArrowLeftRight, href: "/admin/brecha-cambiaria" },
   { id: "ingresos", label: "Ingresos", icon: TrendingUp, href: "/admin/ingresos" },
   { id: "egresos", label: "Egresos", icon: TrendingDown, href: "/admin/egresos" },
   { id: "productos", label: "Productos", icon: Package, href: "/admin/productos" },
   { id: "stock", label: "Inventario por Producto", icon: Boxes, href: "/admin/stock" },
   { id: "pedidos", label: "Pedidos", icon: ShoppingCart, href: "/admin/pedidos" },
+  { id: "materia-prima", label: "Materia Prima", icon: Package, href: "/dosificador/materia-prima" },
+  { id: "guias", label: "Guías de Despacho", icon: FileText, href: "/dosificador/guia-despacho" },
+  { id: "choferes", label: "Choferes", icon: HardHat, href: "/registro/choferes" },
+  { id: "proveedores", label: "Proveedores", icon: Users, href: "/registro/proveedores" },
+  { id: "clientes", label: "Clientes", icon: Users, href: "/registro/clientes" },
+  { id: "vendedores", label: "Vendedores", icon: UserCircle, href: "/registro/vendedores" },
+  { id: "bancos", label: "Bancos", icon: Building2, href: "/registro/bancos" },
+  { id: "facturas", label: "Facturas", icon: FileText, href: "/registro/facturas" },
+  { id: "ordenes", label: "Órdenes de Compra", icon: ShoppingCart, href: "/registro/ordenes-compra" },
   { id: "unidades", label: "Unidades", icon: Truck, href: "/admin/unidades" },
   { id: "retenciones", label: "Retenciones", icon: Receipt, href: "/admin/retenciones" },
   { id: "reportes", label: "Reportes", icon: PieChart, href: "/admin/reportes" },
