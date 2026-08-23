@@ -643,209 +643,192 @@ export default function AdminUnidadesPage() {
         )}
       </div>
 
-      {/* --- MODAL PREMIUM (MAX-W-2XL) --- */}
+      {/* --- MODAL --- */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:px-4">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={cerrarModal}></div>
 
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-visible animate-in zoom-in-95 duration-200">
+          <div className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-2xl max-h-[95vh] sm:max-h-[90vh] flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-200">
             
-            {/* Header del Modal */}
-            <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
+            {/* Header */}
+            <div className="px-5 sm:px-8 py-5 sm:py-6 border-b border-slate-100 flex items-center justify-between shrink-0">
               <div>
-                <h3 className="text-xl font-bold text-slate-900">
+                <h3 className="text-lg sm:text-xl font-bold text-slate-900">
                   {isEditing ? 'Editar unidad' : 'Añadir nueva unidad'}
                 </h3>
-                <p className="text-sm text-slate-500 mt-1">
+                <p className="text-xs sm:text-sm text-slate-500 mt-1">
                   {isEditing ? 'Modifica los datos del vehículo.' : 'Registra el detalle de un nuevo vehículo en la flota.'}
                 </p>
               </div>
-              <button onClick={cerrarModal} className="text-slate-400 hover:text-slate-700 hover:bg-slate-100 p-2 rounded-full transition-colors">
-                <X size={24} />
+              <button onClick={cerrarModal} className="text-slate-400 hover:text-slate-700 hover:bg-slate-100 p-2 rounded-full transition-colors shrink-0">
+                <X size={20} />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-8 space-y-6">
-              
-              {/* FILA 1: N° Unidad y Placa */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
-                    <Hash className="w-4 h-4 text-slate-400" />
-                    Número de Unidad
-                  </label>
-                  <input
-                    type="text"
-                    name="numeroUnidad"
-                    required
-                    placeholder="Ej: 01, U-05..."
-                    value={formData.numeroUnidad}
-                    onChange={handleInputChange}
-                    className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 transition-all text-base font-bold text-slate-900 shadow-sm placeholder:text-slate-400"
-                  />
-                </div>
-
-                <div className="space-y-2.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
-                    <Tag className="w-4 h-4 text-slate-400" />
-                    Placa
-                  </label>
-                  <input
-                    type="text"
-                    name="placa"
-                    required
-                    placeholder="Ej: A12B34C"
-                    value={formData.placa}
-                    onChange={handleInputChange}
-                    className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-mono tracking-widest text-base text-blue-600 font-bold shadow-sm placeholder:text-slate-400 placeholder:font-sans placeholder:font-normal uppercase"
-                  />
-                </div>
-              </div>
-
-              {/* FILA 2: Marca y Modelo */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
-                    <Truck className="w-4 h-4 text-slate-400" />
-                    Marca
-                  </label>
-                  <input
-                    type="text"
-                    name="marca"
-                    required
-                    placeholder="Ej: Chevrolet, Toyota..."
-                    value={formData.marca}
-                    onChange={handleInputChange}
-                    className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 transition-all text-base font-medium text-slate-900 shadow-sm placeholder:text-slate-400"
-                  />
-                </div>
-
-                <div className="space-y-2.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
-                    <Car className="w-4 h-4 text-slate-400" />
-                    Modelo
-                  </label>
-                  <input
-                    type="text"
-                    name="modelo"
-                    required
-                    placeholder="Ej: NPR, Hilux..."
-                    value={formData.modelo}
-                    onChange={handleInputChange}
-                    className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 transition-all text-base font-medium text-slate-900 shadow-sm placeholder:text-slate-400"
-                  />
-                </div>
-              </div>
-
-              {/* FILA 3: Año y Color */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-slate-400" />
-                    Año
-                  </label>
-                  <input
-                    type="text"
-                    name="ano"
-                    required
-                    placeholder="Ej: 2018"
-                    value={formData.ano}
-                    onChange={handleInputChange}
-                    className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 transition-all text-base font-mono text-slate-900 shadow-sm placeholder:text-slate-400 placeholder:font-sans"
-                  />
-                </div>
-
-                <div className="space-y-2.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
-                    <Palette className="w-4 h-4 text-slate-400" />
-                    Color
-                  </label>
-                  <input
-                    type="text"
-                    name="color"
-                    required
-                    placeholder="Ej: Blanco, Rojo..."
-                    value={formData.color}
-                    onChange={handleInputChange}
-                    className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 transition-all text-base font-medium text-slate-900 shadow-sm placeholder:text-slate-400"
-                  />
-                </div>
-              </div>
-
-              {/* FILA 4: Póliza RCV */}
-              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-4">
-                <h5 className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">Póliza RCV</h5>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Número de Póliza</label>
-                    <input
-                      type="text"
-                      name="polizaRcvNumero"
-                      placeholder="Nro. póliza RCV"
-                      value={formData.polizaRcvNumero}
-                      onChange={handleInputChange}
-                      className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 transition-all text-base font-medium text-slate-900 shadow-sm placeholder:text-slate-400"
-                    />
-                  </div>
-                  <div className="space-y-2.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Fecha Vencimiento</label>
-                    <input
-                      type="date"
-                      name="polizaRcvVencimiento"
-                      value={formData.polizaRcvVencimiento}
-                      onChange={handleInputChange}
-                      className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 transition-all text-base font-medium text-slate-900 shadow-sm"
-                    />
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
+              <div className="p-5 sm:p-8 space-y-5 sm:space-y-6">
+                
+                {/* Datos del vehículo */}
+                <div>
+                  <h4 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-3">Datos del vehículo</h4>
+                  <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                    <div className="col-span-2 sm:col-span-1 space-y-1.5">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">N° Unidad *</label>
+                      <input
+                        type="text"
+                        name="numeroUnidad"
+                        required
+                        placeholder="01, U-05..."
+                        value={formData.numeroUnidad}
+                        onChange={handleInputChange}
+                        className="w-full px-3 sm:px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 transition-all shadow-sm placeholder:text-slate-400"
+                      />
+                    </div>
+                    <div className="col-span-2 sm:col-span-1 space-y-1.5">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Placa *</label>
+                      <input
+                        type="text"
+                        name="placa"
+                        required
+                        placeholder="A12B34C"
+                        value={formData.placa}
+                        onChange={handleInputChange}
+                        className="w-full px-3 sm:px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-mono font-bold text-blue-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all shadow-sm placeholder:text-slate-400 placeholder:font-sans placeholder:font-normal uppercase tracking-wider"
+                      />
+                    </div>
+                    <div className="col-span-2 sm:col-span-1 space-y-1.5">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Marca *</label>
+                      <input
+                        type="text"
+                        name="marca"
+                        required
+                        placeholder="Chevrolet, Toyota..."
+                        value={formData.marca}
+                        onChange={handleInputChange}
+                        className="w-full px-3 sm:px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 transition-all shadow-sm placeholder:text-slate-400"
+                      />
+                    </div>
+                    <div className="col-span-2 sm:col-span-1 space-y-1.5">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Modelo *</label>
+                      <input
+                        type="text"
+                        name="modelo"
+                        required
+                        placeholder="NPR, Hilux..."
+                        value={formData.modelo}
+                        onChange={handleInputChange}
+                        className="w-full px-3 sm:px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 transition-all shadow-sm placeholder:text-slate-400"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Año *</label>
+                      <input
+                        type="text"
+                        name="ano"
+                        required
+                        placeholder="2018"
+                        value={formData.ano}
+                        onChange={handleInputChange}
+                        className="w-full px-3 sm:px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-mono text-slate-900 focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 transition-all shadow-sm placeholder:text-slate-400 placeholder:font-sans"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Color *</label>
+                      <input
+                        type="text"
+                        name="color"
+                        required
+                        placeholder="Blanco, Rojo..."
+                        value={formData.color}
+                        onChange={handleInputChange}
+                        className="w-full px-3 sm:px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 transition-all shadow-sm placeholder:text-slate-400"
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* FILA 5: ROT */}
-              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-4">
-                <h5 className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">ROT</h5>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Número ROT</label>
-                    <input
-                      type="text"
-                      name="rotNumero"
-                      placeholder="Nro. ROT"
-                      value={formData.rotNumero}
-                      onChange={handleInputChange}
-                      className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 transition-all text-base font-medium text-slate-900 shadow-sm placeholder:text-slate-400"
-                    />
-                  </div>
-                  <div className="space-y-2.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Fecha Vencimiento</label>
-                    <input
-                      type="date"
-                      name="rotVencimiento"
-                      value={formData.rotVencimiento}
-                      onChange={handleInputChange}
-                      className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 transition-all text-base font-medium text-slate-900 shadow-sm"
-                    />
+                {/* Documentación */}
+                <div>
+                  <h4 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-3">Documentación</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    
+                    {/* Póliza RCV */}
+                    <div className="p-3 sm:p-4 bg-blue-50/50 rounded-xl border border-blue-100 space-y-3">
+                      <h5 className="text-[10px] font-extrabold text-blue-600 uppercase tracking-widest">Póliza RCV</h5>
+                      <div className="space-y-2.5">
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Número</label>
+                          <input
+                            type="text"
+                            name="polizaRcvNumero"
+                            placeholder="Nro. póliza"
+                            value={formData.polizaRcvNumero}
+                            onChange={handleInputChange}
+                            className="w-full px-3 sm:px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 transition-all shadow-sm placeholder:text-slate-400"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Vencimiento</label>
+                          <input
+                            type="date"
+                            name="polizaRcvVencimiento"
+                            value={formData.polizaRcvVencimiento}
+                            onChange={handleInputChange}
+                            className="w-full px-3 sm:px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 transition-all shadow-sm"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* ROT */}
+                    <div className="p-3 sm:p-4 bg-amber-50/50 rounded-xl border border-amber-100 space-y-3">
+                      <h5 className="text-[10px] font-extrabold text-amber-600 uppercase tracking-widest">ROT</h5>
+                      <div className="space-y-2.5">
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Número</label>
+                          <input
+                            type="text"
+                            name="rotNumero"
+                            placeholder="Nro. ROT"
+                            value={formData.rotNumero}
+                            onChange={handleInputChange}
+                            className="w-full px-3 sm:px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 transition-all shadow-sm placeholder:text-slate-400"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Vencimiento</label>
+                          <input
+                            type="date"
+                            name="rotVencimiento"
+                            value={formData.rotVencimiento}
+                            onChange={handleInputChange}
+                            className="w-full px-3 sm:px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 transition-all shadow-sm"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
                   </div>
                 </div>
               </div>
 
-              {/* Botones de Acción */}
-              <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-100 mt-2">
-                <Button 
+              {/* Botones */}
+              <div className="px-5 sm:px-8 py-4 border-t border-slate-100 flex flex-col-reverse sm:flex-row justify-end gap-3 bg-white shrink-0">
+                <button 
                   type="button" 
-                  variant="ghost" 
                   onClick={cerrarModal}
-                  className="text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-xl px-6 py-6 text-base font-medium"
+                  className="w-full sm:w-auto px-6 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors"
                 >
                   Cancelar
-                </Button>
-                <Button 
+                </button>
+                <button 
                   type="submit"
-                  className="bg-slate-900 hover:bg-slate-800 text-white rounded-xl px-8 py-6 shadow-md transition-all text-base font-medium"
+                  className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                 >
                   {isEditing ? 'Guardar cambios' : 'Registrar unidad'}
-                </Button>
+                </button>
               </div>
-
             </form>
           </div>
         </div>
