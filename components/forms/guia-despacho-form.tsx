@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Truck, User, Package, Ruler, AlertCircle, Eye, Printer, Loader2, Box } from 'lucide-react';
-import { printDocument, generateGuiaDespachoHtml, generatePrealcaHtml } from '@/lib/document-templates';
+import { printDocument, generateGuiaDespachoHtml, generatePrealcaHtml, generateServicioBombaHtml } from '@/lib/document-templates';
 
 const guiaSchema = z.object({
   clienteId: z.coerce.number().min(1, 'Debe seleccionar un cliente'),
@@ -46,7 +46,7 @@ export function GuiaDespachoForm({
 }: GuiaDespachoFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [tipoMode, setTipoMode] = useState<'Premezclado' | 'Prealca'>('Premezclado');
+  const [tipoMode, setTipoMode] = useState<'Premezclado' | 'Prealca' | 'Servicio de Bomba'>('Premezclado');
   const [stockMap, setStockMap] = useState<Record<number, number>>({});
 
   useEffect(() => {
@@ -79,6 +79,7 @@ export function GuiaDespachoForm({
   const pedidoId = watch('pedidoId');
 
   const esPrealca = tipoMode === 'Prealca';
+  const esServicioBomba = tipoMode === 'Servicio de Bomba';
 
   const clienteSeleccionado = clientes.find(c => c.id === Number(clienteId));
   const productoSeleccionado = productos.find(p => p.id === Number(productoId));
@@ -116,8 +117,8 @@ export function GuiaDespachoForm({
   };
 
   const handlePrint = () => {
-    if (esPrealca) {
-      printDocument(generatePrealcaHtml({
+    if (esServicioBomba) {
+      printDocument(generateServicioBombaHtml({
         guiaNumber: 'NUEVA',
         fecha: new Date().toISOString(),
         clienteNombre: clienteSeleccionado?.nombre || '',
@@ -126,6 +127,25 @@ export function GuiaDespachoForm({
         clienteTelefono: clienteSeleccionado?.telefono || '',
         operador: chofer || '',
         unidad: unidadSeleccionada?.tipo || '',
+        items: productoSeleccionado ? [{
+          resistencia: productoSeleccionado.resistencia || '',
+          pulgada: productoSeleccionado.pulgada || '',
+          cantidad: Number(cantidadM3) || 0,
+        }] : [],
+      }));
+    } else if (esPrealca) {
+      printDocument(generatePrealcaHtml({
+        guiaNumber: 'NUEVA',
+        fecha: new Date().toISOString(),
+        clienteNombre: clienteSeleccionado?.nombre || '',
+        clienteRif: clienteSeleccionado?.rif || '',
+        clienteDireccion: clienteSeleccionado?.direccion || '',
+        clienteTelefono: clienteSeleccionado?.telefono || '',
+        obra: watch('obra') || '',
+        chofer: chofer || '',
+        placa: unidadSeleccionada?.tipo || '',
+        vanM3: pedidoSeleccionado ? vanM3 : Number(cantidadM3) || 0,
+        deM3: pedidoSeleccionado ? deM3 : 0,
         items: productoSeleccionado ? [{
           resistencia: productoSeleccionado.resistencia || '',
           pulgada: productoSeleccionado.pulgada || '',
@@ -167,7 +187,7 @@ export function GuiaDespachoForm({
       {/* FORMULARIO */}
       <div className="p-8 overflow-y-auto">
         <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
-          {/* Toggle PREALCA / PREMEZCLADO */}
+          {/* Toggle PREMEZCLADO / PREALCA / SERVICIO DE BOMBA */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
             <div className="flex rounded-xl bg-slate-100 p-1">
               <button type="button" onClick={() => setTipoMode('Premezclado')} className={`flex-1 py-3 px-4 rounded-lg text-sm font-bold transition-all duration-200 ${tipoMode === 'Premezclado' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:text-slate-700'}`}>
@@ -176,9 +196,12 @@ export function GuiaDespachoForm({
               <button type="button" onClick={() => setTipoMode('Prealca')} className={`flex-1 py-3 px-4 rounded-lg text-sm font-bold transition-all duration-200 ${tipoMode === 'Prealca' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-700'}`}>
                 PREALCA
               </button>
+              <button type="button" onClick={() => setTipoMode('Servicio de Bomba')} className={`flex-1 py-3 px-4 rounded-lg text-sm font-bold transition-all duration-200 ${tipoMode === 'Servicio de Bomba' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-700'}`}>
+                SERVICIO DE BOMBA
+              </button>
             </div>
             <p className="text-xs text-slate-400 text-center mt-2">
-              {esPrealca ? 'Orden Servicio de Bomba — IVA 16% incluido' : 'Guía de Despacho — Sin IVA'}
+              {esPrealca ? 'Guía de Despacho Prealca — Sin IVA' : esServicioBomba ? 'Orden Servicio de Bomba — IVA 16% incluido' : 'Guía de Despacho — Sin IVA'}
             </p>
           </div>
 
@@ -329,7 +352,7 @@ export function GuiaDespachoForm({
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2 text-sm font-semibold text-slate-500">
             <Eye size={18} />
-            <span>Vista Previa — {esPrealca ? 'Orden Servicio de Bomba' : 'Guía de Despacho'}</span>
+            <span>Vista Previa — {esPrealca ? 'Guía de Despacho Prealca' : esServicioBomba ? 'Orden Servicio de Bomba' : 'Guía de Despacho'}</span>
           </div>
           <button type="button" onClick={handlePrint} className="flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-800 bg-white hover:bg-blue-50 border border-blue-200 px-4 py-2 rounded-xl transition-colors shadow-sm">
             <Printer size={16} />
@@ -340,8 +363,8 @@ export function GuiaDespachoForm({
         <div className="bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
           <div className="p-6 text-sm text-slate-800 leading-relaxed" style={{ fontFamily: 'Poppins, sans-serif' }}>
 
-            {esPrealca ? (
-              /* ===== PREALCA - ORDEN SERVICIO DE BOMBA ===== */
+            {esServicioBomba ? (
+              /* ===== SERVICIO DE BOMBA ===== */
               <>
                 <div className="flex justify-between items-start mb-4 pb-3 border-b-2 border-slate-800">
                   <div className="flex items-start gap-3">
@@ -453,6 +476,143 @@ export function GuiaDespachoForm({
                     <span className="font-semibold w-28 shrink-0">CLIENTE:</span>
                     <span className="flex-1 border-b border-slate-400"></span>
                   </div>
+                </div>
+              </>
+            ) : esPrealca ? (
+              /* ===== PREALCA - GUÍA DE DESPACHO ===== */
+              <>
+                <div className="flex justify-between items-start mb-4 pb-3 border-b-2 border-slate-800">
+                  <div>
+                    <img src="/logo.jpeg" alt="Prealca" className="w-[100px] h-auto" />
+                    <div className="text-[8px] text-slate-600 leading-tight mt-1">
+                      <p className="font-bold">PREALCA, C.A.</p>
+                      <p>CALLE ZONA INDUSTRIAL, 2DA ETAPA, PARCELA</p>
+                      <p>E-37 ZONA INDUSTRIAL SANTA CRUZ</p>
+                      <p>SANTA CRUZ DE ARAGUA - EDO. ARAGUA</p>
+                      <p>TELF: (0243) 251.75.33 / 672.01.65 / (0412) 755.62.07 / (0424) 303.37.40</p>
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-[10px] text-slate-500">R.I.F.: J-30913171-0</p>
+                    <p className="text-xs font-semibold text-slate-600 uppercase tracking-widest">Guía de Despacho</p>
+                    <p className="text-sm font-bold text-red-600 mt-0.5">Nº NUEVA</p>
+                  </div>
+                  <div className="text-right text-[10px] space-y-1">
+                    <div className="border border-slate-400 px-2 py-1">
+                      <span className="font-semibold text-slate-500">FECHA DE EMISIÓN</span><br/>
+                      <span className="text-slate-700">{new Date().toLocaleDateString('es-VE')}</span>
+                    </div>
+                    <div className="border border-slate-400 px-2 py-1">
+                      <span className="font-semibold text-slate-500">FECHA DE VENCIMIENTO</span><br/>
+                      <span className="text-slate-400">___/___/______</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5 mb-3 text-xs">
+                  <div className="flex gap-2">
+                    <span className="font-semibold w-20 shrink-0">Cliente:</span>
+                    <span className="flex-1 border-b border-slate-400">{clienteSeleccionado?.nombre || ''}</span>
+                    <span className="font-semibold w-12 shrink-0">R.I.F.:</span>
+                    <span className="w-40 border-b border-slate-400">{clienteSeleccionado?.rif || ''}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="font-semibold w-20 shrink-0">Dirección:</span>
+                    <span className="flex-1 border-b border-slate-400">{clienteSeleccionado?.direccion || ''}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="font-semibold w-20 shrink-0">Teléfonos:</span>
+                    <span className="flex-1 border-b border-slate-400">{clienteSeleccionado?.telefono || ''}</span>
+                    <span className="font-semibold w-14 shrink-0">N.I.T.:</span>
+                    <span className="w-32 border-b border-slate-400"></span>
+                    <span className="font-semibold w-28 shrink-0">Condiciones:</span>
+                    <span className="flex-1 border-b border-slate-400">Contado</span>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center py-2 border-y border-slate-400 mb-3 text-xs">
+                  <span className="font-semibold">
+                    Van: {pedidoSeleccionado ? vanM3 : (Number(cantidadM3) || 0)} M³
+                  </span>
+                  <span className="font-semibold">
+                    de {pedidoSeleccionado ? deM3 : '___'} M³
+                  </span>
+                </div>
+
+                <div className="border border-slate-400 mb-3">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="bg-slate-800">
+                        <th className="border border-slate-400 px-2 py-2 text-center font-bold w-[8%] text-white">CANT.</th>
+                        <th className="border border-slate-400 px-2 py-2 text-center font-bold w-[18%] text-white">RESISTENCIA (RG)</th>
+                        <th className="border border-slate-400 px-2 py-2 text-center font-bold w-[10%] text-white">ASENT.</th>
+                        <th className="border border-slate-400 px-2 py-2 text-left font-bold text-white">OBSERVACIONES</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {productoSeleccionado ? (
+                        <tr>
+                          <td className="border border-slate-400 px-2 py-6 text-center">{Number(cantidadM3) || 0}</td>
+                          <td className="border border-slate-400 px-2 py-6 text-center">{productoSeleccionado.resistencia || ''}{productoSeleccionado.pulgada ? ` ${productoSeleccionado.pulgada}ST` : ''}</td>
+                          <td className="border border-slate-400 px-2 py-6 text-center">{productoSeleccionado.pulgada ? `${productoSeleccionado.pulgada}"` : ''}</td>
+                          <td className="border border-slate-400 px-2 py-4 text-[10px] leading-relaxed text-slate-600">
+                            <p>El Concreto suministrado cumple con la Norma COVENIN 633.</p>
+                            <p>Cualquier adición de agua va por cuenta y riesgo del Cliente.</p>
+                            <p className="font-bold">ADITIVO WRDA 79</p>
+                            <p className="text-right font-bold">FRACTIL 10%</p>
+                          </td>
+                        </tr>
+                      ) : (
+                        <tr>
+                          <td colSpan={4} className="border border-slate-400 px-2 py-8 text-center text-slate-400">Seleccione un producto...</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="flex justify-between text-[10px] text-slate-500 mb-3 px-1">
+                  <span>Adición de Agua Sugerido por el Dueño <span className="border-b border-dotted border-slate-400 min-w-[40px] inline-block">&nbsp;</span> Litros / Adición de Agua Sugerido por el Cliente <span className="border-b border-dotted border-slate-400 min-w-[40px] inline-block">&nbsp;</span> Litros</span>
+                  <span>Firma ________________</span>
+                </div>
+
+                <div className="space-y-1.5 text-xs">
+                  <div className="flex gap-2">
+                    <span className="font-semibold w-16 shrink-0">OBRA:</span>
+                    <span className="flex-1 border-b border-slate-400">{watch('obra') || ''}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="font-semibold w-16 shrink-0">CHOFER:</span>
+                    <span className="w-48 border-b border-slate-400">{chofer || ''}</span>
+                    <span className="font-semibold shrink-0">HORA DE SALIDA:</span>
+                    <span className="w-20 border-b border-slate-400 font-semibold">{horaSalida}</span>
+                    <span className="font-semibold shrink-0">HORA DE LLEGADA:</span>
+                    <span className="w-20 border-b border-slate-400"></span>
+                  </div>
+                </div>
+
+                <div className="flex justify-between mt-6 pt-4 border-t border-slate-300">
+                  <div className="text-xs font-semibold">RECIBIDO POR:</div>
+                  <div className="w-1/4 text-center">
+                    <div className="mt-8 border-t border-slate-600 pt-1 text-[10px] font-semibold">Nombre:</div>
+                  </div>
+                  <div className="w-1/4 text-center">
+                    <div className="mt-8 border-t border-slate-600 pt-1 text-[10px] font-semibold">Firma:</div>
+                  </div>
+                  <div className="w-1/4 text-center">
+                    <div className="mt-8 border-t border-slate-600 pt-1 text-[10px] font-semibold">Fecha:</div>
+                  </div>
+                  <div className="w-1/4 text-center">
+                    <div className="mt-8 border-t border-slate-600 pt-1 text-[10px] font-semibold">Hora:</div>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center mt-4 pt-3 border-t border-slate-300">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold">N° DE CONTROL:</span>
+                    <span className="text-lg font-bold text-red-600">00-NUEVA</span>
+                  </div>
+                  <span className="text-[10px] font-semibold text-red-600">ORIGINAL CLIENTE - SIN DERECHO A CREDITO FISCAL</span>
                 </div>
               </>
             ) : (
