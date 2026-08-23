@@ -14,17 +14,26 @@ export default function MateriaPrimaPage() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [error, setError] = useState("");
 
+  const getLocalDate = () => {
+    const d = new Date();
+    const offset = d.getTimezoneOffset();
+    const local = new Date(d.getTime() - offset * 60000);
+    return local.toISOString().split("T")[0];
+  };
+
   const [form, setForm] = useState({
     agregado_id: "",
     cantidad: "",
-    fecha: new Date().toISOString().split("T")[0],
+    fecha: getLocalDate(),
   });
 
-  const getMaxDate = () => new Date().toISOString().split("T")[0];
+  const getMaxDate = () => getLocalDate();
   const getMinDate = () => {
     const d = new Date();
     d.setDate(d.getDate() - 30);
-    return d.toISOString().split("T")[0];
+    const offset = d.getTimezoneOffset();
+    const local = new Date(d.getTime() - offset * 60000);
+    return local.toISOString().split("T")[0];
   };
 
   const getUnidadByAgregado = (id: string) => {
@@ -94,7 +103,7 @@ export default function MateriaPrimaPage() {
       setTimeout(() => {
         setShowSuccess(false);
         setIsModalOpen(false);
-        setForm({ agregado_id: "", cantidad: "", fecha: new Date().toISOString().split("T")[0] });
+        setForm({ agregado_id: "", cantidad: "", fecha: getLocalDate() });
         fetchData();
       }, 1500);
     } catch (err: any) {
