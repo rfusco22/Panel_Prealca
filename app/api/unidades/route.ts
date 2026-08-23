@@ -10,7 +10,12 @@ export async function GET() {
   try {
     const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
     if (!session.userId) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    const unidades = await query(`SELECT id, numero_unidad AS numeroUnidad, placa, marca, modelo, ano, color FROM unidades ORDER BY id DESC`);
+    const unidades = await query(`
+      SELECT id, numero_unidad AS numeroUnidad, placa, marca, modelo, ano, color,
+             poliza_rcv_numero AS polizaRcvNumero, poliza_rcv_vencimiento AS polizaRcvVencimiento,
+             rot_numero AS rotNumero, rot_vencimiento AS rotVencimiento
+      FROM unidades ORDER BY id DESC
+    `);
     return NextResponse.json(unidades);
   } catch (error) {
     console.error('Error GET unidades:', error);
@@ -23,9 +28,12 @@ export async function POST(request: Request) {
     const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
     if (!session.userId) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     const body = await request.json();
-    const { numeroUnidad, placa, marca, modelo, ano, color } = body;
+    const { numeroUnidad, placa, marca, modelo, ano, color, polizaRcvNumero, polizaRcvVencimiento, rotNumero, rotVencimiento } = body;
     if (!numeroUnidad || !placa || !marca || !modelo || !ano || !color) return NextResponse.json({ error: 'Todos los campos son obligatorios' }, { status: 400 });
-    const result: any = await query(`INSERT INTO unidades (numero_unidad, placa, marca, modelo, ano, color) VALUES (?, ?, ?, ?, ?, ?)`, [numeroUnidad, placa, marca, modelo, ano, color]);
+    const result: any = await query(
+      `INSERT INTO unidades (numero_unidad, placa, marca, modelo, ano, color, poliza_rcv_numero, poliza_rcv_vencimiento, rot_numero, rot_vencimiento) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [numeroUnidad, placa, marca, modelo, ano, color, polizaRcvNumero || null, polizaRcvVencimiento || null, rotNumero || null, rotVencimiento || null]
+    );
     emitSocketEvent('unidades:created');
 
     const usuario = await getUsuarioFromRequest();
@@ -48,13 +56,17 @@ export async function PUT(request: Request) {
     const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
     if (!session.userId) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     const body = await request.json();
-    const { id, numeroUnidad, placa, marca, modelo, ano, color } = body;
+    const { id, numeroUnidad, placa, marca, modelo, ano, color, polizaRcvNumero, polizaRcvVencimiento, rotNumero, rotVencimiento } = body;
     if (!id || !numeroUnidad || !placa || !marca || !modelo || !ano || !color) return NextResponse.json({ error: 'Faltan datos requeridos' }, { status: 400 });
 
     const anterior: any = await query('SELECT id, numero_unidad, placa FROM unidades WHERE id = ?', [id]);
     const old = anterior.length > 0 ? anterior[0] : null;
 
-    await query(`UPDATE unidades SET numero_unidad = ?, placa = ?, marca = ?, modelo = ?, ano = ?, color = ? WHERE id = ?`, [numeroUnidad, placa, marca, modelo, ano, color, id]);
+    await query(
+      `UPDATE unidades SET numero_unidad = ?, placa = ?, marca = ?, modelo = ?, ano = ?, color = ?,
+       poliza_rcv_numero = ?, poliza_rcv_vencimiento = ?, rot_numero = ?, rot_vencimiento = ? WHERE id = ?`,
+      [numeroUnidad, placa, marca, modelo, ano, color, polizaRcvNumero || null, polizaRcvVencimiento || null, rotNumero || null, rotVencimiento || null, id]
+    );
     emitSocketEvent('unidades:updated');
 
     const usuario = await getUsuarioFromRequest();

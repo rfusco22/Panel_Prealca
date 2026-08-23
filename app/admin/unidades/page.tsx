@@ -353,6 +353,10 @@ interface Unidad {
   modelo: string;
   ano: string;
   color: string;
+  polizaRcvNumero: string | null;
+  polizaRcvVencimiento: string | null;
+  rotNumero: string | null;
+  rotVencimiento: string | null;
 }
 
 export default function AdminUnidadesPage() {
@@ -372,7 +376,11 @@ export default function AdminUnidadesPage() {
     marca: '',
     modelo: '',
     ano: '',
-    color: ''
+    color: '',
+    polizaRcvNumero: '',
+    polizaRcvVencimiento: '',
+    rotNumero: '',
+    rotVencimiento: ''
   });
 
   const { socket } = useSocket();
@@ -433,7 +441,11 @@ export default function AdminUnidadesPage() {
       marca: unidad.marca,
       modelo: unidad.modelo,
       ano: unidad.ano,
-      color: unidad.color
+      color: unidad.color,
+      polizaRcvNumero: unidad.polizaRcvNumero || '',
+      polizaRcvVencimiento: unidad.polizaRcvVencimiento?.split('T')[0] || '',
+      rotNumero: unidad.rotNumero || '',
+      rotVencimiento: unidad.rotVencimiento?.split('T')[0] || ''
     });
     setEditingId(unidad.id);
     setIsEditing(true);
@@ -496,7 +508,7 @@ export default function AdminUnidadesPage() {
     setIsModalOpen(false);
     setIsEditing(false);
     setEditingId(null);
-    setFormData({ numeroUnidad: '', placa: '', marca: '', modelo: '', ano: '', color: '' });
+    setFormData({ numeroUnidad: '', placa: '', marca: '', modelo: '', ano: '', color: '', polizaRcvNumero: '', polizaRcvVencimiento: '', rotNumero: '', rotVencimiento: '' });
   };
 
   return (
@@ -552,6 +564,8 @@ export default function AdminUnidadesPage() {
                   <th className="px-6 py-4">Placa</th>
                   <th className="px-6 py-4">Vehículo (Marca / Modelo)</th>
                   <th className="px-6 py-4">Año / Color</th>
+                  <th className="px-6 py-4">Póliza RCV</th>
+                  <th className="px-6 py-4">ROT</th>
                   <th className="px-6 py-4 text-right"></th>
                 </tr>
               </thead>
@@ -584,6 +598,26 @@ export default function AdminUnidadesPage() {
                         </span>
                         <span className="text-xs text-slate-500 capitalize">{unidad.color}</span>
                       </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      {unidad.polizaRcvNumero ? (
+                        <div>
+                          <span className="text-xs font-bold text-slate-700">{unidad.polizaRcvNumero}</span>
+                          {unidad.polizaRcvVencimiento && (
+                            <p className="text-[10px] text-slate-500 mt-0.5">Vence: {new Date(unidad.polizaRcvVencimiento).toLocaleDateString("es-VE")}</p>
+                          )}
+                        </div>
+                      ) : <span className="text-slate-400 text-xs">—</span>}
+                    </td>
+                    <td className="px-6 py-4">
+                      {unidad.rotNumero ? (
+                        <div>
+                          <span className="text-xs font-bold text-slate-700">{unidad.rotNumero}</span>
+                          {unidad.rotVencimiento && (
+                            <p className="text-[10px] text-slate-500 mt-0.5">Vence: {new Date(unidad.rotVencimiento).toLocaleDateString("es-VE")}</p>
+                          )}
+                        </div>
+                      ) : <span className="text-slate-400 text-xs">—</span>}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -735,6 +769,62 @@ export default function AdminUnidadesPage() {
                     onChange={handleInputChange}
                     className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 transition-all text-base font-medium text-slate-900 shadow-sm placeholder:text-slate-400"
                   />
+                </div>
+              </div>
+
+              {/* FILA 4: Póliza RCV */}
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-4">
+                <h5 className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">Póliza RCV</h5>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2.5">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Número de Póliza</label>
+                    <input
+                      type="text"
+                      name="polizaRcvNumero"
+                      placeholder="Nro. póliza RCV"
+                      value={formData.polizaRcvNumero}
+                      onChange={handleInputChange}
+                      className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 transition-all text-base font-medium text-slate-900 shadow-sm placeholder:text-slate-400"
+                    />
+                  </div>
+                  <div className="space-y-2.5">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Fecha Vencimiento</label>
+                    <input
+                      type="date"
+                      name="polizaRcvVencimiento"
+                      value={formData.polizaRcvVencimiento}
+                      onChange={handleInputChange}
+                      className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 transition-all text-base font-medium text-slate-900 shadow-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* FILA 5: ROT */}
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-4">
+                <h5 className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">ROT</h5>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2.5">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Número ROT</label>
+                    <input
+                      type="text"
+                      name="rotNumero"
+                      placeholder="Nro. ROT"
+                      value={formData.rotNumero}
+                      onChange={handleInputChange}
+                      className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 transition-all text-base font-medium text-slate-900 shadow-sm placeholder:text-slate-400"
+                    />
+                  </div>
+                  <div className="space-y-2.5">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Fecha Vencimiento</label>
+                    <input
+                      type="date"
+                      name="rotVencimiento"
+                      value={formData.rotVencimiento}
+                      onChange={handleInputChange}
+                      className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 transition-all text-base font-medium text-slate-900 shadow-sm"
+                    />
+                  </div>
                 </div>
               </div>
 
