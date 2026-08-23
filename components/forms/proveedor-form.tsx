@@ -1,11 +1,27 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { AlertCircle, CheckCircle2, Plus, X } from "lucide-react";
 
+function calcularDigitoVerificador(tipo: string, numero: string): string {
+  if (!numero || numero.length < 6) return "";
+  const pesosJuridico = [4, 3, 2, 7, 6, 5, 4, 3, 2];
+  const pesosNatural = [9, 8, 7, 6, 5, 4, 3, 2];
+  const esJuridico = tipo === "J" || tipo === "G" || tipo === "C";
+  const pesos = esJuridico ? pesosJuridico : pesosNatural;
+  const digitos = numero.split("").map(Number);
+  let suma = 0;
+  for (let i = 0; i < digitos.length; i++) {
+    suma += digitos[i] * (pesos[i] || 0);
+  }
+  const resto = suma % 11;
+  const digito = resto <= 1 ? 0 : 11 - resto;
+  return String(digito);
+}
+
 function ProveedorForm({ onClose }: { onClose?: () => void }) {
-  const { register, handleSubmit, reset, watch, setValue } = useForm();
+  const { register, handleSubmit, reset, watch } = useForm();
   const [isLoading, setIsLoading] = useState(false);
   const [mensaje, setMensaje] = useState({ tipo: "", texto: "" });
   const [plantas, setPlantas] = useState<string[]>([""]);
@@ -13,6 +29,16 @@ function ProveedorForm({ onClose }: { onClose?: () => void }) {
   const [agregadosSeleccionados, setAgregadosSeleccionados] = useState<number[]>([]);
 
   const clasificacionGasto = watch("clasificacionGasto");
+
+  const [form, setForm] = useState({
+    rifTipo: "J",
+    rifNumero: "",
+  });
+
+  const digitoVerificador = useMemo(
+    () => calcularDigitoVerificador(form.rifTipo, form.rifNumero),
+    [form.rifTipo, form.rifNumero]
+  );
 
   useEffect(() => {
     fetch("/api/agregados")
@@ -38,12 +64,6 @@ function ProveedorForm({ onClose }: { onClose?: () => void }) {
     );
   };
 
-  const [form, setForm] = useState({
-    rifTipo: "J",
-    rifNumero: "",
-    rifDigito: "",
-  });
-
   const onSubmit = async (data: any) => {
     setIsLoading(true);
     setMensaje({ tipo: "", texto: "" });
@@ -53,12 +73,7 @@ function ProveedorForm({ onClose }: { onClose?: () => void }) {
         setIsLoading(false);
         return;
       }
-      if (!form.rifDigito) {
-        setMensaje({ tipo: "error", texto: "El dígito verificador es obligatorio." });
-        setIsLoading(false);
-        return;
-      }
-      const rif = `${form.rifTipo}-${form.rifNumero}-${form.rifDigito}`;
+      const rif = `${form.rifTipo}-${form.rifNumero}-${digitoVerificador}`;
       const payload = {
         ...data,
         rif,
@@ -76,7 +91,7 @@ function ProveedorForm({ onClose }: { onClose?: () => void }) {
         reset();
         setPlantas([""]);
         setAgregadosSeleccionados([]);
-        setForm({ rifTipo: "J", rifNumero: "", rifDigito: "" });
+        setForm({ rifTipo: "J", rifNumero: "" });
         setTimeout(() => {
           if (onClose) onClose();
         }, 1200);
@@ -91,7 +106,7 @@ function ProveedorForm({ onClose }: { onClose?: () => void }) {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="p-8 space-y-5">
+    <form onSubmit={handleSubmit(onSubmit)} className="p-5 sm:p-8 space-y-5">
       {mensaje.tipo === "exito" && (
         <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-xl">
           <CheckCircle2 size={18} className="text-emerald-500 shrink-0" />
@@ -105,7 +120,7 @@ function ProveedorForm({ onClose }: { onClose?: () => void }) {
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
         <div>
           <label className="block text-xs font-semibold text-slate-600 mb-1.5">Nombre *</label>
           <input
@@ -117,11 +132,11 @@ function ProveedorForm({ onClose }: { onClose?: () => void }) {
         </div>
         <div>
           <label className="block text-xs font-semibold text-slate-600 mb-1.5">RIF *</label>
-          <div className="flex gap-1.5">
+          <div className="flex items-center gap-1">
             <select
               value={form.rifTipo}
               onChange={(e) => setForm({ ...form, rifTipo: e.target.value })}
-              className="w-20 px-3 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-900 font-bold focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
+              className="w-16 sm:w-20 px-2 sm:px-3 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-900 font-bold focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all shrink-0"
             >
               <option value="J">J</option>
               <option value="V">V</option>
@@ -130,27 +145,23 @@ function ProveedorForm({ onClose }: { onClose?: () => void }) {
               <option value="G">G</option>
               <option value="C">C</option>
             </select>
+            <span className="text-slate-400 text-sm font-bold shrink-0">-</span>
             <input
               type="text"
               placeholder="12345678"
               value={form.rifNumero}
               onChange={(e) => setForm({ ...form, rifNumero: e.target.value.replace(/\D/g, "").slice(0, 10) })}
-              className="flex-1 px-3 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
+              className="flex-1 min-w-0 px-3 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
             />
-            <span className="flex items-center text-slate-400 text-sm font-bold">-</span>
-            <input
-              type="text"
-              placeholder="D.V."
-              value={form.rifDigito}
-              onChange={(e) => setForm({ ...form, rifDigito: e.target.value.replace(/\D/g, "").slice(0, 1) })}
-              className="w-14 px-3 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-900 text-center font-bold placeholder:text-slate-400 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
-            />
+            <span className="text-slate-400 text-sm font-bold shrink-0">-</span>
+            <div className="w-10 sm:w-12 px-2 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-900 text-center font-bold bg-slate-50 shrink-0">
+              {digitoVerificador || "?"}
+            </div>
           </div>
-          <p className="text-[10px] text-slate-400 mt-1 ml-1">Ej: J-12345678-9</p>
+          <p className="text-[10px] text-slate-400 mt-1 ml-1">Dígito verificador calculado automáticamente</p>
         </div>
       </div>
 
-      {/* Plantas dinámicas */}
       <div>
         <label className="block text-xs font-semibold text-slate-600 mb-1.5">Planta / Sucursal</label>
         <div className="space-y-2">
@@ -167,7 +178,7 @@ function ProveedorForm({ onClose }: { onClose?: () => void }) {
                 <button
                   type="button"
                   onClick={() => eliminarPlanta(index)}
-                  className="px-3 py-2.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                  className="px-3 py-2.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all shrink-0"
                 >
                   <X size={16} />
                 </button>
@@ -195,7 +206,7 @@ function ProveedorForm({ onClose }: { onClose?: () => void }) {
         />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
         <div>
           <label className="block text-xs font-semibold text-slate-600 mb-1.5">Clasificacion de Gasto</label>
           <select
@@ -216,7 +227,6 @@ function ProveedorForm({ onClose }: { onClose?: () => void }) {
         </div>
       </div>
 
-      {/* Select de agregados condicional */}
       {clasificacionGasto === "Produccion" && (
         <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl space-y-3">
           <label className="block text-xs font-bold text-blue-700 uppercase tracking-wider">
@@ -248,16 +258,16 @@ function ProveedorForm({ onClose }: { onClose?: () => void }) {
         </div>
       )}
 
-      <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+      <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t border-slate-100">
         {onClose && (
-          <button type="button" onClick={onClose} className="px-5 py-2.5 rounded-lg text-sm font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-all duration-200">
+          <button type="button" onClick={onClose} className="w-full sm:w-auto px-5 py-2.5 rounded-lg text-sm font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-all duration-200">
             Cancelar
           </button>
         )}
         <button
           type="submit"
           disabled={isLoading}
-          className="px-6 py-2.5 bg-slate-900 hover:bg-slate-700 active:scale-[0.98] text-white text-sm font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="w-full sm:w-auto px-6 py-2.5 bg-slate-900 hover:bg-slate-700 active:scale-[0.98] text-white text-sm font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {isLoading ? "Guardando..." : "Guardar Proveedor"}
         </button>
