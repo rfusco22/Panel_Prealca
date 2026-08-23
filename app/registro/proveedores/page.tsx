@@ -12,6 +12,8 @@ interface Proveedor {
   direccion?: string;
   clasificacionGasto?: string;
   esContribuyenteEspecial: boolean;
+  plantas?: { id: number; nombre: string }[];
+  agregados?: { id: number; nombre: string }[];
 }
 
 export default function ProveedoresPage() {
@@ -113,9 +115,9 @@ export default function ProveedoresPage() {
                 <tr>
                   <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Nombre</th>
                   <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">RIF</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Direccion</th>
+                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Plantas</th>
                   <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Clasificacion</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Contribuyente</th>
+                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Agregados</th>
                   <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Acciones</th>
                 </tr>
               </thead>
@@ -124,14 +126,24 @@ export default function ProveedoresPage() {
                   <tr key={prov.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4 text-sm font-medium text-slate-900">{prov.nombre}</td>
                     <td className="px-6 py-4 text-sm text-slate-600">{prov.rif}</td>
-                    <td className="px-6 py-4 text-sm text-slate-600 max-w-xs truncate">{prov.direccion || "—"}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-wrap gap-1">
+                        {prov.plantas && prov.plantas.length > 0 ? prov.plantas.map((pl) => (
+                          <span key={pl.id} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                            {pl.nombre}
+                          </span>
+                        )) : <span className="text-slate-400 text-xs">—</span>}
+                      </div>
+                    </td>
                     <td className="px-6 py-4 text-sm text-slate-600">{prov.clasificacionGasto || "—"}</td>
                     <td className="px-6 py-4">
-                      {prov.esContribuyenteEspecial ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Si</span>
-                      ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-500">No</span>
-                      )}
+                      <div className="flex flex-wrap gap-1">
+                        {prov.agregados && prov.agregados.length > 0 ? prov.agregados.map((agg) => (
+                          <span key={agg.id} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                            {agg.nombre}
+                          </span>
+                        )) : <span className="text-slate-400 text-xs">—</span>}
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-right">
                       <button
