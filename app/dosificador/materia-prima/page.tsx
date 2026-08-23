@@ -7,6 +7,7 @@ import { useSocket } from '@/contexts/SocketContext';
 export default function MateriaPrimaPage() {
   const { socket } = useSocket();
   const [agregados, setAgregados] = useState<any[]>([]);
+  const [proveedores, setProveedores] = useState<any[]>([]);
   const [materiaPrima, setMateriaPrima] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -25,6 +26,7 @@ export default function MateriaPrimaPage() {
     agregado_id: "",
     cantidad: "",
     fecha: getLocalDate(),
+    proveedor_id: "",
   });
 
   const getMaxDate = () => getLocalDate();
@@ -62,9 +64,10 @@ export default function MateriaPrimaPage() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [aggRes, mpRes] = await Promise.all([
+      const [aggRes, mpRes, pvRes] = await Promise.all([
         fetch("/api/agregados"),
         fetch("/api/materia-prima"),
+        fetch("/api/proveedores"),
       ]);
       if (aggRes.ok) {
         const aggData = await aggRes.json();
@@ -73,6 +76,10 @@ export default function MateriaPrimaPage() {
       if (mpRes.ok) {
         const mpData = await mpRes.json();
         setMateriaPrima(Array.isArray(mpData) ? mpData : (mpData.materiaPrima || mpData.data || []));
+      }
+      if (pvRes.ok) {
+        const pvData = await pvRes.json();
+        setProveedores(pvData.proveedores || pvData.data || []);
       }
     } catch {} finally {
       setIsLoading(false);
@@ -92,6 +99,7 @@ export default function MateriaPrimaPage() {
           cantidad: parseFloat(form.cantidad),
           unidad: getUnidadByAgregado(form.agregado_id),
           fecha: form.fecha,
+          proveedor_id: form.proveedor_id ? parseInt(form.proveedor_id) : null,
           usuario_id: 1,
         }),
       });
@@ -103,7 +111,7 @@ export default function MateriaPrimaPage() {
       setTimeout(() => {
         setShowSuccess(false);
         setIsModalOpen(false);
-        setForm({ agregado_id: "", cantidad: "", fecha: getLocalDate() });
+        setForm({ agregado_id: "", cantidad: "", fecha: getLocalDate(), proveedor_id: "" });
         fetchData();
       }, 1500);
     } catch (err: any) {
@@ -217,6 +225,20 @@ export default function MateriaPrimaPage() {
                   onChange={(e) => setForm({ ...form, fecha: e.target.value })}
                   className={inputCls}
                 />
+              </div>
+
+              <div>
+                <label className={labelCls}>Proveedor</label>
+                <select
+                  value={form.proveedor_id}
+                  onChange={(e) => setForm({ ...form, proveedor_id: e.target.value })}
+                  className={inputCls}
+                >
+                  <option value="">Seleccionar proveedor...</option>
+                  {proveedores.map((p: any) => (
+                    <option key={p.id} value={p.id}>{p.nombre}</option>
+                  ))}
+                </select>
               </div>
 
               <div>
