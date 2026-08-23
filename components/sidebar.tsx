@@ -55,7 +55,6 @@ const menuGroups: MenuGroup[] = [
     items: [
       { id: "productos", label: "Productos", icon: Package, href: "/admin/productos" },
       { id: "materia-prima", label: "Materia Prima", icon: Package, href: "/admin/materia-prima" },
-      { id: "saldo-inicial", label: "Saldo Inicial", icon: Boxes, href: "/admin/saldo-inicial" },
       { id: "stock", label: "Stock por Producto", icon: Boxes, href: "/admin/stock" },
       { id: "agregados", label: "Agregados", icon: Settings, href: "/admin/agregados" },
     ],

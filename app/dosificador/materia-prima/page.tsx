@@ -27,6 +27,7 @@ export default function MateriaPrimaPage() {
     cantidad: "",
     fecha: getLocalDate(),
     proveedor_id: "",
+    es_saldo_inicial: false,
   });
 
   const getMaxDate = () => getLocalDate();
@@ -100,6 +101,7 @@ export default function MateriaPrimaPage() {
           unidad: getUnidadByAgregado(form.agregado_id),
           fecha: form.fecha,
           proveedor_id: parseInt(form.proveedor_id),
+          es_saldo_inicial: form.es_saldo_inicial,
           usuario_id: 1,
         }),
       });
@@ -111,7 +113,7 @@ export default function MateriaPrimaPage() {
       setTimeout(() => {
         setShowSuccess(false);
         setIsModalOpen(false);
-        setForm({ agregado_id: "", cantidad: "", fecha: getLocalDate(), proveedor_id: "" });
+        setForm({ agregado_id: "", cantidad: "", fecha: getLocalDate(), proveedor_id: "", es_saldo_inicial: false });
         fetchData();
       }, 1500);
     } catch (err: any) {
@@ -159,6 +161,7 @@ export default function MateriaPrimaPage() {
                   <th className="px-6 py-4">Proveedor - Agregado</th>
                   <th className="px-6 py-4">Cantidad</th>
                   <th className="px-6 py-4">Unidad</th>
+                  <th className="px-6 py-4">Tipo</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -177,6 +180,17 @@ export default function MateriaPrimaPage() {
                       <span className="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-full text-xs font-bold">
                         {mp.unidad}
                       </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      {mp.es_saldo_inicial ? (
+                        <span className="bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full text-xs font-bold">
+                          Saldo Inicial
+                        </span>
+                      ) : (
+                        <span className="bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full text-xs font-bold">
+                          Registro
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -283,6 +297,19 @@ export default function MateriaPrimaPage() {
                     className={`${inputCls} bg-slate-50 cursor-not-allowed font-bold text-slate-900`}
                   />
                 </div>
+              </div>
+
+              <div className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                <input
+                  type="checkbox"
+                  id="es_saldo_inicial"
+                  checked={form.es_saldo_inicial}
+                  onChange={(e) => setForm({ ...form, es_saldo_inicial: e.target.checked })}
+                  className="w-4 h-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500"
+                />
+                <label htmlFor="es_saldo_inicial" className="text-sm font-medium text-slate-700 cursor-pointer">
+                  Saldo Inicial
+                </label>
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">

@@ -3,13 +3,12 @@ import { query } from '@/lib/db';
 
 export async function GET() {
   try {
-    // 1. Materia prima disponible por agregado (saldo_inicial + entradas - salidas por fórmula)
+    // 1. Materia prima disponible por agregado (entradas - salidas por fórmula)
     const materiaPrimaDisponible: any = await query(`
       SELECT 
         a.id AS agregadoId,
         a.nombre AS agregadoNombre,
         a.unidad_medida AS unidadMedida,
-        COALESCE(si.cantidad, 0) AS saldoInicial,
         COALESCE(SUM(mp.cantidad), 0) AS totalEntradas,
         COALESCE((
           SELECT SUM(gd.cantidad_m3 * pf.cantidad)
@@ -17,7 +16,7 @@ export async function GET() {
           INNER JOIN producto_formulas pf ON pf.producto_id = gd.producto_id
           WHERE pf.agregado_id = a.id
         ), 0) AS totalConsumido,
-        COALESCE(si.cantidad, 0) + COALESCE(SUM(mp.cantidad), 0) - COALESCE((
+        COALESCE(SUM(mp.cantidad), 0) - COALESCE((
           SELECT SUM(gd.cantidad_m3 * pf.cantidad)
           FROM guia_despacho gd
           INNER JOIN producto_formulas pf ON pf.producto_id = gd.producto_id
@@ -25,15 +24,13 @@ export async function GET() {
         ), 0) AS disponible
       FROM agregados a
       LEFT JOIN materia_prima mp ON mp.agregado_id = a.id
-      LEFT JOIN saldo_inicial si ON si.agregado_id = a.id
-      GROUP BY a.id, a.nombre, a.unidad_medida, si.cantidad
+      GROUP BY a.id, a.nombre, a.unidad_medida
       ORDER BY a.nombre
     `);
 
     // Convert BigInt to Number
     const materiaPrima = materiaPrimaDisponible.map((row: any) => ({
       ...row,
-      saldoInicial: Number(row.saldoInicial),
       totalEntradas: Number(row.totalEntradas),
       totalConsumido: Number(row.totalConsumido),
       disponible: Number(row.disponible),
@@ -54,8 +51,6 @@ export async function GET() {
               ELSE (
                 COALESCE(
                   (SELECT SUM(mp.cantidad) FROM materia_prima mp WHERE mp.agregado_id = pf.agregado_id), 0
-                ) + COALESCE(
-                  (SELECT si.cantidad FROM saldo_inicial si WHERE si.agregado_id = pf.agregado_id), 0
                 ) - COALESCE(
                   (SELECT SUM(gd.cantidad_m3 * pf2.cantidad) 
                    FROM guia_despacho gd 
@@ -97,7 +92,6 @@ export async function GET() {
         a.nombre AS agregadoNombre,
         pf.cantidad AS cantidadRequerida,
         a.unidad_medida AS unidadMedida,
-        COALESCE(si.cantidad, 0) AS saldoInicialAgregado,
         COALESCE(
           (SELECT SUM(mp.cantidad) FROM materia_prima mp WHERE mp.agregado_id = pf.agregado_id), 0
         ) AS disponibleAgregado,
@@ -109,7 +103,6 @@ export async function GET() {
         ) AS consumidoAgregado
       FROM producto_formulas pf
       INNER JOIN agregados a ON pf.agregado_id = a.id
-      LEFT JOIN saldo_inicial si ON si.agregado_id = pf.agregado_id
       ORDER BY pf.producto_id, a.nombre
     `);
 
@@ -123,8 +116,7 @@ export async function GET() {
         agregadoNombre: row.agregadoNombre,
         cantidadRequerida: Number(row.cantidadRequerida),
         unidadMedida: row.unidadMedida,
-        saldoInicial: Number(row.saldoInicialAgregado),
-        disponible: Number(row.saldoInicialAgregado) + Number(row.disponibleAgregado) - Number(row.consumidoAgregado),
+        disponible: Number(row.disponibleAgregado) - Number(row.consumidoAgregado),
       });
     }
 
