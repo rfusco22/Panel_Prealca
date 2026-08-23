@@ -649,8 +649,8 @@ export function generatePrealcaHtml(data: PrealcaPrintData): string {
   </div>
 
   <div class="condiciones-row">
-    <span class="label">Van: ${data.vanM3 || item.cantidad} M³</span>
-    <span class="label">de ${data.deM3 || '___'} M³</span>
+    <span class="label">CONDICIONES</span>
+    <span class="van">VAN: ${data.vanM3 || 0} M³ DE ${data.deM3 ? data.deM3 : '<span style="border-bottom:1px solid #999;min-width:40px;display:inline-block;">&nbsp;&nbsp;&nbsp;&nbsp;</span>'} M³</span>
   </div>
 
   <table class="guia-table">

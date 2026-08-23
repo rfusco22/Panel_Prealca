@@ -531,11 +531,11 @@ export function GuiaDespachoForm({
                 </div>
 
                 <div className="flex justify-between items-center py-2 border-y border-slate-400 mb-3 text-xs">
-                  <span className="font-semibold">
-                    Van: {pedidoSeleccionado ? vanM3 : (Number(cantidadM3) || 0)} M³
-                  </span>
-                  <span className="font-semibold">
-                    de {pedidoSeleccionado ? deM3 : '___'} M³
+                  <span className="font-semibold">CONDICIONES</span>
+                  <span className="font-bold text-sm">
+                    VAN: {pedidoSeleccionado ? vanM3 : (Number(cantidadM3) || 0)} M³ DE{' '}
+                    {pedidoSeleccionado ? deM3 : <span className="border-b border-slate-400 min-w-[40px] inline-block">&nbsp;&nbsp;&nbsp;&nbsp;</span>}{' '}
+                    M³
                   </span>
                 </div>
 
