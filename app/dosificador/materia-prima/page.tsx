@@ -99,7 +99,7 @@ export default function MateriaPrimaPage() {
           cantidad: parseFloat(form.cantidad),
           unidad: getUnidadByAgregado(form.agregado_id),
           fecha: form.fecha,
-          proveedor_id: form.proveedor_id ? parseInt(form.proveedor_id) : null,
+          proveedor_id: parseInt(form.proveedor_id),
           usuario_id: 1,
         }),
       });
@@ -121,7 +121,7 @@ export default function MateriaPrimaPage() {
     }
   };
 
-  const inputCls = "w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-900 font-medium focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 shadow-sm transition-all bg-white";
+  const inputCls = "w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-900 font-medium focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 shadow-sm transition-all bg-white appearance-none cursor-pointer";
   const labelCls = "block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5";
 
   return (
@@ -156,7 +156,7 @@ export default function MateriaPrimaPage() {
               <thead className="bg-slate-50/80 text-[10px] uppercase font-extrabold text-slate-500 tracking-widest border-b border-slate-200">
                 <tr>
                   <th className="px-6 py-4">Fecha</th>
-                  <th className="px-6 py-4">Agregado</th>
+                  <th className="px-6 py-4">Proveedor - Agregado</th>
                   <th className="px-6 py-4">Cantidad</th>
                   <th className="px-6 py-4">Unidad</th>
                 </tr>
@@ -167,7 +167,9 @@ export default function MateriaPrimaPage() {
                     <td className="px-6 py-4 font-medium text-slate-900">
                       {new Date(mp.fecha || mp.created_at).toLocaleDateString("es-VE")}
                     </td>
-                    <td className="px-6 py-4 font-bold text-slate-800">{mp.agregado_nombre}</td>
+                    <td className="px-6 py-4 font-bold text-slate-800">
+                      {mp.proveedor_nombre ? `${mp.proveedor_nombre} - ${mp.agregado_nombre}` : mp.agregado_nombre}
+                    </td>
                     <td className="px-6 py-4 font-bold text-slate-900">
                       {Number(mp.cantidad).toLocaleString("es-VE", { minimumFractionDigits: 2 })}
                     </td>
@@ -228,8 +230,9 @@ export default function MateriaPrimaPage() {
               </div>
 
               <div>
-                <label className={labelCls}>Proveedor</label>
+                <label className={labelCls}>Proveedor *</label>
                 <select
+                  required
                   value={form.proveedor_id}
                   onChange={(e) => setForm({ ...form, proveedor_id: e.target.value })}
                   className={inputCls}

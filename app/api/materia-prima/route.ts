@@ -5,7 +5,14 @@ import { registrarLog, getUsuarioFromRequest, getClientIp } from '@/lib/audit-lo
 
 export async function GET() {
   try {
-    const sql = `SELECT mp.*, a.nombre AS agregado_nombre, a.unidad_medida FROM materia_prima mp JOIN agregados a ON mp.agregado_id = a.id ORDER BY mp.id DESC`;
+    const sql = `
+      SELECT mp.*, a.nombre AS agregado_nombre, a.unidad_medida,
+             pv.nombre AS proveedor_nombre
+      FROM materia_prima mp
+      JOIN agregados a ON mp.agregado_id = a.id
+      LEFT JOIN proveedores pv ON mp.proveedor_id = pv.id
+      ORDER BY mp.id DESC
+    `;
     const resultados = await query(sql);
     return NextResponse.json({ success: true, materiaPrima: resultados }, { status: 200 });
   } catch (error) {
@@ -17,8 +24,8 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const data = await req.json();
-    const sql = `INSERT INTO materia_prima (agregado_id, cantidad, unidad, fecha, usuario_id) VALUES (?, ?, ?, NOW(), ?)`;
-    const valores = [data.agregado_id, parseFloat(data.cantidad), data.unidad || 'M3', data.usuario_id || 1];
+    const sql = `INSERT INTO materia_prima (agregado_id, cantidad, unidad, fecha, proveedor_id, usuario_id) VALUES (?, ?, ?, ?, ?, ?)`;
+    const valores = [data.agregado_id, parseFloat(data.cantidad), data.unidad || 'M3', data.fecha, data.proveedor_id, data.usuario_id || 1];
     const resultado: any = await query(sql, valores);
     emitSocketEvent('materia-prima:created');
 
@@ -26,7 +33,7 @@ export async function POST(req: Request) {
     await registrarLog({
       ...usuario, accion: 'crear', modulo: 'Materia Prima', entidad_id: resultado.insertId,
       descripcion: `Registró materia prima: ${data.cantidad} ${data.unidad || 'M3'}`,
-      datos_nuevos: { agregado_id: data.agregado_id, cantidad: data.cantidad, unidad: data.unidad },
+      datos_nuevos: { agregado_id: data.agregado_id, cantidad: data.cantidad, unidad: data.unidad, proveedor_id: data.proveedor_id },
       ip_address: getClientIp(req),
     });
 
