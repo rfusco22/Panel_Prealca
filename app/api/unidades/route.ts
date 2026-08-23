@@ -30,6 +30,10 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { numeroUnidad, placa, marca, modelo, ano, color, polizaRcvNumero, polizaRcvVencimiento, rotNumero, rotVencimiento } = body;
     if (!numeroUnidad || !placa || !marca || !modelo || !ano || !color) return NextResponse.json({ error: 'Todos los campos son obligatorios' }, { status: 400 });
+
+    const hoy = new Date().toISOString().split('T')[0];
+    if (polizaRcvVencimiento && polizaRcvVencimiento < hoy) return NextResponse.json({ error: 'La fecha de vencimiento de la Póliza RCV no puede ser anterior a hoy.' }, { status: 400 });
+    if (rotVencimiento && rotVencimiento < hoy) return NextResponse.json({ error: 'La fecha de vencimiento del ROT no puede ser anterior a hoy.' }, { status: 400 });
     const result: any = await query(
       `INSERT INTO unidades (numero_unidad, placa, marca, modelo, ano, color, poliza_rcv_numero, poliza_rcv_vencimiento, rot_numero, rot_vencimiento) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [numeroUnidad, placa, marca, modelo, ano, color, polizaRcvNumero || null, polizaRcvVencimiento || null, rotNumero || null, rotVencimiento || null]
@@ -58,6 +62,10 @@ export async function PUT(request: Request) {
     const body = await request.json();
     const { id, numeroUnidad, placa, marca, modelo, ano, color, polizaRcvNumero, polizaRcvVencimiento, rotNumero, rotVencimiento } = body;
     if (!id || !numeroUnidad || !placa || !marca || !modelo || !ano || !color) return NextResponse.json({ error: 'Faltan datos requeridos' }, { status: 400 });
+
+    const hoy = new Date().toISOString().split('T')[0];
+    if (polizaRcvVencimiento && polizaRcvVencimiento < hoy) return NextResponse.json({ error: 'La fecha de vencimiento de la Póliza RCV no puede ser anterior a hoy.' }, { status: 400 });
+    if (rotVencimiento && rotVencimiento < hoy) return NextResponse.json({ error: 'La fecha de vencimiento del ROT no puede ser anterior a hoy.' }, { status: 400 });
 
     const anterior: any = await query('SELECT id, numero_unidad, placa FROM unidades WHERE id = ?', [id]);
     const old = anterior.length > 0 ? anterior[0] : null;

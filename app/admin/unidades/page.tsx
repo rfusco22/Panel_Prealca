@@ -370,6 +370,13 @@ export default function AdminUnidadesPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
 
   // Estado con los campos exactos que pediste
+  const getToday = () => {
+    const d = new Date();
+    const offset = d.getTimezoneOffset();
+    const local = new Date(d.getTime() - offset * 60000);
+    return local.toISOString().split("T")[0];
+  };
+
   const [formData, setFormData] = useState({
     numeroUnidad: '',
     placa: '',
@@ -773,6 +780,7 @@ export default function AdminUnidadesPage() {
                           <input
                             type="date"
                             name="polizaRcvVencimiento"
+                            min={getToday()}
                             value={formData.polizaRcvVencimiento}
                             onChange={handleInputChange}
                             className="w-full px-3 sm:px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 transition-all shadow-sm"
@@ -801,6 +809,7 @@ export default function AdminUnidadesPage() {
                           <input
                             type="date"
                             name="rotVencimiento"
+                            min={getToday()}
                             value={formData.rotVencimiento}
                             onChange={handleInputChange}
                             className="w-full px-3 sm:px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 transition-all shadow-sm"
