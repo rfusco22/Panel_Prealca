@@ -8,6 +8,7 @@ import { Plus, X } from "lucide-react";
 
 export default function ChoferesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingChofer, setEditingChofer] = useState<any>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const { socket } = useSocket();
 
@@ -31,7 +32,13 @@ export default function ChoferesPage() {
 
   const cerrarModal = () => {
     setIsModalOpen(false);
+    setEditingChofer(null);
     setRefreshKey((k) => k + 1);
+  };
+
+  const handleEdit = (chofer: any) => {
+    setEditingChofer(chofer);
+    setIsModalOpen(true);
   };
 
   return (
@@ -51,7 +58,7 @@ export default function ChoferesPage() {
       </div>
 
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden p-6">
-        <ChoferesTable key={refreshKey} />
+        <ChoferesTable key={refreshKey} onEdit={handleEdit} />
       </div>
 
       {isModalOpen && (
@@ -60,15 +67,15 @@ export default function ChoferesPage() {
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between shrink-0">
               <div>
-                <h3 className="text-xl font-bold text-slate-900">Nuevo Chofer</h3>
-                <p className="text-sm text-slate-500 mt-1">Completa los datos del chofer.</p>
+                <h3 className="text-xl font-bold text-slate-900">{editingChofer ? "Editar Chofer" : "Nuevo Chofer"}</h3>
+                <p className="text-sm text-slate-500 mt-1">{editingChofer ? "Modifica los datos del chofer." : "Completa los datos del chofer."}</p>
               </div>
               <button onClick={cerrarModal} className="text-slate-400 hover:text-slate-700 p-2 rounded-full transition-colors bg-slate-50 hover:bg-slate-100">
                 <X size={20} />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto bg-white">
-              <ChoferForm onClose={cerrarModal} />
+              <ChoferForm onClose={cerrarModal} initialData={editingChofer} isEditing={!!editingChofer} />
             </div>
           </div>
         </div>

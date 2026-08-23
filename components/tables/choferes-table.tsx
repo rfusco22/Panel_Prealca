@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Loader2, Trash2, CheckCircle2, XCircle, AlertTriangle, Clock } from "lucide-react";
+import { Loader2, Trash2, CheckCircle2, XCircle, AlertTriangle, Clock, Pencil } from "lucide-react";
 
-function ChoferesTable({ refreshKey }: { refreshKey?: number }) {
+function ChoferesTable({ refreshKey, onEdit }: { refreshKey?: number; onEdit?: (chofer: any) => void }) {
   const [data, setData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -151,7 +151,10 @@ function ChoferesTable({ refreshKey }: { refreshKey?: number }) {
                 </td>
                 <td className="px-6 py-4 text-right">
                   <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => handleDelete(c.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                    <button onClick={() => onEdit && onEdit(c)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Editar">
+                      <Pencil size={15} />
+                    </button>
+                    <button onClick={() => handleDelete(c.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Eliminar">
                       <Trash2 size={15} />
                     </button>
                   </div>
