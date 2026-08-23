@@ -198,6 +198,19 @@ export default function MateriaPrimaPage() {
               )}
 
               <div>
+                <label className={labelCls}>Fecha *</label>
+                <input
+                  type="date"
+                  required
+                  value={form.fecha}
+                  min={getMinDate()}
+                  max={getMaxDate()}
+                  onChange={(e) => setForm({ ...form, fecha: e.target.value })}
+                  className={inputCls}
+                />
+              </div>
+
+              <div>
                 <label className={labelCls}>Agregado *</label>
                 <select
                   required
@@ -210,19 +223,6 @@ export default function MateriaPrimaPage() {
                     <option key={a.id} value={a.id}>{a.nombre} — {a.unidadMedida || a.unidad_medida}</option>
                   ))}
                 </select>
-              </div>
-
-              <div>
-                <label className={labelCls}>Fecha *</label>
-                <input
-                  type="date"
-                  required
-                  value={form.fecha}
-                  min={getMinDate()}
-                  max={getMaxDate()}
-                  onChange={(e) => setForm({ ...form, fecha: e.target.value })}
-                  className={inputCls}
-                />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
