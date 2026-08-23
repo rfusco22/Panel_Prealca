@@ -38,12 +38,30 @@ function ProveedorForm({ onClose }: { onClose?: () => void }) {
     );
   };
 
+  const [form, setForm] = useState({
+    rifTipo: "J",
+    rifNumero: "",
+    rifDigito: "",
+  });
+
   const onSubmit = async (data: any) => {
     setIsLoading(true);
     setMensaje({ tipo: "", texto: "" });
     try {
+      if (!form.rifNumero || form.rifNumero.length < 6) {
+        setMensaje({ tipo: "error", texto: "El número de RIF debe tener al menos 6 dígitos." });
+        setIsLoading(false);
+        return;
+      }
+      if (!form.rifDigito) {
+        setMensaje({ tipo: "error", texto: "El dígito verificador es obligatorio." });
+        setIsLoading(false);
+        return;
+      }
+      const rif = `${form.rifTipo}-${form.rifNumero}-${form.rifDigito}`;
       const payload = {
         ...data,
+        rif,
         plantas: plantas.filter((p) => p.trim()),
         agregados: clasificacionGasto === "Produccion" ? agregadosSeleccionados : [],
       };
@@ -58,6 +76,7 @@ function ProveedorForm({ onClose }: { onClose?: () => void }) {
         reset();
         setPlantas([""]);
         setAgregadosSeleccionados([]);
+        setForm({ rifTipo: "J", rifNumero: "", rifDigito: "" });
         setTimeout(() => {
           if (onClose) onClose();
         }, 1200);
@@ -98,12 +117,36 @@ function ProveedorForm({ onClose }: { onClose?: () => void }) {
         </div>
         <div>
           <label className="block text-xs font-semibold text-slate-600 mb-1.5">RIF *</label>
-          <input
-            {...register("rif", { required: "El RIF es requerido", minLength: { value: 6, message: "Minimo 6 caracteres" } })}
-            type="text"
-            placeholder="J-12345678"
-            className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
-          />
+          <div className="flex gap-1.5">
+            <select
+              value={form.rifTipo}
+              onChange={(e) => setForm({ ...form, rifTipo: e.target.value })}
+              className="w-20 px-3 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-900 font-bold focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
+            >
+              <option value="J">J</option>
+              <option value="V">V</option>
+              <option value="E">E</option>
+              <option value="P">P</option>
+              <option value="G">G</option>
+              <option value="C">C</option>
+            </select>
+            <input
+              type="text"
+              placeholder="12345678"
+              value={form.rifNumero}
+              onChange={(e) => setForm({ ...form, rifNumero: e.target.value.replace(/\D/g, "").slice(0, 10) })}
+              className="flex-1 px-3 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
+            />
+            <span className="flex items-center text-slate-400 text-sm font-bold">-</span>
+            <input
+              type="text"
+              placeholder="D.V."
+              value={form.rifDigito}
+              onChange={(e) => setForm({ ...form, rifDigito: e.target.value.replace(/\D/g, "").slice(0, 1) })}
+              className="w-14 px-3 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-900 text-center font-bold placeholder:text-slate-400 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
+            />
+          </div>
+          <p className="text-[10px] text-slate-400 mt-1 ml-1">Ej: J-12345678-9</p>
         </div>
       </div>
 
