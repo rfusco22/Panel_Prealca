@@ -558,71 +558,70 @@ export function generatePrealcaHtml(data: PrealcaPrintData): string {
   @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Poppins', sans-serif; background: #f0f0f0; display: flex; justify-content: center; padding: 20px; }
-  .guia { width: 800px; background: #fff; border: 2px solid #1a5276; padding: 0; }
-  .guia-header { display: flex; justify-content: space-between; align-items: flex-start; padding: 15px 20px 10px; border-bottom: 2px solid #1a5276; }
-  .guia-center { text-align: center; }
-  .guia-center .subtitle { font-size: 14px; font-weight: 600; color: #333; text-transform: uppercase; letter-spacing: 2px; }
-  .guia-center .guia-num { font-size: 16px; font-weight: 700; color: #c0392b; margin-top: 4px; }
-  .guia-fechas { text-align: right; font-size: 11px; }
-  .guia-fechas .fecha-box { border: 1px solid #999; padding: 3px 8px; margin-bottom: 3px; display: inline-block; }
-  .guia-fechas .fecha-label { color: #666; font-weight: 600; }
-  .cliente-section { padding: 12px 20px; border-bottom: 1px solid #ccc; }
-  .cliente-row { display: flex; gap: 10px; margin-bottom: 4px; font-size: 12px; }
-  .cliente-row .label { font-weight: 600; color: #333; min-width: 80px; }
-  .cliente-row .value { flex: 1; border-bottom: 1px solid #999; padding-bottom: 1px; color: #333; }
-  .condiciones-row { display: flex; justify-content: space-between; padding: 8px 20px; border-bottom: 2px solid #1a5276; font-size: 12px; }
-  .condiciones-row .label { font-weight: 600; }
-  .condiciones-row .van { font-weight: 700; font-size: 14px; }
-  .guia-table { width: 100%; border-collapse: collapse; }
-  .guia-table th { background: #1a5276; border: 1px solid #999; padding: 8px 10px; font-size: 11px; font-weight: 700; text-transform: uppercase; color: #fff; text-align: center; }
-  .guia-table td { border: 1px solid #999; padding: 10px; font-size: 12px; color: #333; vertical-align: top; }
-  .guia-table .col-cant { width: 10%; text-align: center; }
-  .guia-table .col-resistencia { width: 20%; text-align: center; }
-  .guia-table .col-asent { width: 10%; text-align: center; }
-  .guia-table .col-obs { width: 60%; }
-  .observaciones-cell { min-height: 80px; font-size: 10px; line-height: 1.6; color: #555; }
-  .agua-row { display: flex; justify-content: space-between; padding: 8px 20px; border-top: 1px solid #999; font-size: 11px; color: #555; }
-  .guia-footer { padding: 12px 20px; border-top: 1px solid #ccc; }
-  .footer-row { display: flex; gap: 20px; margin-bottom: 6px; font-size: 11px; }
-  .footer-row .label { font-weight: 600; color: #333; min-width: 60px; }
-  .footer-row .value { border-bottom: 1px solid #999; flex: 1; padding-bottom: 1px; }
-  .firmas-section { display: flex; justify-content: space-between; padding: 15px 20px 10px; border-top: 1px solid #ccc; }
-  .firma-box { text-align: center; width: 30%; }
-  .firma-line { border-top: 1px solid #333; margin-top: 40px; padding-top: 5px; font-size: 10px; font-weight: 600; color: #333; }
-  .control-number { padding: 10px 20px; border-top: 1px solid #ccc; display: flex; align-items: center; gap: 10px; }
-  .control-number .label { font-weight: 700; font-size: 14px; color: #000; }
-  .control-number .value { font-weight: 700; font-size: 22px; color: #c0392b; }
-  .footer-legal { text-align: center; padding: 8px 20px; font-size: 10px; color: #c0392b; font-weight: 600; border-top: 1px solid #ccc; }
+  .guia { width: 1050px; background: #fff; border: 2px solid #000; padding: 15px 20px; }
+  @page { size: landscape; margin: 10mm; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 8px; border-bottom: 2px solid #000; margin-bottom: 8px; }
+  .header-left { display: flex; align-items: flex-start; gap: 8px; }
+  .header-left img { width: 110px; height: auto; }
+  .company-info { font-size: 8px; line-height: 1.3; }
+  .company-info .name { font-size: 9px; font-weight: 700; }
+  .header-center { text-align: center; }
+  .header-center .rif { font-size: 10px; font-weight: 600; }
+  .header-center .title { font-size: 14px; font-weight: 700; }
+  .header-center .guia-num { font-size: 26px; font-weight: 700; color: #c0392b; }
+  .header-right { text-align: right; }
+  .header-right .date-box { border: 1px solid #000; padding: 3px 10px; margin-bottom: 4px; font-size: 9px; }
+  .header-right .date-box .label { font-weight: 700; }
+  .cliente-section { font-size: 10px; margin-bottom: 6px; }
+  .cliente-row { display: flex; align-items: center; gap: 4px; margin-bottom: 3px; }
+  .cliente-row .label { font-weight: 700; min-width: 70px; }
+  .cliente-row .value { flex: 1; border-bottom: 1px solid #000; }
+  .cliente-row .short-value { border-bottom: 1px solid #000; }
+  .condiciones-row { display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 6px; padding: 2px 0; }
+  .condiciones-row .label { font-weight: 700; }
+  .condiciones-row .van { font-weight: 700; font-size: 12px; }
+  .guia-table { width: 100%; border-collapse: collapse; margin-bottom: 6px; font-size: 10px; }
+  .guia-table th { background: #333; border: 1px solid #000; padding: 4px 8px; font-weight: 700; color: #fff; text-align: center; }
+  .guia-table td { border: 1px solid #000; padding: 8px; vertical-align: top; }
+  .agua-row { font-size: 9px; margin-bottom: 6px; padding: 2px 0; }
+  .footer-section { font-size: 10px; margin-bottom: 6px; }
+  .footer-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+  .footer-row .label { font-weight: 700; }
+  .footer-row .value { border-bottom: 1px solid #000; flex: 1; }
+  .recibido-row { display: flex; justify-content: space-between; align-items: flex-start; border-top: 1px solid #000; padding-top: 6px; margin-bottom: 6px; font-size: 10px; }
+  .recibido-label { font-weight: 700; }
+  .recibido-fields { display: flex; gap: 20px; font-size: 9px; }
+  .control-row { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #000; padding-top: 6px; font-size: 12px; }
+  .control-row .control-num { font-weight: 700; color: #c0392b; font-size: 18px; }
+  .control-row .legal { font-size: 9px; font-weight: 700; color: #c0392b; }
   @media print { body { background: #fff; padding: 0; } .guia { border: 2px solid #000; width: 100%; } }
 </style>
 </head>
 <body>
 <div class="guia">
-  <div class="guia-header">
-    <div>
-      <img src="/logo.jpeg" alt="Prealca" style="width:120px;height:auto;">
-      <div style="font-size:8px;color:#555;line-height:1.4;margin-top:4px;">
-        <p style="font-weight:700;">PREALCA, C.A.</p>
-        <p>CALLE ZONA INDUSTRIAL, 2DA ETAPA, PARCELA</p>
-        <p>E-37 ZONA INDUSTRIAL SANTA CRUZ</p>
+  <div class="header">
+    <div class="header-left">
+      <img src="/logo.jpeg" alt="Prealca">
+      <div class="company-info">
+        <p class="name">PREALCA, C.A.</p>
+        <p>CALLE ZONA INDUSTRIAL, 2da ETAPA, PARCELA E-37 ZONA INDUSTRIAL SANTA CRUZ</p>
         <p>SANTA CRUZ DE ARAGUA - EDO. ARAGUA</p>
-        <p>TELF: (0243) 251.75.33 / 672.01.65 / (0412) 755.62.07 / (0424) 303.37.40</p>
+        <p>TELF: (0243) 251.75.33 - 672.01.65 - (0412) 755.62.07 - (0424) 303.37.40</p>
       </div>
     </div>
-    <div class="guia-center">
-      <div style="font-size:11px;color:#666;">R.I.F.: J-30913171-0</div>
-      <div class="subtitle">Guía de Despacho</div>
+    <div class="header-center">
+      <div class="rif">R.I.F.: J-30913171-0</div>
+      <div class="title">Guía de Despacho</div>
       <div class="guia-num">${data.guiaNumber}</div>
     </div>
-    <div class="guia-fechas">
-      <div class="fecha-box">
-        <span class="fecha-label">FECHA DE EMISIÓN</span><br>
-        <span>${new Date().toLocaleDateString('es-VE')}</span>
+    <div class="header-right">
+      <div class="date-box">
+        <div class="label">FECHA DE EMISIÓN</div>
+        <div>${new Date().toLocaleDateString('es-VE')}</div>
       </div>
-      <br>
-      <div class="fecha-box">
-        <span class="fecha-label">FECHA DE VENCIMIENTO</span><br>
-        <span>___/___/______</span>
+      <div class="date-box">
+        <div class="label">FECHA DE VENCIMIENTO</div>
+        <div>___/___/______</div>
       </div>
     </div>
   </div>
@@ -631,8 +630,8 @@ export function generatePrealcaHtml(data: PrealcaPrintData): string {
     <div class="cliente-row">
       <span class="label">Cliente:</span>
       <span class="value">${data.clienteNombre}</span>
-      <span class="label" style="min-width:40px;">R.I.F.:</span>
-      <span class="value" style="max-width:150px;">${data.clienteRif}</span>
+      <span class="label" style="margin-left:16px;">R.I.F.:</span>
+      <span class="short-value" style="width:200px;">${data.clienteRif}</span>
     </div>
     <div class="cliente-row">
       <span class="label">Dirección:</span>
@@ -640,38 +639,38 @@ export function generatePrealcaHtml(data: PrealcaPrintData): string {
     </div>
     <div class="cliente-row">
       <span class="label">Teléfonos:</span>
-      <span class="value">${data.clienteTelefono || ''}</span>
-      <span class="label" style="min-width:50px;">N.I.T.:</span>
-      <span class="value" style="max-width:120px;"></span>
-      <span class="label" style="min-width:90px;">Condiciones:</span>
-      <span class="value" style="max-width:120px;">Contado</span>
+      <span class="short-value" style="width:150px;">${data.clienteTelefono || ''}</span>
+      <span class="label" style="margin-left:16px;">N.I.T.:</span>
+      <span class="short-value" style="width:100px;"></span>
+      <span class="label" style="margin-left:16px;">Condiciones:</span>
+      <span class="short-value" style="width:80px;text-align:center;">Contado</span>
+      <span class="label" style="margin-left:24px;">Van:</span>
+      <span class="short-value" style="width:40px;text-align:center;font-weight:700;">${data.vanM3 || item.cantidad}</span>
+      <span style="margin:0 2px;">M³de</span>
+      <span class="short-value" style="width:40px;text-align:center;font-weight:700;">${data.deM3 || '___'}</span>
+      <span>M³</span>
     </div>
-  </div>
-
-  <div class="condiciones-row">
-    <span class="label">CONDICIONES</span>
-    <span class="van">VAN: ${data.vanM3 || 0} M³ DE ${data.deM3 ? data.deM3 : '<span style="border-bottom:1px solid #999;min-width:40px;display:inline-block;">&nbsp;&nbsp;&nbsp;&nbsp;</span>'} M³</span>
   </div>
 
   <table class="guia-table">
     <thead>
       <tr>
-        <th class="col-cant">Cant.</th>
-        <th class="col-resistencia">Resistencia (RG)</th>
-        <th class="col-asent">Asent.</th>
-        <th class="col-obs">Observaciones</th>
+        <th style="width:8%;">Cant.</th>
+        <th style="width:22%;">Resistencia (RG)</th>
+        <th style="width:10%;">ASENT.</th>
+        <th>OBSERVACIONES</th>
       </tr>
     </thead>
     <tbody>
       <tr>
-        <td class="col-cant">${item.cantidad}</td>
-        <td class="col-resistencia" style="text-align:center;">${item.resistencia || ''}${item.pulgada ? ' ' + item.pulgada + 'ST' : ''}</td>
-        <td class="col-asent" style="text-align:center;">${item.pulgada ? item.pulgada + '&quot;' : ''}</td>
-        <td class="col-obs observaciones-cell">
-          El Concreto suministrado cumple con la Norma COVENIN 633.<br>
-          Cualquier adición de agua va por cuenta y riesgo del Cliente.<br>
-          <strong>ADITIVO WRDA 79</strong><br>
-          <span style="float:right;font-weight:600;">FRACTIL 10%</span>
+        <td style="text-align:center;font-weight:700;font-size:14px;padding:12px 8px;">${item.cantidad}</td>
+        <td style="text-align:center;font-weight:700;padding:12px 8px;">${item.resistencia || ''}${item.pulgada ? ' ' + item.pulgada + 'ST' : ''}</td>
+        <td style="text-align:center;padding:12px 8px;">${item.pulgada ? item.pulgada + '&quot;' : ''}</td>
+        <td style="font-size:9px;line-height:1.6;padding:10px;">
+          <p>El Concreto suministrado cumple con la Norma COVENIN 633.</p>
+          <p>Cualquier adición de agua va por cuenta y riesgo del Cliente.</p>
+          <p style="font-weight:700;margin-top:4px;">ADITIVO WRDA 79</p>
+          <p style="text-align:right;font-weight:700;margin-top:4px;">FRACTIL 10%</p>
         </td>
       </tr>
     </tbody>
@@ -679,45 +678,41 @@ export function generatePrealcaHtml(data: PrealcaPrintData): string {
 
   <div class="agua-row">
     <span>Adición de Agua Sugerido por el Dueño _____ Litros / Adición de Agua Sugerido por el Cliente _____ Litros</span>
-    <span>Firma ________________</span>
+    <span style="float:right;">Firma ________________</span>
   </div>
 
-  <div class="guia-footer">
+  <div class="footer-section">
     <div class="footer-row">
       <span class="label">OBRA:</span>
       <span class="value">${data.obra || ''}</span>
     </div>
     <div class="footer-row">
       <span class="label">CHOFER:</span>
-      <span class="value" style="max-width:200px;">${data.chofer}</span>
-      <span class="label" style="min-width:100px;">HORA DE SALIDA:</span>
-      <span class="value" style="max-width:100px;">${horaSalida}</span>
-      <span class="label" style="min-width:100px;">HORA DE LLEGADA:</span>
-      <span class="value" style="max-width:80px;"></span>
+      <span class="value" style="max-width:250px;">${data.chofer}</span>
+      <span class="label" style="margin-left:24px;">HORA DE SALIDA:</span>
+      <span class="value" style="max-width:120px;font-weight:700;">${horaSalida}</span>
+      <span class="label" style="margin-left:24px;">HORA DE LLEGADA:</span>
+      <span class="value" style="max-width:120px;"></span>
     </div>
   </div>
 
-  <div class="firmas-section">
-    <div style="font-size:11px;font-weight:600;">RECIBIDO POR:</div>
-    <div class="firma-box">
-      <div class="firma-line">Nombre:</div>
-    </div>
-    <div class="firma-box">
-      <div class="firma-line">Firma:</div>
-    </div>
-    <div class="firma-box">
-      <div class="firma-line">Fecha:</div>
-    </div>
-    <div class="firma-box">
-      <div class="firma-line">Hora:</div>
+  <div class="recibido-row">
+    <span class="recibido-label">RECIBIDO POR:</span>
+    <div class="recibido-fields">
+      <span><strong>Nombre:</strong> ________________</span>
+      <span><strong>Firma:</strong> ________________</span>
+      <span><strong>Fecha:</strong> ________________</span>
+      <span><strong>Hora:</strong> ________________</span>
     </div>
   </div>
 
-  <div class="control-number">
-    <span class="label">N° DE CONTROL:</span>
-    <span class="value">00-${data.guiaNumber}</span>
+  <div class="control-row">
+    <div>
+      <span style="font-weight:700;">N° DE CONTROL:</span>
+      <span class="control-num">00-${data.guiaNumber}</span>
+    </div>
+    <span class="legal">ORIGINAL CLIENTE - SIN DERECHO A CREDITO FISCAL</span>
   </div>
-  <div class="footer-legal">ORIGINAL CLIENTE - SIN DERECHO A CREDITO FISCAL</div>
 </div>
 </body></html>`
 }

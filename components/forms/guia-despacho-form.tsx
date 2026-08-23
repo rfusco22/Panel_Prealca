@@ -479,140 +479,134 @@ export function GuiaDespachoForm({
                 </div>
               </>
             ) : esPrealca ? (
-              /* ===== PREALCA - GUÍA DE DESPACHO ===== */
+              /* ===== PREALCA - GUÍA DE DESPACHO (HORIZONTAL) ===== */
               <>
-                <div className="flex justify-between items-start mb-4 pb-3 border-b-2 border-slate-800">
-                  <div>
-                    <img src="/logo.jpeg" alt="Prealca" className="w-[100px] h-auto" />
-                    <div className="text-[8px] text-slate-600 leading-tight mt-1">
-                      <p className="font-bold">PREALCA, C.A.</p>
-                      <p>CALLE ZONA INDUSTRIAL, 2DA ETAPA, PARCELA</p>
-                      <p>E-37 ZONA INDUSTRIAL SANTA CRUZ</p>
+                {/* HEADER */}
+                <div className="flex justify-between items-start mb-2 pb-2 border-b-2 border-black">
+                  <div className="flex items-start gap-2">
+                    <img src="/logo.jpeg" alt="Prealca" className="w-[110px] h-auto" />
+                    <div className="text-[8px] leading-tight mt-1">
+                      <p className="font-bold text-[9px]">PREALCA, C.A.</p>
+                      <p>CALLE ZONA INDUSTRIAL, 2da ETAPA, PARCELA E-37 ZONA INDUSTRIAL SANTA CRUZ</p>
                       <p>SANTA CRUZ DE ARAGUA - EDO. ARAGUA</p>
-                      <p>TELF: (0243) 251.75.33 / 672.01.65 / (0412) 755.62.07 / (0424) 303.37.40</p>
+                      <p>TELF: (0243) 251.75.33 - 672.01.65 - (0412) 755.62.07 - (0424) 303.37.40</p>
                     </div>
                   </div>
-                  <div className="text-center">
-                    <p className="text-[10px] text-slate-500">R.I.F.: J-30913171-0</p>
-                    <p className="text-xs font-semibold text-slate-600 uppercase tracking-widest">Guía de Despacho</p>
-                    <p className="text-sm font-bold text-red-600 mt-0.5">Nº NUEVA</p>
+                  <div className="text-center shrink-0 mx-4">
+                    <p className="text-[10px] font-semibold">R.I.F.: J-30913171-0</p>
+                    <p className="text-sm font-bold tracking-wide">Guía de Despacho</p>
+                    <p className="text-2xl font-bold text-red-600">NUEVA</p>
                   </div>
-                  <div className="text-right text-[10px] space-y-1">
-                    <div className="border border-slate-400 px-2 py-1">
-                      <span className="font-semibold text-slate-500">FECHA DE EMISIÓN</span><br/>
-                      <span className="text-slate-700">{new Date().toLocaleDateString('es-VE')}</span>
+                  <div className="text-right text-[9px] shrink-0">
+                    <div className="border border-black px-3 py-1 mb-1">
+                      <p className="font-bold">FECHA DE EMISIÓN</p>
+                      <p>{new Date().toLocaleDateString('es-VE')}</p>
                     </div>
-                    <div className="border border-slate-400 px-2 py-1">
-                      <span className="font-semibold text-slate-500">FECHA DE VENCIMIENTO</span><br/>
-                      <span className="text-slate-400">___/___/______</span>
+                    <div className="border border-black px-3 py-1">
+                      <p className="font-bold">FECHA DE VENCIMIENTO</p>
+                      <p className="text-slate-400">___/___/______</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="space-y-1.5 mb-3 text-xs">
-                  <div className="flex gap-2">
-                    <span className="font-semibold w-20 shrink-0">Cliente:</span>
-                    <span className="flex-1 border-b border-slate-400">{clienteSeleccionado?.nombre || ''}</span>
-                    <span className="font-semibold w-12 shrink-0">R.I.F.:</span>
-                    <span className="w-40 border-b border-slate-400">{clienteSeleccionado?.rif || ''}</span>
+                {/* CLIENTE */}
+                <div className="text-[10px] mb-2 space-y-1">
+                  <div className="flex items-center">
+                    <span className="font-bold w-16">Cliente:</span>
+                    <span className="flex-1 border-b border-black mx-1">{clienteSeleccionado?.nombre || ''}</span>
+                    <span className="font-bold ml-4">R.I.F.:</span>
+                    <span className="border-b border-black w-48 ml-1">{clienteSeleccionado?.rif || ''}</span>
                   </div>
-                  <div className="flex gap-2">
-                    <span className="font-semibold w-20 shrink-0">Dirección:</span>
-                    <span className="flex-1 border-b border-slate-400">{clienteSeleccionado?.direccion || ''}</span>
+                  <div className="flex items-center">
+                    <span className="font-bold w-16">Dirección:</span>
+                    <span className="flex-1 border-b border-black mx-1">{clienteSeleccionado?.direccion || ''}</span>
                   </div>
-                  <div className="flex gap-2">
-                    <span className="font-semibold w-20 shrink-0">Teléfonos:</span>
-                    <span className="flex-1 border-b border-slate-400">{clienteSeleccionado?.telefono || ''}</span>
-                    <span className="font-semibold w-14 shrink-0">N.I.T.:</span>
-                    <span className="w-32 border-b border-slate-400"></span>
-                    <span className="font-semibold w-28 shrink-0">Condiciones:</span>
-                    <span className="flex-1 border-b border-slate-400">Contado</span>
+                  <div className="flex items-center">
+                    <span className="font-bold w-16">Teléfonos:</span>
+                    <span className="border-b border-black w-36">{clienteSeleccionado?.telefono || ''}</span>
+                    <span className="font-bold ml-4">N.I.T.:</span>
+                    <span className="border-b border-black w-24 mx-1"></span>
+                    <span className="font-bold ml-2">Condiciones:</span>
+                    <span className="border-b border-black w-20 mx-1 text-center">Contado</span>
+                    <span className="font-bold ml-4">Van:</span>
+                    <span className="border-b border-black w-12 mx-1 text-center font-bold">{pedidoSeleccionado ? vanM3 : (Number(cantidadM3) || 0)}</span>
+                    <span>M³de</span>
+                    <span className="border-b border-black w-12 mx-1 text-center font-bold">{pedidoSeleccionado ? deM3 : '___'}</span>
+                    <span>M³</span>
                   </div>
                 </div>
 
-                <div className="flex justify-between items-center py-2 border-y border-slate-400 mb-3 text-xs">
-                  <span className="font-semibold">CONDICIONES</span>
-                  <span className="font-bold text-sm">
-                    VAN: {pedidoSeleccionado ? vanM3 : (Number(cantidadM3) || 0)} M³ DE{' '}
-                    {pedidoSeleccionado ? deM3 : <span className="border-b border-slate-400 min-w-[40px] inline-block">&nbsp;&nbsp;&nbsp;&nbsp;</span>}{' '}
-                    M³
-                  </span>
-                </div>
-
-                <div className="border border-slate-400 mb-3">
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr className="bg-slate-800">
-                        <th className="border border-slate-400 px-2 py-2 text-center font-bold w-[8%] text-white">CANT.</th>
-                        <th className="border border-slate-400 px-2 py-2 text-center font-bold w-[18%] text-white">RESISTENCIA (RG)</th>
-                        <th className="border border-slate-400 px-2 py-2 text-center font-bold w-[10%] text-white">ASENT.</th>
-                        <th className="border border-slate-400 px-2 py-2 text-left font-bold text-white">OBSERVACIONES</th>
+                {/* TABLA */}
+                <table className="w-full text-[10px] mb-2 border-collapse">
+                  <thead>
+                    <tr className="bg-slate-800 text-white">
+                      <th className="border border-black px-2 py-1.5 text-center font-bold w-[8%]">Cant.</th>
+                      <th className="border border-black px-2 py-1.5 text-center font-bold w-[22%]">Resistencia (RG)</th>
+                      <th className="border border-black px-2 py-1.5 text-center font-bold w-[10%]">ASENT.</th>
+                      <th className="border border-black px-2 py-1.5 text-left font-bold">OBSERVACIONES</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {productoSeleccionado ? (
+                      <tr>
+                        <td className="border border-black px-2 py-8 text-center text-sm font-bold">{Number(cantidadM3) || 0}</td>
+                        <td className="border border-black px-2 py-8 text-center font-bold">{productoSeleccionado.resistencia || ''}{productoSeleccionado.pulgada ? ` ${productoSeleccionado.pulgada}ST` : ''}</td>
+                        <td className="border border-black px-2 py-8 text-center">{productoSeleccionado.pulgada ? `${productoSeleccionado.pulgada}"` : ''}</td>
+                        <td className="border border-black px-3 py-4 text-[9px] leading-relaxed">
+                          <p>El Concreto suministrado cumple con la Norma COVENIN 633.</p>
+                          <p>Cualquier adición de agua va por cuenta y riesgo del Cliente.</p>
+                          <p className="font-bold mt-1">ADITIVO WRDA 79</p>
+                          <p className="text-right font-bold mt-1">FRACTIL 10%</p>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {productoSeleccionado ? (
-                        <tr>
-                          <td className="border border-slate-400 px-2 py-6 text-center">{Number(cantidadM3) || 0}</td>
-                          <td className="border border-slate-400 px-2 py-6 text-center">{productoSeleccionado.resistencia || ''}{productoSeleccionado.pulgada ? ` ${productoSeleccionado.pulgada}ST` : ''}</td>
-                          <td className="border border-slate-400 px-2 py-6 text-center">{productoSeleccionado.pulgada ? `${productoSeleccionado.pulgada}"` : ''}</td>
-                          <td className="border border-slate-400 px-2 py-4 text-[10px] leading-relaxed text-slate-600">
-                            <p>El Concreto suministrado cumple con la Norma COVENIN 633.</p>
-                            <p>Cualquier adición de agua va por cuenta y riesgo del Cliente.</p>
-                            <p className="font-bold">ADITIVO WRDA 79</p>
-                            <p className="text-right font-bold">FRACTIL 10%</p>
-                          </td>
-                        </tr>
-                      ) : (
-                        <tr>
-                          <td colSpan={4} className="border border-slate-400 px-2 py-8 text-center text-slate-400">Seleccione un producto...</td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
+                    ) : (
+                      <tr>
+                        <td colSpan={4} className="border border-black px-2 py-8 text-center text-slate-400">Seleccione un producto...</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+
+                {/* ADICIÓN DE AGUA */}
+                <div className="flex justify-between text-[9px] mb-2 px-1">
+                  <span>Adición de Agua Sugerido por el Dueño <span className="border-b border-dotted border-black min-w-[30px] inline-block">&nbsp;</span> Litros / Adición de Agua Sugerido por el Cliente <span className="border-b border-dotted border-black min-w-[30px] inline-block">&nbsp;</span> Litros</span>
+                  <span className="ml-4">Firma ________________</span>
                 </div>
 
-                <div className="flex justify-between text-[10px] text-slate-500 mb-3 px-1">
-                  <span>Adición de Agua Sugerido por el Dueño <span className="border-b border-dotted border-slate-400 min-w-[40px] inline-block">&nbsp;</span> Litros / Adición de Agua Sugerido por el Cliente <span className="border-b border-dotted border-slate-400 min-w-[40px] inline-block">&nbsp;</span> Litros</span>
-                  <span>Firma ________________</span>
-                </div>
-
-                <div className="space-y-1.5 text-xs">
-                  <div className="flex gap-2">
-                    <span className="font-semibold w-16 shrink-0">OBRA:</span>
-                    <span className="flex-1 border-b border-slate-400">{watch('obra') || ''}</span>
+                {/* OBRA + CHOFER */}
+                <div className="text-[10px] space-y-1 mb-3">
+                  <div className="flex items-center">
+                    <span className="font-bold">OBRA:</span>
+                    <span className="flex-1 border-b border-black ml-1">{watch('obra') || ''}</span>
                   </div>
-                  <div className="flex gap-2">
-                    <span className="font-semibold w-16 shrink-0">CHOFER:</span>
-                    <span className="w-48 border-b border-slate-400">{chofer || ''}</span>
-                    <span className="font-semibold shrink-0">HORA DE SALIDA:</span>
-                    <span className="w-20 border-b border-slate-400 font-semibold">{horaSalida}</span>
-                    <span className="font-semibold shrink-0">HORA DE LLEGADA:</span>
-                    <span className="w-20 border-b border-slate-400"></span>
+                  <div className="flex items-center">
+                    <span className="font-bold">CHOFER:</span>
+                    <span className="border-b border-black w-48 ml-1">{chofer || ''}</span>
+                    <span className="font-bold ml-6">HORA DE SALIDA:</span>
+                    <span className="border-b border-black w-24 ml-1 font-bold">{horaSalida}</span>
+                    <span className="font-bold ml-6">HORA DE LLEGADA:</span>
+                    <span className="border-b border-black w-24 ml-1"></span>
                   </div>
                 </div>
 
-                <div className="flex justify-between mt-6 pt-4 border-t border-slate-300">
-                  <div className="text-xs font-semibold">RECIBIDO POR:</div>
-                  <div className="w-1/4 text-center">
-                    <div className="mt-8 border-t border-slate-600 pt-1 text-[10px] font-semibold">Nombre:</div>
-                  </div>
-                  <div className="w-1/4 text-center">
-                    <div className="mt-8 border-t border-slate-600 pt-1 text-[10px] font-semibold">Firma:</div>
-                  </div>
-                  <div className="w-1/4 text-center">
-                    <div className="mt-8 border-t border-slate-600 pt-1 text-[10px] font-semibold">Fecha:</div>
-                  </div>
-                  <div className="w-1/4 text-center">
-                    <div className="mt-8 border-t border-slate-600 pt-1 text-[10px] font-semibold">Hora:</div>
+                {/* RECIBIDO POR */}
+                <div className="flex items-start justify-between border-t border-black pt-2 mb-2">
+                  <div className="text-[10px] font-bold">RECIBIDO POR:</div>
+                  <div className="flex gap-6 text-[9px]">
+                    <div className="w-28"><span className="font-bold">Nombre:</span><span className="border-b border-black ml-1 inline-block w-16">&nbsp;</span></div>
+                    <div className="w-24"><span className="font-bold">Firma:</span><span className="border-b border-black ml-1 inline-block w-12">&nbsp;</span></div>
+                    <div className="w-24"><span className="font-bold">Fecha:</span><span className="border-b border-black ml-1 inline-block w-12">&nbsp;</span></div>
+                    <div className="w-20"><span className="font-bold">Hora:</span><span className="border-b border-black ml-1 inline-block w-10">&nbsp;</span></div>
                   </div>
                 </div>
 
-                <div className="flex justify-between items-center mt-4 pt-3 border-t border-slate-300">
+                {/* CONTROL + FOOTER */}
+                <div className="flex justify-between items-center border-t border-black pt-2">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-bold">N° DE CONTROL:</span>
-                    <span className="text-lg font-bold text-red-600">00-NUEVA</span>
+                    <span className="text-xl font-bold text-red-600">00-NUEVA</span>
                   </div>
-                  <span className="text-[10px] font-semibold text-red-600">ORIGINAL CLIENTE - SIN DERECHO A CREDITO FISCAL</span>
+                  <span className="text-[10px] font-bold text-red-600">ORIGINAL CLIENTE - SIN DERECHO A CREDITO FISCAL</span>
                 </div>
               </>
             ) : (
