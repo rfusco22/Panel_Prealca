@@ -6,9 +6,11 @@ import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { GuiaDespachoTable } from '@/components/tables/guia-despacho-table';
 import { useSocket } from '@/contexts/SocketContext';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function GuiaDespachoPage() {
   const { socket } = useSocket();
+  const { session } = useAuth();
   const [guias, setGuias] = useState<any[]>([]);
 
   const fetchGuias = async () => {
@@ -43,7 +45,7 @@ export default function GuiaDespachoPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-gray-900">Guías de Despacho</h1>
-        <Link href="/dosificador/guia-despacho/new">
+        <Link href={`/${session?.user?.role || 'dosificador'}/guia-despacho/new`}>
           <Button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2">
             <Plus size={20} />
             Nueva Guía
