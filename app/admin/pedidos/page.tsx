@@ -13,6 +13,7 @@ interface Pedido {
   cantidadM3: number;
   estado: string;
   notas: string | null;
+  obra: string | null;
   usuarioNombre: string;
   fecha: string;
 }
@@ -40,6 +41,7 @@ export default function PedidosPage() {
   const [formProducto, setFormProducto] = useState("");
   const [formCantidad, setFormCantidad] = useState("");
   const [formNotas, setFormNotas] = useState("");
+  const [formObra, setFormObra] = useState("");
 
   const { socket } = useSocket();
 
@@ -83,6 +85,7 @@ export default function PedidosPage() {
     setFormProducto("");
     setFormCantidad("");
     setFormNotas("");
+    setFormObra("");
     setError(null);
     setIsModalOpen(true);
   };
@@ -104,6 +107,7 @@ export default function PedidosPage() {
           productoId: Number(formProducto),
           cantidadM3: Number(formCantidad),
           notas: formNotas || undefined,
+          obra: formObra || undefined,
         }),
       });
       const data = await res.json();
@@ -168,6 +172,7 @@ export default function PedidosPage() {
                   <th className="text-left px-6 py-4 font-semibold text-slate-600">#</th>
                   <th className="text-left px-6 py-4 font-semibold text-slate-600">Cliente</th>
                   <th className="text-left px-6 py-4 font-semibold text-slate-600">Producto</th>
+                  <th className="text-left px-6 py-4 font-semibold text-slate-600">Obra</th>
                   <th className="text-left px-6 py-4 font-semibold text-slate-600">Cantidad M³</th>
                   <th className="text-left px-6 py-4 font-semibold text-slate-600">Estado</th>
                   <th className="text-left px-6 py-4 font-semibold text-slate-600">Creado por</th>
@@ -184,6 +189,7 @@ export default function PedidosPage() {
                       <td className="px-6 py-4 font-bold text-slate-900">{pedido.id}</td>
                       <td className="px-6 py-4 font-medium text-slate-900">{pedido.clienteNombre}</td>
                       <td className="px-6 py-4 text-slate-600">{pedido.productoNombre}</td>
+                      <td className="px-6 py-4 text-slate-600">{pedido.obra || "—"}</td>
                       <td className="px-6 py-4 font-semibold text-slate-900">{Number(pedido.cantidadM3).toFixed(2)} M³</td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${badge.bg} ${badge.text}`}>
@@ -257,6 +263,11 @@ export default function PedidosPage() {
                   <option value="">Seleccionar producto...</option>
                   {productos.map((p) => <option key={p.id} value={p.id}>{p.resistencia} - {p.pulgada}"</option>)}
                 </select>
+              </div>
+
+              <div>
+                <label className={labelCls}>Obra</label>
+                <input type="text" value={formObra} onChange={(e) => setFormObra(e.target.value)} placeholder="Nombre de la obra..." className={inputCls} />
               </div>
 
               <div>

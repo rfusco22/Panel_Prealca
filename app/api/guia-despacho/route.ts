@@ -8,12 +8,13 @@ import { registrarLog, getUsuarioFromRequest, getClientIp } from '@/lib/audit-lo
 
 async function ensurePedidoColumn() {
   try { await query(`ALTER TABLE guia_despacho ADD COLUMN pedido_id INT NULL`); } catch {}
+  try { await query(`ALTER TABLE guia_despacho ADD COLUMN obra VARCHAR(255) NULL`); } catch {}
 }
 
 export async function GET() {
   try {
     await ensurePedidoColumn();
-    const guias = await query(`SELECT gd.id, gd.tipo, gd.cliente_id AS clienteId, c.nombre AS clienteNombre, c.rif AS clienteRif, c.direccion AS clienteDireccion, c.telefono AS clienteTelefono, gd.producto_id AS productoId, CONCAT(p.resistencia, ' - ', p.pulgada) AS productoNombre, p.resistencia, p.pulgada, gd.cantidad_m3 AS cantidadM3, gd.precio_m3 AS precioM3, gd.iva_aplicado AS ivaAplicado, gd.iva_monto AS ivaMonto, gd.total, gd.chofer, gd.unidad_id AS unidadId, un.numero_unidad AS numeroUnidad, un.placa, gd.pedido_id AS pedidoId, pe.cantidad_m3 AS pedidoTotalM3, gd.usuario_id AS usuarioId, gd.created_at AS fecha FROM guia_despacho gd LEFT JOIN clientes c ON gd.cliente_id = c.id LEFT JOIN productos p ON gd.producto_id = p.id LEFT JOIN unidades un ON gd.unidad_id = un.id LEFT JOIN pedidos pe ON gd.pedido_id = pe.id ORDER BY gd.id DESC`);
+    const guias = await query(`SELECT gd.id, gd.tipo, gd.cliente_id AS clienteId, c.nombre AS clienteNombre, c.rif AS clienteRif, c.direccion AS clienteDireccion, c.telefono AS clienteTelefono, gd.producto_id AS productoId, CONCAT(p.resistencia, ' - ', p.pulgada) AS productoNombre, p.resistencia, p.pulgada, gd.cantidad_m3 AS cantidadM3, gd.precio_m3 AS precioM3, gd.iva_aplicado AS ivaAplicado, gd.iva_monto AS ivaMonto, gd.total, gd.chofer, gd.unidad_id AS unidadId, un.numero_unidad AS numeroUnidad, un.placa, gd.pedido_id AS pedidoId, pe.cantidad_m3 AS pedidoTotalM3, pe.obra AS pedidoObra, gd.obra, gd.usuario_id AS usuarioId, gd.created_at AS fecha FROM guia_despacho gd LEFT JOIN clientes c ON gd.cliente_id = c.id LEFT JOIN productos p ON gd.producto_id = p.id LEFT JOIN unidades un ON gd.unidad_id = un.id LEFT JOIN pedidos pe ON gd.pedido_id = pe.id ORDER BY gd.id DESC`);
     return NextResponse.json({ success: true, guias }, { status: 200 });
   } catch (error) {
     console.error('Error GET guia_despacho:', error);
@@ -27,7 +28,14 @@ export async function POST(request: Request) {
     const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
     if (!session.userId) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     const data = await request.json();
-    const { tipo, clienteId, productoId, cantidadM3, chofer, unidadId, pedidoId } = data;
+    const { tipo, clienteId, productoId, cantidadM3, chofer, unidadId, pedidoId, obra } = data;
+
+    // Auto-obtener obra del pedido si no se envía
+    let obraFinal = obra || null;
+    if (pedidoId && !obraFinal) {
+      const [pedidoRows]: any = await query('SELECT obra FROM pedidos WHERE id = ?', [pedidoId]);
+      if (pedidoRows?.obra) obraFinal = pedidoRows.obra;
+    }
 
     // Validar stock disponible
     const stockRows: any = await query(`
@@ -58,7 +66,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: `La cantidad solicitada (${cantidadM3} M³) excede el stock disponible (${stockDisponible} M³)` }, { status: 400 });
     }
 
-    const result: any = await query(`INSERT INTO guia_despacho (tipo, cliente_id, producto_id, cantidad_m3, chofer, unidad_id, pedido_id, usuario_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, [tipo, clienteId, productoId, cantidadM3, chofer, unidadId || null, pedidoId || null, session.userId]);
+    const result: any = await query(`INSERT INTO guia_despacho (tipo, cliente_id, producto_id, cantidad_m3, chofer, unidad_id, pedido_id, obra, usuario_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, [tipo, clienteId, productoId, cantidadM3, chofer, unidadId || null, pedidoId || null, obraFinal, session.userId]);
 
     if (pedidoId) {
       const [pedidoRows]: any = await query('SELECT cantidad_m3 FROM pedidos WHERE id = ?', [pedidoId]);
@@ -79,7 +87,7 @@ export async function POST(request: Request) {
     await registrarLog({
       ...usuario, accion: 'crear', modulo: 'Guías de Despacho', entidad_id: result.insertId,
       descripcion: `Creó guía #${result.insertId} (${tipo}) - ${cantidadM3} M3`,
-      datos_nuevos: { tipo, clienteId, productoId, cantidadM3, chofer, pedidoId },
+      datos_nuevos: { tipo, clienteId, productoId, cantidadM3, chofer, pedidoId, obra: obraFinal },
       ip_address: getClientIp(request),
     });
 

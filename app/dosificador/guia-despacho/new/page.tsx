@@ -14,7 +14,7 @@ export default function NewGuiaDespachoPage() {
   const [productos, setProductos] = useState<Array<{ id: number; nombre: string; resistencia?: string }>>([]);
   const [unidades, setUnidades] = useState<Array<{ id: number; nombre: string; tipo: string; placa?: string }>>([]);
   const [choferes, setChoferes] = useState<Array<{ id: number; nombre: string }>>([]);
-  const [pedidos, setPedidos] = useState<Array<{ id: number; clienteId: number; clienteNombre: string; productoId: number; productoNombre: string; totalM3: number; acumuladoM3: number }>>([]);
+  const [pedidos, setPedidos] = useState<Array<{ id: number; clienteId: number; clienteNombre: string; productoId: number; productoNombre: string; totalM3: number; acumuladoM3: number; obra: string | null }>>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {

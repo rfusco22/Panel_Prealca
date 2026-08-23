@@ -14,6 +14,7 @@ const guiaSchema = z.object({
   chofer: z.string().min(3, 'Nombre del chofer requerido'),
   unidadId: z.coerce.number().optional(),
   pedidoId: z.coerce.number().optional(),
+  obra: z.string().optional(),
 });
 
 type GuiaFormData = z.infer<typeof guiaSchema>;
@@ -27,7 +28,7 @@ interface GuiaDespachoFormProps {
   productos?: Array<{ id: number; nombre: string; resistencia?: string; pulgada?: string }>;
   unidades?: Array<{ id: number; nombre: string; tipo: string }>;
   choferes?: Array<{ id: number; nombre: string }>;
-  pedidos?: Array<{ id: number; clienteId: number; clienteNombre: string; productoId: number; productoNombre: string; totalM3: number; acumuladoM3: number }>;
+  pedidos?: Array<{ id: number; clienteId: number; clienteNombre: string; productoId: number; productoNombre: string; totalM3: number; acumuladoM3: number; obra: string | null }>;
   stockProductos?: Array<{ productoId: number; stockDisponible: number }>;
 }
 
@@ -208,10 +209,13 @@ export function GuiaDespachoForm({
                       if (form) {
                         const clienteSelect = form.querySelector('[name="clienteId"]') as HTMLSelectElement;
                         const productoSelect = form.querySelector('[name="productoId"]') as HTMLSelectElement;
+                        const obraInput = form.querySelector('[name="obra"]') as HTMLInputElement;
                         if (clienteSelect) clienteSelect.value = String(pedido.clienteId);
                         if (productoSelect) productoSelect.value = String(pedido.productoId);
+                        if (obraInput && pedido.obra) obraInput.value = pedido.obra;
                         clienteSelect?.dispatchEvent(new Event('change', { bubbles: true }));
                         productoSelect?.dispatchEvent(new Event('change', { bubbles: true }));
+                        if (obraInput && pedido.obra) obraInput.dispatchEvent(new Event('change', { bubbles: true }));
                       }
                     }
                   }
@@ -223,6 +227,18 @@ export function GuiaDespachoForm({
                     </option>
                   ))}
                 </select>
+              </div>
+              {pedidoSeleccionado && pedidoSeleccionado.obra && (
+                <div className="sm:col-span-2 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-blue-600 uppercase tracking-wide">Obra del Pedido</span>
+                  </div>
+                  <p className="text-sm font-medium text-blue-800 mt-1">{pedidoSeleccionado.obra}</p>
+                </div>
+              )}
+              <div>
+                <label className={labelCls}>Obra (opcional)</label>
+                <input type="text" {...register('obra')} placeholder="Nombre de la obra..." className={inputCls} />
               </div>
               <div>
                 <label className={labelCls}>Cliente</label>

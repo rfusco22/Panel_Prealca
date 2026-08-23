@@ -7,13 +7,13 @@ import { emitSocketEvent } from '@/lib/socket-server';
 import { registrarLog, getUsuarioFromRequest, getClientIp } from '@/lib/audit-log';
 
 async function ensureTable() {
-  await query(`CREATE TABLE IF NOT EXISTS pedidos (id INT AUTO_INCREMENT PRIMARY KEY, cliente_id INT NOT NULL, producto_id INT NOT NULL, cantidad_m3 DECIMAL(10,2) NOT NULL, estado ENUM('pendiente','en_proceso','completado','cancelado') DEFAULT 'pendiente', notas TEXT, usuario_id INT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP)`);
+  await query(`CREATE TABLE IF NOT EXISTS pedidos (id INT AUTO_INCREMENT PRIMARY KEY, cliente_id INT NOT NULL, producto_id INT NOT NULL, cantidad_m3 DECIMAL(10,2) NOT NULL, estado ENUM('pendiente','en_proceso','completado','cancelado') DEFAULT 'pendiente', notas TEXT, obra VARCHAR(255), usuario_id INT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP)`);
 }
 
 export async function GET() {
   try {
     await ensureTable();
-    const pedidos = await query(`SELECT pe.id, pe.cliente_id AS clienteId, c.nombre AS clienteNombre, pe.producto_id AS productoId, CONCAT(p.resistencia, ' - ', p.pulgada) AS productoNombre, pe.cantidad_m3 AS cantidadM3, pe.estado, pe.notas, pe.usuario_id AS usuarioId, u.nombre AS usuarioNombre, pe.created_at AS fecha FROM pedidos pe LEFT JOIN clientes c ON pe.cliente_id = c.id LEFT JOIN productos p ON pe.producto_id = p.id LEFT JOIN users u ON pe.usuario_id = u.id ORDER BY pe.id DESC`);
+    const pedidos = await query(`SELECT pe.id, pe.cliente_id AS clienteId, c.nombre AS clienteNombre, pe.producto_id AS productoId, CONCAT(p.resistencia, ' - ', p.pulgada) AS productoNombre, pe.cantidad_m3 AS cantidadM3, pe.estado, pe.notas, pe.obra, pe.usuario_id AS usuarioId, u.nombre AS usuarioNombre, pe.created_at AS fecha FROM pedidos pe LEFT JOIN clientes c ON pe.cliente_id = c.id LEFT JOIN productos p ON pe.producto_id = p.id LEFT JOIN users u ON pe.usuario_id = u.id ORDER BY pe.id DESC`);
     return NextResponse.json({ success: true, pedidos }, { status: 200 });
   } catch (error) {
     console.error('Error GET pedidos:', error);
@@ -27,16 +27,16 @@ export async function POST(request: Request) {
     const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
     if (!session.userId) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     const data = await request.json();
-    const { clienteId, productoId, cantidadM3, notas } = data;
+    const { clienteId, productoId, cantidadM3, notas, obra } = data;
     if (!clienteId || !productoId || !cantidadM3) return NextResponse.json({ error: 'Cliente, producto y cantidad son requeridos' }, { status: 400 });
-    const result: any = await query(`INSERT INTO pedidos (cliente_id, producto_id, cantidad_m3, notas, usuario_id) VALUES (?, ?, ?, ?, ?)`, [clienteId, productoId, cantidadM3, notas || null, session.userId]);
+    const result: any = await query(`INSERT INTO pedidos (cliente_id, producto_id, cantidad_m3, notas, obra, usuario_id) VALUES (?, ?, ?, ?, ?, ?)`, [clienteId, productoId, cantidadM3, notas || null, obra || null, session.userId]);
     emitSocketEvent('pedidos:created');
 
     const usuario = await getUsuarioFromRequest();
     await registrarLog({
       ...usuario, accion: 'crear', modulo: 'Pedidos', entidad_id: result.insertId,
       descripcion: `Creó pedido #${result.insertId} - ${cantidadM3} M3`,
-      datos_nuevos: { clienteId, productoId, cantidadM3, notas },
+      datos_nuevos: { clienteId, productoId, cantidadM3, notas, obra },
       ip_address: getClientIp(request),
     });
 
