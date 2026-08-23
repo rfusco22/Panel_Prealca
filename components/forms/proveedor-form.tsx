@@ -72,6 +72,16 @@ function ProveedorForm({ onClose }: { onClose?: () => void }) {
       </div>
 
       <div>
+        <label className="block text-xs font-semibold text-slate-600 mb-1.5">Planta / Sucursal</label>
+        <input
+          {...register("planta")}
+          type="text"
+          placeholder="Ej: Planta A, Planta B, Sede Central..."
+          className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
+        />
+      </div>
+
+      <div>
         <label className="block text-xs font-semibold text-slate-600 mb-1.5">Direccion</label>
         <textarea
           {...register("direccion")}

@@ -7,7 +7,7 @@ export async function GET() {
   try {
     const sql = `
       SELECT mp.*, a.nombre AS agregado_nombre, a.unidad_medida,
-             pv.nombre AS proveedor_nombre
+             pv.nombre AS proveedor_nombre, pv.planta AS proveedor_planta
       FROM materia_prima mp
       JOIN agregados a ON mp.agregado_id = a.id
       LEFT JOIN proveedores pv ON mp.proveedor_id = pv.id

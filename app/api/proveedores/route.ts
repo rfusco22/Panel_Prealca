@@ -6,7 +6,7 @@ import { registrarLog, getUsuarioFromRequest, getClientIp } from '@/lib/audit-lo
 export async function GET() {
   try {
     const sql = `
-      SELECT id, nombre, rif, direccion,
+      SELECT id, nombre, rif, direccion, planta,
              clasificacion_gasto AS clasificacionGasto,
              es_contribuyente_especial AS esContribuyenteEspecial
       FROM proveedores
@@ -26,8 +26,8 @@ export async function POST(req: Request) {
     if (!data.nombre || !data.rif) {
       return NextResponse.json({ error: 'El Nombre y el RIF son campos obligatorios.' }, { status: 400 });
     }
-    const sql = `INSERT INTO proveedores (nombre, rif, direccion, clasificacion_gasto, es_contribuyente_especial) VALUES (?, ?, ?, ?, ?)`;
-    const valores = [data.nombre, data.rif, data.direccion || null, data.clasificacionGasto || null, data.esContribuyenteEspecial ? 1 : 0];
+    const sql = `INSERT INTO proveedores (nombre, rif, direccion, planta, clasificacion_gasto, es_contribuyente_especial) VALUES (?, ?, ?, ?, ?, ?)`;
+    const valores = [data.nombre, data.rif, data.direccion || null, data.planta || null, data.clasificacionGasto || null, data.esContribuyenteEspecial ? 1 : 0];
     const resultado: any = await query(sql, valores);
     emitSocketEvent('proveedores:created');
 
@@ -35,7 +35,7 @@ export async function POST(req: Request) {
     await registrarLog({
       ...usuario, accion: 'crear', modulo: 'Proveedores', entidad_id: resultado.insertId,
       descripcion: `Creó el proveedor "${data.nombre}" (RIF: ${data.rif})`,
-      datos_nuevos: { nombre: data.nombre, rif: data.rif, direccion: data.direccion },
+      datos_nuevos: { nombre: data.nombre, rif: data.rif, direccion: data.direccion, planta: data.planta },
       ip_address: getClientIp(req),
     });
 
@@ -53,11 +53,11 @@ export async function PUT(req: Request) {
     const { id } = data;
     if (!id) return NextResponse.json({ error: 'ID es requerido.' }, { status: 400 });
 
-    const anterior: any = await query('SELECT id, nombre, rif, direccion FROM proveedores WHERE id = ?', [id]);
+    const anterior: any = await query('SELECT id, nombre, rif, direccion, planta FROM proveedores WHERE id = ?', [id]);
     const old = anterior.length > 0 ? anterior[0] : null;
 
-    const sql = `UPDATE proveedores SET nombre = ?, rif = ?, direccion = ?, clasificacion_gasto = ?, es_contribuyente_especial = ? WHERE id = ?`;
-    const valores = [data.nombre, data.rif, data.direccion || null, data.clasificacionGasto || null, data.esContribuyenteEspecial ? 1 : 0, id];
+    const sql = `UPDATE proveedores SET nombre = ?, rif = ?, direccion = ?, planta = ?, clasificacion_gasto = ?, es_contribuyente_especial = ? WHERE id = ?`;
+    const valores = [data.nombre, data.rif, data.direccion || null, data.planta || null, data.clasificacionGasto || null, data.esContribuyenteEspecial ? 1 : 0, id];
     await query(sql, valores);
     emitSocketEvent('proveedores:updated');
 
@@ -65,8 +65,8 @@ export async function PUT(req: Request) {
     await registrarLog({
       ...usuario, accion: 'editar', modulo: 'Proveedores', entidad_id: id,
       descripcion: `Editó el proveedor "${data.nombre}"`,
-      datos_anteriores: old ? { nombre: old.nombre, rif: old.rif } : null,
-      datos_nuevos: { nombre: data.nombre, rif: data.rif },
+      datos_anteriores: old ? { nombre: old.nombre, rif: old.rif, planta: old.planta } : null,
+      datos_nuevos: { nombre: data.nombre, rif: data.rif, planta: data.planta },
       ip_address: getClientIp(req),
     });
 
