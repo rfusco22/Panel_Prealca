@@ -6,14 +6,24 @@ import { sessionOptions, SessionData } from '@/lib/session';
 import { emitSocketEvent } from '@/lib/socket-server';
 import { registrarLog, getUsuarioFromRequest, getClientIp } from '@/lib/audit-log';
 
+async function ensureColumns() {
+  try { await query(`ALTER TABLE unidades ADD COLUMN km_actual DECIMAL(10,2) DEFAULT 0`); } catch {}
+  try { await query(`ALTER TABLE unidades ADD COLUMN ultimo_mantenimiento DATE NULL`); } catch {}
+  try { await query(`ALTER TABLE unidades ADD COLUMN proximo_mantenimiento DATE NULL`); } catch {}
+  try { await query(`ALTER TABLE unidades ADD COLUMN proximo_mantenimiento_km DECIMAL(10,2) NULL`); } catch {}
+}
+
 export async function GET() {
   try {
     const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
     if (!session.userId) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    await ensureColumns();
     const unidades = await query(`
       SELECT id, numero_unidad AS numeroUnidad, placa, marca, modelo, ano, color,
              poliza_rcv_numero AS polizaRcvNumero, poliza_rcv_vencimiento AS polizaRcvVencimiento,
-             rot_numero AS rotNumero, rot_vencimiento AS rotVencimiento
+             rot_numero AS rotNumero, rot_vencimiento AS rotVencimiento,
+             km_actual AS kmActual, ultimo_mantenimiento AS ultimoMantenimiento,
+             proximo_mantenimiento AS proximoMantenimiento, proximo_mantenimiento_km AS proximoMantenimientoKm
       FROM unidades ORDER BY id DESC
     `);
     return NextResponse.json(unidades);

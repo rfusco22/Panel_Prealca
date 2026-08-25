@@ -5,7 +5,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { 
   Building2, Package, Truck, Receipt, Settings, PieChart, LogOut, 
   LayoutDashboard, Users, TrendingUp, TrendingDown, Boxes, ShoppingCart, 
-  ArrowLeftRight, AlertTriangle, HardHat, UserCircle, FileText, ChevronDown
+  ArrowLeftRight, AlertTriangle, HardHat, UserCircle, FileText, ChevronDown,
+  Wrench
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -77,6 +78,7 @@ const menuGroups: MenuGroup[] = [
       { id: "guias", label: "Guías de Despacho", icon: FileText, href: "/admin/guia-despacho" },
       { id: "choferes", label: "Choferes", icon: HardHat, href: "/admin/choferes" },
       { id: "unidades", label: "Unidades", icon: Truck, href: "/admin/unidades" },
+      { id: "mantenimiento", label: "Mantenimiento", icon: Wrench, href: "/admin/mantenimiento-unidades" },
     ],
   },
   {
