@@ -26,3 +26,8 @@ ALTER TABLE unidades ADD COLUMN km_actual DECIMAL(10,2) DEFAULT 0;
 ALTER TABLE unidades ADD COLUMN ultimo_mantenimiento DATE NULL;
 ALTER TABLE unidades ADD COLUMN proximo_mantenimiento DATE NULL;
 ALTER TABLE unidades ADD COLUMN proximo_mantenimiento_km DECIMAL(10,2) NULL;
+
+-- Doble moneda en mantenimientos (USD + Bs)
+ALTER TABLE unidad_mantenimientos ADD COLUMN costo_usd DECIMAL(12,2) NULL;
+ALTER TABLE unidad_mantenimientos ADD COLUMN tasa_bcv DECIMAL(10,4) NULL;
+ALTER TABLE unidad_mantenimientos ADD COLUMN moneda ENUM('USD','BS') DEFAULT 'BS';

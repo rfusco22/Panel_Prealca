@@ -17,6 +17,9 @@ async function ensureTables() {
         descripcion TEXT NOT NULL,
         km DECIMAL(10,2) NULL,
         costo DECIMAL(12,2) NULL,
+        costo_usd DECIMAL(12,2) NULL,
+        tasa_bcv DECIMAL(10,4) NULL,
+        moneda ENUM('USD','BS') DEFAULT 'BS',
         proximo_servicio_km DECIMAL(10,2) NULL,
         proximo_servicio_fecha DATE NULL,
         realizado_por VARCHAR(255) NULL,
@@ -33,6 +36,9 @@ async function ensureTables() {
   try { await query(`ALTER TABLE unidades ADD COLUMN ultimo_mantenimiento DATE NULL`); } catch {}
   try { await query(`ALTER TABLE unidades ADD COLUMN proximo_mantenimiento DATE NULL`); } catch {}
   try { await query(`ALTER TABLE unidades ADD COLUMN proximo_mantenimiento_km DECIMAL(10,2) NULL`); } catch {}
+  try { await query(`ALTER TABLE unidad_mantenimientos ADD COLUMN costo_usd DECIMAL(12,2) NULL`); } catch {}
+  try { await query(`ALTER TABLE unidad_mantenimientos ADD COLUMN tasa_bcv DECIMAL(10,4) NULL`); } catch {}
+  try { await query(`ALTER TABLE unidad_mantenimientos ADD COLUMN moneda ENUM('USD','BS') DEFAULT 'BS'`); } catch {}
 }
 
 export async function GET(request: Request) {
@@ -47,6 +53,7 @@ export async function GET(request: Request) {
     let sql = `
       SELECT m.id, m.unidad_id AS unidadId, u.numero_unidad AS unidadNumero, u.placa AS unidadPlaca,
              m.fecha, m.tipo_mantenimiento AS tipoMantenimiento, m.descripcion, m.km, m.costo,
+             m.costo_usd AS costoUsd, m.tasa_bcv AS tasaBcv, m.moneda,
              m.proximo_servicio_km AS proximoServicioKm, m.proximo_servicio_fecha AS proximoServicioFecha,
              m.realizado_por AS realizadoPor, m.notas, m.usuario_id AS usuarioId,
              usr.nombre AS usuarioNombre, m.created_at AS createdAt
@@ -73,16 +80,16 @@ export async function POST(request: Request) {
     await ensureTables();
 
     const body = await request.json();
-    const { unidadId, fecha, tipoMantenimiento, descripcion, km, costo, proximoServicioKm, proximoServicioFecha, realizadoPor, notas } = body;
+    const { unidadId, fecha, tipoMantenimiento, descripcion, km, costo, costoUsd, tasaBcv, moneda, proximoServicioKm, proximoServicioFecha, realizadoPor, notas } = body;
 
     if (!unidadId || !fecha || !descripcion) {
       return NextResponse.json({ error: 'Unidad, fecha y descripción son requeridos' }, { status: 400 });
     }
 
     const result: any = await query(
-      `INSERT INTO unidad_mantenimientos (unidad_id, fecha, tipo_mantenimiento, descripcion, km, costo, proximo_servicio_km, proximo_servicio_fecha, realizado_por, notas, usuario_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [unidadId, fecha, tipoMantenimiento || 'preventivo', descripcion, km || null, costo || null, proximoServicioKm || null, proximoServicioFecha || null, realizadoPor || null, notas || null, session.userId]
+      `INSERT INTO unidad_mantenimientos (unidad_id, fecha, tipo_mantenimiento, descripcion, km, costo, costo_usd, tasa_bcv, moneda, proximo_servicio_km, proximo_servicio_fecha, realizado_por, notas, usuario_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [unidadId, fecha, tipoMantenimiento || 'preventivo', descripcion, km || null, costo || null, costoUsd || null, tasaBcv || null, moneda || 'BS', proximoServicioKm || null, proximoServicioFecha || null, realizadoPor || null, notas || null, session.userId]
     );
 
     // Smart update: actualizar km_actual y fechas en la unidad
@@ -118,13 +125,13 @@ export async function PUT(request: Request) {
     await ensureTables();
 
     const body = await request.json();
-    const { id, fecha, tipoMantenimiento, descripcion, km, costo, proximoServicioKm, proximoServicioFecha, realizadoPor, notas, unidadId } = body;
+    const { id, fecha, tipoMantenimiento, descripcion, km, costo, costoUsd, tasaBcv, moneda, proximoServicioKm, proximoServicioFecha, realizadoPor, notas, unidadId } = body;
     if (!id) return NextResponse.json({ error: 'ID es requerido' }, { status: 400 });
 
     await query(
       `UPDATE unidad_mantenimientos SET fecha = ?, tipo_mantenimiento = ?, descripcion = ?, km = ?, costo = ?,
-       proximo_servicio_km = ?, proximo_servicio_fecha = ?, realizado_por = ?, notas = ? WHERE id = ?`,
-      [fecha, tipoMantenimiento || 'preventivo', descripcion, km || null, costo || null, proximoServicioKm || null, proximoServicioFecha || null, realizadoPor || null, notas || null, id]
+       costo_usd = ?, tasa_bcv = ?, moneda = ?, proximo_servicio_km = ?, proximo_servicio_fecha = ?, realizado_por = ?, notas = ? WHERE id = ?`,
+      [fecha, tipoMantenimiento || 'preventivo', descripcion, km || null, costo || null, costoUsd || null, tasaBcv || null, moneda || 'BS', proximoServicioKm || null, proximoServicioFecha || null, realizadoPor || null, notas || null, id]
     );
 
     if (unidadId && km) {

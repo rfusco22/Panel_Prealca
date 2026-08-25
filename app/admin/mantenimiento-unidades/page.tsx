@@ -29,6 +29,9 @@ interface Mantenimiento {
   descripcion: string;
   km: number | null;
   costo: number | null;
+  costoUsd: number | null;
+  tasaBcv: number | null;
+  moneda: string | null;
   proximoServicioKm: number | null;
   proximoServicioFecha: string | null;
   realizadoPor: string | null;
@@ -65,11 +68,50 @@ export default function MantenimientoUnidadesPage() {
     descripcion: "",
     km: "",
     costo: "",
+    costoUsd: "",
+    tasaBcv: "",
+    moneda: "BS" as "BS" | "USD",
     proximoServicioKm: "",
     proximoServicioFecha: "",
     realizadoPor: "",
     notas: "",
   });
+
+  // Fetch BCV rate on mount
+  const fetchTasaBcv = async () => {
+    try {
+      const res = await fetch("/api/brecha-cambiaria");
+      const data = await res.json();
+      if (data.tasas) {
+        const bcv = data.tasas.find((t: any) => t.fuente === "BCV Oficial" && t.moneda === "USD");
+        if (bcv) setFormData((prev) => ({ ...prev, tasaBcv: String(bcv.promedio) }));
+      }
+    } catch (err) {
+      console.error("Error fetching BCV rate", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+    fetchTasaBcv();
+  }, []);
+
+  // Recalcular según moneda activa
+  const recalcularConversion = (data: typeof formData) => {
+    const tasa = parseFloat(data.tasaBcv) || 0;
+    if (!tasa) return data;
+    if (data.moneda === "BS") {
+      // usuario ingresa costo (Bs), calculo costoUsd
+      const bs = parseFloat(data.costo) || 0;
+      const usd = bs > 0 ? Math.round((bs / tasa) * 100) / 100 : 0;
+      return { ...data, costoUsd: usd > 0 ? String(usd) : "" };
+    } else {
+      // usuario ingresa costoUsd, calculo costo (Bs)
+      const usd = parseFloat(data.costoUsd) || 0;
+      const bs = usd > 0 ? Math.round(usd * tasa * 100) / 100 : 0;
+      return { ...data, costo: bs > 0 ? String(bs) : "" };
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -101,8 +143,6 @@ export default function MantenimientoUnidadesPage() {
       setLoading(false);
     }
   };
-
-  useEffect(() => { fetchData(); }, []);
 
   const mantenimientosFiltrados = useMemo(() => {
     return mantenimientos.filter((m) => {
@@ -160,18 +200,21 @@ export default function MantenimientoUnidadesPage() {
   }, [mantenimientos]);
 
   const openModalNuevo = (unidadIdPre?: number) => {
-    setFormData({
+    setFormData((prev) => ({
+      ...prev,
       unidadId: unidadIdPre ? String(unidadIdPre) : "",
       fecha: new Date().toISOString().split("T")[0],
       tipoMantenimiento: "preventivo",
       descripcion: "",
       km: "",
       costo: "",
+      costoUsd: "",
+      moneda: "BS",
       proximoServicioKm: "",
       proximoServicioFecha: "",
       realizadoPor: "",
       notas: "",
-    });
+    }));
     setEditingId(null);
     setIsEditing(false);
     setError(null);
@@ -186,6 +229,9 @@ export default function MantenimientoUnidadesPage() {
       descripcion: m.descripcion,
       km: m.km != null ? String(m.km) : "",
       costo: m.costo != null ? String(m.costo) : "",
+      costoUsd: m.costoUsd != null ? String(m.costoUsd) : "",
+      tasaBcv: m.tasaBcv != null ? String(m.tasaBcv) : "",
+      moneda: (m.moneda as "BS" | "USD") || "BS",
       proximoServicioKm: m.proximoServicioKm != null ? String(m.proximoServicioKm) : "",
       proximoServicioFecha: m.proximoServicioFecha ? m.proximoServicioFecha.split("T")[0] : "",
       realizadoPor: m.realizadoPor || "",
@@ -213,6 +259,9 @@ export default function MantenimientoUnidadesPage() {
         descripcion: formData.descripcion,
         km: formData.km ? Number(formData.km) : null,
         costo: formData.costo ? Number(formData.costo) : null,
+        costoUsd: formData.costoUsd ? Number(formData.costoUsd) : null,
+        tasaBcv: formData.tasaBcv ? Number(formData.tasaBcv) : null,
+        moneda: formData.moneda,
         proximoServicioKm: formData.proximoServicioKm ? Number(formData.proximoServicioKm) : null,
         proximoServicioFecha: formData.proximoServicioFecha || null,
         realizadoPor: formData.realizadoPor || null,
@@ -473,7 +522,8 @@ export default function MantenimientoUnidadesPage() {
                     <p className="text-sm text-slate-700 mb-2 line-clamp-2">{m.descripcion}</p>
                     <div className="flex items-center justify-between text-[11px] text-slate-500 flex-wrap gap-2">
                       {m.km != null && <span><Gauge size={10} className="inline" /> {Number(m.km).toLocaleString("es-VE")} km</span>}
-                      {m.costo != null && <span className="font-semibold text-emerald-700">{formatCurrency(Number(m.costo))}</span>}
+                      {m.costo != null && <span className="font-semibold text-emerald-700">Bs {Number(m.costo).toLocaleString("es-VE", { minimumFractionDigits: 2 })}</span>}
+                      {m.costoUsd != null && <span className="text-slate-500">${Number(m.costoUsd).toLocaleString("es-VE", { minimumFractionDigits: 2 })}</span>}
                       {m.realizadoPor && <span>· {m.realizadoPor}</span>}
                     </div>
                   </div>
@@ -530,8 +580,13 @@ export default function MantenimientoUnidadesPage() {
                         <td className="px-4 py-3 text-xs font-semibold text-slate-700 whitespace-nowrap">
                           {m.km != null ? <span className="flex items-center gap-1"><Gauge size={11} />{Number(m.km).toLocaleString("es-VE")}</span> : <span className="text-slate-400">—</span>}
                         </td>
-                        <td className="px-4 py-3 text-xs font-bold text-emerald-700 whitespace-nowrap">
-                          {m.costo != null ? formatCurrency(Number(m.costo)) : <span className="text-slate-400">—</span>}
+                        <td className="px-4 py-3 text-xs whitespace-nowrap">
+                          {m.costo != null || m.costoUsd != null ? (
+                            <div>
+                              <div className="font-bold text-emerald-700">{m.costo != null ? `Bs ${Number(m.costo).toLocaleString("es-VE", { minimumFractionDigits: 2 })}` : "—"}</div>
+                              {m.costoUsd != null && <div className="text-[10px] text-slate-500">${Number(m.costoUsd).toLocaleString("es-VE", { minimumFractionDigits: 2 })}</div>}
+                            </div>
+                          ) : <span className="text-slate-400">—</span>}
                         </td>
                         <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">
                           {m.realizadoPor || <span className="text-slate-400">—</span>}
@@ -625,16 +680,62 @@ export default function MantenimientoUnidadesPage() {
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Kilometraje</label>
                     <div className="relative">
-                      <Gauge size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                      <input type="number" step="0.01" min="0" value={formData.km} onChange={(e) => setFormData({ ...formData, km: e.target.value })} placeholder="0" className={`${inputCls} pl-11`} />
+                      <Gauge size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" />
+                      <input type="number" step="0.01" min="0" value={formData.km} onChange={(e) => setFormData({ ...formData, km: e.target.value })} placeholder="0" className={`${inputCls} pl-10`} />
                     </div>
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Costo (Bs.)</label>
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Costo</label>
+                      <div className="flex rounded-lg bg-slate-100 p-0.5">
+                        <button
+                          type="button"
+                          onClick={() => setFormData(recalcularConversion({ ...formData, moneda: "BS", costo: formData.costo, costoUsd: "" }))}
+                          className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold transition-all ${formData.moneda === "BS" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"}`}
+                        >
+                          Bs
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFormData(recalcularConversion({ ...formData, moneda: "USD", costoUsd: formData.costoUsd, costo: "" }))}
+                          className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold transition-all ${formData.moneda === "USD" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"}`}
+                        >
+                          $
+                        </button>
+                      </div>
+                    </div>
                     <div className="relative">
-                      <DollarSign size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                      <input type="number" step="0.01" min="0" value={formData.costo} onChange={(e) => setFormData({ ...formData, costo: e.target.value })} placeholder="0.00" className={`${inputCls} pl-11`} />
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10 text-sm font-bold">
+                        {formData.moneda === "BS" ? "Bs" : "$"}
+                      </span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={formData.moneda === "BS" ? formData.costo : formData.costoUsd}
+                        onChange={(e) => {
+                          if (formData.moneda === "BS") {
+                            setFormData(recalcularConversion({ ...formData, costo: e.target.value, costoUsd: "" }));
+                          } else {
+                            setFormData(recalcularConversion({ ...formData, costoUsd: e.target.value, costo: "" }));
+                          }
+                        }}
+                        placeholder="0.00"
+                        className={`${inputCls} pl-10`}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between text-[10px] text-slate-500">
+                      <span>
+                        Equivalente: <strong className="text-slate-700">
+                          {formData.moneda === "BS"
+                            ? (formData.costoUsd ? `$${Number(formData.costoUsd).toLocaleString("es-VE", { minimumFractionDigits: 2 })}` : "—")
+                            : (formData.costo ? `Bs ${Number(formData.costo).toLocaleString("es-VE", { minimumFractionDigits: 2 })}` : "—")}
+                        </strong>
+                      </span>
+                      {formData.tasaBcv && (
+                        <span className="font-mono">Tasa BCV: {Number(formData.tasaBcv).toLocaleString("es-VE", { minimumFractionDigits: 2 })}</span>
+                      )}
                     </div>
                   </div>
 
