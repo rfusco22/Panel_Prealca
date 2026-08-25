@@ -625,16 +625,16 @@ export default function MantenimientoUnidadesPage() {
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Kilometraje</label>
                     <div className="relative">
-                      <Gauge size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input type="number" step="0.01" min="0" value={formData.km} onChange={(e) => setFormData({ ...formData, km: e.target.value })} placeholder="0" className={`${inputCls} pl-9`} />
+                      <Gauge size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                      <input type="number" step="0.01" min="0" value={formData.km} onChange={(e) => setFormData({ ...formData, km: e.target.value })} placeholder="0" className={`${inputCls} pl-11`} />
                     </div>
                   </div>
 
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Costo (Bs.)</label>
                     <div className="relative">
-                      <DollarSign size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input type="number" step="0.01" min="0" value={formData.costo} onChange={(e) => setFormData({ ...formData, costo: e.target.value })} placeholder="0.00" className={`${inputCls} pl-9`} />
+                      <DollarSign size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                      <input type="number" step="0.01" min="0" value={formData.costo} onChange={(e) => setFormData({ ...formData, costo: e.target.value })} placeholder="0.00" className={`${inputCls} pl-11`} />
                     </div>
                   </div>
 
