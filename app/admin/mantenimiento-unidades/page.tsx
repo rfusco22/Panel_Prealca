@@ -686,27 +686,27 @@ export default function MantenimientoUnidadesPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Costo</label>
-                      <div className="flex rounded-lg bg-slate-100 p-0.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Costo</label>
+                      <div className="flex rounded-lg bg-slate-100 p-0.5 shrink-0">
                         <button
                           type="button"
                           onClick={() => setFormData(recalcularConversion({ ...formData, moneda: "BS", costo: formData.costo, costoUsd: "" }))}
-                          className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold transition-all ${formData.moneda === "BS" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"}`}
+                          className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all ${formData.moneda === "BS" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
                         >
                           Bs
                         </button>
                         <button
                           type="button"
                           onClick={() => setFormData(recalcularConversion({ ...formData, moneda: "USD", costoUsd: formData.costoUsd, costo: "" }))}
-                          className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold transition-all ${formData.moneda === "USD" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"}`}
+                          className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all ${formData.moneda === "USD" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
                         >
                           $
                         </button>
                       </div>
                     </div>
                     <div className="relative">
-                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10 text-sm font-bold">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10 text-xs font-bold select-none">
                         {formData.moneda === "BS" ? "Bs" : "$"}
                       </span>
                       <input
