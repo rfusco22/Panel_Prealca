@@ -680,8 +680,10 @@ export default function MantenimientoUnidadesPage() {
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Kilometraje</label>
                     <div className="relative">
-                      <Gauge size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" />
-                      <input type="number" step="0.01" min="0" value={formData.km} onChange={(e) => setFormData({ ...formData, km: e.target.value })} placeholder="0" className={`${inputCls} pl-10`} />
+                      <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10 flex items-center">
+                        <Gauge size={14} />
+                      </div>
+                      <input type="number" step="0.01" min="0" value={formData.km} onChange={(e) => setFormData({ ...formData, km: e.target.value })} placeholder="0" className={`${inputCls} pl-12`} style={{ paddingLeft: '2.75rem' }} />
                     </div>
                   </div>
 
@@ -706,7 +708,7 @@ export default function MantenimientoUnidadesPage() {
                       </div>
                     </div>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10 text-xs font-bold select-none">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none z-10 text-xs font-bold select-none">
                         {formData.moneda === "BS" ? "Bs" : "$"}
                       </span>
                       <input
@@ -722,7 +724,8 @@ export default function MantenimientoUnidadesPage() {
                           }
                         }}
                         placeholder="0.00"
-                        className={`${inputCls} pl-10`}
+                        className={`${inputCls} pl-12`}
+                        style={{ paddingLeft: '2.75rem' }}
                       />
                     </div>
                     <div className="flex items-center justify-between text-[10px] text-slate-500">
