@@ -8,6 +8,7 @@ import { registrarLog, getUsuarioFromRequest, getClientIp } from '@/lib/audit-lo
 
 async function ensureTable() {
   await query(`CREATE TABLE IF NOT EXISTS pedidos (id INT AUTO_INCREMENT PRIMARY KEY, cliente_id INT NOT NULL, producto_id INT NOT NULL, cantidad_m3 DECIMAL(10,2) NOT NULL, estado ENUM('pendiente','en_proceso','completado','cancelado') DEFAULT 'pendiente', notas TEXT, obra VARCHAR(255), usuario_id INT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP)`);
+  try { await query(`ALTER TABLE pedidos ADD COLUMN obra VARCHAR(255) NULL AFTER notas`); } catch {}
 }
 
 export async function GET() {

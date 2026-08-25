@@ -3,8 +3,14 @@ import { query } from '@/lib/db';
 import { emitSocketEvent } from '@/lib/socket-server';
 import { registrarLog, getUsuarioFromRequest, getClientIp } from '@/lib/audit-log';
 
+async function ensureColumns() {
+  try { await query(`ALTER TABLE materia_prima ADD COLUMN es_saldo_inicial TINYINT(1) DEFAULT 0`); } catch {}
+  try { await query(`ALTER TABLE materia_prima ADD COLUMN planta VARCHAR(255) NULL`); } catch {}
+}
+
 export async function GET() {
   try {
+    await ensureColumns();
     const sql = `
       SELECT mp.*, a.nombre AS agregado_nombre, a.unidad_medida,
              pv.nombre AS proveedor_nombre, pv.planta AS proveedor_planta
@@ -23,6 +29,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    await ensureColumns();
     const data = await req.json();
     const sql = `INSERT INTO materia_prima (agregado_id, cantidad, unidad, fecha, proveedor_id, es_saldo_inicial, usuario_id) VALUES (?, ?, ?, ?, ?, ?, ?)`;
     const valores = [data.agregado_id, parseFloat(data.cantidad), data.unidad || 'M3', data.fecha, data.proveedor_id, data.es_saldo_inicial ? 1 : 0, data.usuario_id || 1];
