@@ -60,6 +60,8 @@ export default function MantenimientoUnidadesPage() {
 
   const [filtroUnidad, setFiltroUnidad] = useState<string>("");
   const [filtroTipo, setFiltroTipo] = useState<string>("");
+  const [filtroMes, setFiltroMes] = useState<string>("all");
+  const [monedaStats, setMonedaStats] = useState<"BS" | "USD">("BS");
 
   const [formData, setFormData] = useState({
     unidadId: "",
@@ -148,9 +150,14 @@ export default function MantenimientoUnidadesPage() {
     return mantenimientos.filter((m) => {
       if (filtroUnidad && String(m.unidadId) !== filtroUnidad) return false;
       if (filtroTipo && m.tipoMantenimiento !== filtroTipo) return false;
+      if (filtroMes !== "all") {
+        const d = new Date(m.fecha);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        if (key !== filtroMes) return false;
+      }
       return true;
     });
-  }, [mantenimientos, filtroUnidad, filtroTipo]);
+  }, [mantenimientos, filtroUnidad, filtroTipo, filtroMes]);
 
   // Smart alerts
   const alertas = useMemo(() => {
@@ -180,24 +187,51 @@ export default function MantenimientoUnidadesPage() {
     return { vencidos, porVencer, sinRegistro };
   }, [unidades]);
 
+  // Meses disponibles con registros
+  const mesesDisponibles = useMemo(() => {
+    const set = new Set<string>();
+    mantenimientos.forEach((m) => {
+      const d = new Date(m.fecha);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      set.add(key);
+    });
+    return Array.from(set).sort().reverse();
+  }, [mantenimientos]);
+
   // Smart stats
   const stats = useMemo(() => {
     const total = mantenimientos.length;
-    const costoTotal = mantenimientos.reduce((acc, m) => acc + (Number(m.costo) || 0), 0);
-    const costoMes = mantenimientos
+    const totalBs = mantenimientos.reduce((acc, m) => acc + (Number(m.costo) || 0), 0);
+    const totalUsd = mantenimientos.reduce((acc, m) => acc + (Number(m.costoUsd) || 0), 0);
+
+    // Costo del mes seleccionado (o mes actual si es "all")
+    const now = new Date();
+    const targetMes = filtroMes === "all"
+      ? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
+      : filtroMes;
+    const costoMesBs = mantenimientos
       .filter((m) => {
         const d = new Date(m.fecha);
-        const now = new Date();
-        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        return key === targetMes;
       })
       .reduce((acc, m) => acc + (Number(m.costo) || 0), 0);
+    const costoMesUsd = mantenimientos
+      .filter((m) => {
+        const d = new Date(m.fecha);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        return key === targetMes;
+      })
+      .reduce((acc, m) => acc + (Number(m.costoUsd) || 0), 0);
+
     const ultimos30 = mantenimientos.filter((m) => {
       const d = new Date(m.fecha);
       const diff = (Date.now() - d.getTime()) / (1000 * 60 * 60 * 24);
       return diff <= 30;
     }).length;
-    return { total, costoTotal, costoMes, ultimos30 };
-  }, [mantenimientos]);
+
+    return { total, totalBs, totalUsd, costoMesBs, costoMesUsd, ultimos30, targetMes };
+  }, [mantenimientos, filtroMes]);
 
   const openModalNuevo = (unidadIdPre?: number) => {
     setFormData((prev) => ({
@@ -294,8 +328,18 @@ export default function MantenimientoUnidadesPage() {
     }
   };
 
-  const formatCurrency = (v: number) =>
-    new Intl.NumberFormat("es-VE", { style: "currency", currency: "VES" }).format(v);
+  const formatCurrency = (v: number, moneda: "BS" | "USD" = "BS") => {
+    if (moneda === "USD") {
+      return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2 }).format(v);
+    }
+    return new Intl.NumberFormat("es-VE", { style: "currency", currency: "VES", minimumFractionDigits: 2 }).format(v);
+  };
+
+  const formatMesLabel = (key: string) => {
+    const [y, m] = key.split("-");
+    const fecha = new Date(Number(y), Number(m) - 1, 1);
+    return fecha.toLocaleDateString("es-VE", { month: "long", year: "numeric" });
+  };
 
   const formatDate = (d: string | null) => {
     if (!d) return "—";
@@ -366,24 +410,66 @@ export default function MantenimientoUnidadesPage() {
           </div>
         </div>
         <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
-          <div className="flex items-center justify-between">
+          <div className="flex items-start justify-between mb-2">
             <div>
               <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Costo del Mes</p>
-              <p className="text-lg sm:text-xl font-extrabold text-blue-600 mt-1">{formatCurrency(stats.costoMes)}</p>
+              <p className="text-[10px] text-slate-400 capitalize">{stats.targetMes === `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}` ? "Mes actual" : formatMesLabel(stats.targetMes)}</p>
             </div>
-            <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center shrink-0">
               <DollarSign size={20} className="text-blue-600" />
+            </div>
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-lg sm:text-xl font-extrabold text-blue-600 truncate">
+              {formatCurrency(monedaStats === "USD" ? stats.costoMesUsd : stats.costoMesBs, monedaStats)}
+            </p>
+            <div className="flex rounded-lg bg-slate-100 p-0.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => setMonedaStats("BS")}
+                className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${monedaStats === "BS" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"}`}
+              >
+                Bs
+              </button>
+              <button
+                type="button"
+                onClick={() => setMonedaStats("USD")}
+                className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${monedaStats === "USD" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"}`}
+              >
+                $
+              </button>
             </div>
           </div>
         </div>
         <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
-          <div className="flex items-center justify-between">
+          <div className="flex items-start justify-between mb-2">
             <div>
               <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Costo Total</p>
-              <p className="text-lg sm:text-xl font-extrabold text-slate-900 mt-1">{formatCurrency(stats.costoTotal)}</p>
+              <p className="text-[10px] text-slate-400">Histórico completo</p>
             </div>
-            <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center shrink-0">
               <Activity size={20} className="text-amber-600" />
+            </div>
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-lg sm:text-xl font-extrabold text-slate-900 truncate">
+              {formatCurrency(monedaStats === "USD" ? stats.totalUsd : stats.totalBs, monedaStats)}
+            </p>
+            <div className="flex rounded-lg bg-slate-100 p-0.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => setMonedaStats("BS")}
+                className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${monedaStats === "BS" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"}`}
+              >
+                Bs
+              </button>
+              <button
+                type="button"
+                onClick={() => setMonedaStats("USD")}
+                className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${monedaStats === "USD" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"}`}
+              >
+                $
+              </button>
             </div>
           </div>
         </div>
@@ -444,8 +530,17 @@ export default function MantenimientoUnidadesPage() {
       )}
 
       {/* FILTROS */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 shadow-sm flex flex-col sm:flex-row gap-3">
-        <div className="flex-1">
+      <div className="bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 shadow-sm flex flex-col sm:flex-row gap-3 flex-wrap">
+        <div className="flex-1 min-w-[180px]">
+          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Mes</label>
+          <select value={filtroMes} onChange={(e) => setFiltroMes(e.target.value)} className={inputCls}>
+            <option value="all">Mes actual ({formatMesLabel(`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`)})</option>
+            {mesesDisponibles.map((key) => (
+              <option key={key} value={key}>{formatMesLabel(key)}</option>
+            ))}
+          </select>
+        </div>
+        <div className="flex-1 min-w-[180px]">
           <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Unidad</label>
           <select value={filtroUnidad} onChange={(e) => setFiltroUnidad(e.target.value)} className={inputCls}>
             <option value="">Todas las unidades</option>
@@ -454,7 +549,7 @@ export default function MantenimientoUnidadesPage() {
             ))}
           </select>
         </div>
-        <div className="flex-1">
+        <div className="flex-1 min-w-[180px]">
           <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Tipo</label>
           <select value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)} className={inputCls}>
             <option value="">Todos los tipos</option>
@@ -465,9 +560,9 @@ export default function MantenimientoUnidadesPage() {
             <option value="otro">Otro</option>
           </select>
         </div>
-        {(filtroUnidad || filtroTipo) && (
+        {(filtroUnidad || filtroTipo || filtroMes !== "all") && (
           <div className="flex items-end">
-            <button onClick={() => { setFiltroUnidad(""); setFiltroTipo(""); }} className="px-4 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors">
+            <button onClick={() => { setFiltroUnidad(""); setFiltroTipo(""); setFiltroMes("all"); }} className="px-4 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors">
               Limpiar
             </button>
           </div>
