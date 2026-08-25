@@ -158,69 +158,117 @@ export default function PedidosPage() {
         </button>
       </div>
 
-      {/* Tabla */}
+      {/* Listado: Cards en móvil, Tabla en desktop */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
         {loading ? (
           <div className="p-12 text-center"><Loader2 className="animate-spin mx-auto text-slate-400" size={32} /><p className="mt-3 text-slate-500">Cargando pedidos...</p></div>
         ) : pedidos.length === 0 ? (
           <div className="p-12 text-center"><ShoppingCart className="mx-auto text-slate-300 mb-3" size={48} /><p className="text-slate-500 font-medium">No hay pedidos registrados</p></div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-100 bg-slate-50/50">
-                  <th className="text-left px-6 py-4 font-semibold text-slate-600">#</th>
-                  <th className="text-left px-6 py-4 font-semibold text-slate-600">Cliente</th>
-                  <th className="text-left px-6 py-4 font-semibold text-slate-600">Producto</th>
-                  <th className="text-left px-6 py-4 font-semibold text-slate-600">Obra</th>
-                  <th className="text-left px-6 py-4 font-semibold text-slate-600">Cantidad M³</th>
-                  <th className="text-left px-6 py-4 font-semibold text-slate-600">Estado</th>
-                  <th className="text-left px-6 py-4 font-semibold text-slate-600">Creado por</th>
-                  <th className="text-left px-6 py-4 font-semibold text-slate-600">Fecha</th>
-                  <th className="text-right px-6 py-4 font-semibold text-slate-600">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {pedidos.map((pedido) => {
-                  const badge = estadoBadge[pedido.estado] || estadoBadge.pendiente;
-                  const Icon = badge.icon;
-                  return (
-                    <tr key={pedido.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
-                      <td className="px-6 py-4 font-bold text-slate-900">{pedido.id}</td>
-                      <td className="px-6 py-4 font-medium text-slate-900">{pedido.clienteNombre}</td>
-                      <td className="px-6 py-4 text-slate-600">{pedido.productoNombre}</td>
-                      <td className="px-6 py-4 text-slate-600">{pedido.obra || "—"}</td>
-                      <td className="px-6 py-4 font-semibold text-slate-900">{Number(pedido.cantidadM3).toFixed(2)} M³</td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${badge.bg} ${badge.text}`}>
-                          <Icon size={13} className={pedido.estado === "en_proceso" ? "animate-spin" : ""} />
+          <>
+            {/* MOBILE: Cards */}
+            <div className="md:hidden divide-y divide-slate-100">
+              {pedidos.map((pedido) => {
+                const badge = estadoBadge[pedido.estado] || estadoBadge.pendiente;
+                const Icon = badge.icon;
+                return (
+                  <div key={pedido.id} className="p-4 hover:bg-slate-50/50 transition-colors">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-slate-900">#{pedido.id}</span>
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${badge.bg} ${badge.text}`}>
+                          <Icon size={11} className={pedido.estado === "en_proceso" ? "animate-spin" : ""} />
                           {badge.label}
                         </span>
-                      </td>
-                      <td className="px-6 py-4 text-slate-500">{pedido.usuarioNombre}</td>
-                      <td className="px-6 py-4 text-slate-500">{new Date(pedido.fecha).toLocaleDateString("es-VE")}</td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center justify-end gap-2">
-                          {pedido.estado === "pendiente" && (
-                            <button onClick={() => cambiarEstado(pedido.id, "en_proceso")} className="text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 px-2.5 py-1 rounded-lg font-medium transition-colors">Procesar</button>
-                          )}
-                          {pedido.estado === "en_proceso" && (
-                            <button onClick={() => cambiarEstado(pedido.id, "completado")} className="text-xs bg-emerald-50 text-emerald-700 hover:bg-emerald-100 px-2.5 py-1 rounded-lg font-medium transition-colors">Completar</button>
-                          )}
-                          {pedido.estado !== "cancelado" && pedido.estado !== "completado" && (
-                            <button onClick={() => cambiarEstado(pedido.id, "cancelado")} className="text-xs bg-red-50 text-red-700 hover:bg-red-100 px-2.5 py-1 rounded-lg font-medium transition-colors">Cancelar</button>
-                          )}
-                          <button onClick={() => eliminarPedido(pedido.id)} className="text-slate-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 transition-colors">
-                            <Trash2 size={15} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                      </div>
+                      <span className="font-bold text-slate-900">{Number(pedido.cantidadM3).toFixed(2)} M³</span>
+                    </div>
+                    <div className="text-sm font-medium text-slate-900 mb-1">{pedido.clienteNombre}</div>
+                    <div className="text-xs text-slate-500 mb-2">{pedido.productoNombre}</div>
+                    {pedido.obra && (
+                      <div className="text-xs text-slate-600 mb-2"><span className="font-semibold">Obra:</span> {pedido.obra}</div>
+                    )}
+                    <div className="flex items-center justify-between text-[11px] text-slate-400 mb-3">
+                      <span>{pedido.usuarioNombre}</span>
+                      <span>{new Date(pedido.fecha).toLocaleDateString("es-VE")}</span>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {pedido.estado === "pendiente" && (
+                        <button onClick={() => cambiarEstado(pedido.id, "en_proceso")} className="text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 px-3 py-1.5 rounded-lg font-medium transition-colors">Procesar</button>
+                      )}
+                      {pedido.estado === "en_proceso" && (
+                        <button onClick={() => cambiarEstado(pedido.id, "completado")} className="text-xs bg-emerald-50 text-emerald-700 hover:bg-emerald-100 px-3 py-1.5 rounded-lg font-medium transition-colors">Completar</button>
+                      )}
+                      {pedido.estado !== "cancelado" && pedido.estado !== "completado" && (
+                        <button onClick={() => cambiarEstado(pedido.id, "cancelado")} className="text-xs bg-red-50 text-red-700 hover:bg-red-100 px-3 py-1.5 rounded-lg font-medium transition-colors">Cancelar</button>
+                      )}
+                      <button onClick={() => eliminarPedido(pedido.id)} className="text-slate-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 transition-colors ml-auto">
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* DESKTOP: Tabla */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-100 bg-slate-50/50">
+                    <th className="text-left px-4 py-3 font-semibold text-slate-600 text-xs uppercase tracking-wide">#</th>
+                    <th className="text-left px-4 py-3 font-semibold text-slate-600 text-xs uppercase tracking-wide">Cliente</th>
+                    <th className="text-left px-4 py-3 font-semibold text-slate-600 text-xs uppercase tracking-wide">Producto</th>
+                    <th className="text-left px-4 py-3 font-semibold text-slate-600 text-xs uppercase tracking-wide">Obra</th>
+                    <th className="text-left px-4 py-3 font-semibold text-slate-600 text-xs uppercase tracking-wide">Cant. M³</th>
+                    <th className="text-left px-4 py-3 font-semibold text-slate-600 text-xs uppercase tracking-wide">Estado</th>
+                    <th className="text-left px-4 py-3 font-semibold text-slate-600 text-xs uppercase tracking-wide">Por</th>
+                    <th className="text-left px-4 py-3 font-semibold text-slate-600 text-xs uppercase tracking-wide">Fecha</th>
+                    <th className="text-right px-4 py-3 font-semibold text-slate-600 text-xs uppercase tracking-wide">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pedidos.map((pedido) => {
+                    const badge = estadoBadge[pedido.estado] || estadoBadge.pendiente;
+                    const Icon = badge.icon;
+                    return (
+                      <tr key={pedido.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
+                        <td className="px-4 py-3 font-bold text-slate-900">{pedido.id}</td>
+                        <td className="px-4 py-3 font-medium text-slate-900">{pedido.clienteNombre}</td>
+                        <td className="px-4 py-3 text-slate-600">{pedido.productoNombre}</td>
+                        <td className="px-4 py-3 text-slate-600">{pedido.obra || "—"}</td>
+                        <td className="px-4 py-3 font-semibold text-slate-900">{Number(pedido.cantidadM3).toFixed(2)} M³</td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${badge.bg} ${badge.text}`}>
+                            <Icon size={12} className={pedido.estado === "en_proceso" ? "animate-spin" : ""} />
+                            {badge.label}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-slate-500 text-xs">{pedido.usuarioNombre}</td>
+                        <td className="px-4 py-3 text-slate-500 text-xs">{new Date(pedido.fecha).toLocaleDateString("es-VE")}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {pedido.estado === "pendiente" && (
+                              <button onClick={() => cambiarEstado(pedido.id, "en_proceso")} className="text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 px-2 py-1 rounded-lg font-medium transition-colors">Procesar</button>
+                            )}
+                            {pedido.estado === "en_proceso" && (
+                              <button onClick={() => cambiarEstado(pedido.id, "completado")} className="text-xs bg-emerald-50 text-emerald-700 hover:bg-emerald-100 px-2 py-1 rounded-lg font-medium transition-colors">Completar</button>
+                            )}
+                            {pedido.estado !== "cancelado" && pedido.estado !== "completado" && (
+                              <button onClick={() => cambiarEstado(pedido.id, "cancelado")} className="text-xs bg-red-50 text-red-700 hover:bg-red-100 px-2 py-1 rounded-lg font-medium transition-colors">Cancelar</button>
+                            )}
+                            <button onClick={() => eliminarPedido(pedido.id)} className="text-slate-400 hover:text-red-500 p-1 rounded-lg hover:bg-red-50 transition-colors">
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 
