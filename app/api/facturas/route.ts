@@ -5,8 +5,12 @@ import { cookies } from 'next/headers';
 import { sessionOptions, SessionData } from '@/lib/session';
 import { emitSocketEvent } from '@/lib/socket-server';
 import { registrarLog, getUsuarioFromRequest, getClientIp } from '@/lib/audit-log';
+import { requireAuth } from '@/lib/auth-guard';
 
 export async function GET() {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   try {
     const facturas = await query(`SELECT f.id, f.guia_despacho_id AS guiaDespachoId, f.cliente_id AS clienteId, c.nombre AS clienteNombre, f.forma_pago AS formaPago, f.comprobante_retencion AS comprobanteRetencion, f.total, f.usuario_id AS usuarioId, f.created_at AS fecha FROM facturas f LEFT JOIN clientes c ON f.cliente_id = c.id ORDER BY f.id DESC`);
     return NextResponse.json({ success: true, facturas }, { status: 200 });

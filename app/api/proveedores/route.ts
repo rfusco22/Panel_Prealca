@@ -2,8 +2,12 @@ import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { emitSocketEvent } from '@/lib/socket-server';
 import { registrarLog, getUsuarioFromRequest, getClientIp } from '@/lib/audit-log';
+import { requireAuth } from '@/lib/auth-guard';
 
 export async function GET() {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   try {
     const proveedoresRaw: any = await query(`
       SELECT id, nombre, rif, direccion,
@@ -32,6 +36,9 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   try {
     const data = await req.json();
     if (!data.nombre || !data.rif) {
@@ -78,6 +85,9 @@ export async function POST(req: Request) {
 }
 
 export async function PUT(req: Request) {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   try {
     const data = await req.json();
     const { id } = data;
@@ -128,6 +138,9 @@ export async function PUT(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');

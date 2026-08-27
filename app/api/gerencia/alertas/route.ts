@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { requireAuth } from '@/lib/auth-guard';
 
 export async function GET() {
+  const auth = await requireAuth(['admin', 'gerencia']);
+  if (auth.response) return auth.response;
+
   try {
     // 1. Choferes - documentos vencidos o próximos a vencer (7 días)
     const choferesRaw: any = await query(`

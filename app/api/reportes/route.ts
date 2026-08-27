@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { requireAuth } from '@/lib/auth-guard';
 
 export async function GET(request: Request) {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   try {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type') || 'ingresos';

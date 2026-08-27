@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/auth-guard';
 
 export async function GET() {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   try {
     const response = await fetch('https://ve.dolarapi.com/v1/dolares/oficial', {
       cache: 'no-store'

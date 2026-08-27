@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
 import { verifyTransfer, verifyMobilePayment } from '@/lib/ApiBank/mercantil';
+import { requireAuth } from '@/lib/auth-guard';
 
 export async function POST(request: Request) {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   try {
     const body = await request.json();
     const { metodoPago, referencia, monto, cedula, telefono } = body;

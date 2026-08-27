@@ -2,14 +2,23 @@ import { NextResponse } from 'next/server';
 import { query } from '@/lib/db'; // Usamos tu función query directa
 import bcrypt from 'bcryptjs';
 import { emitSocketEvent } from '@/lib/socket-server';
+import { requireAuth, esRolValido } from '@/lib/auth-guard';
 
 export async function POST(req: Request) {
+  const auth = await requireAuth(['admin', 'gerencia']);
+  if (auth.response) return auth.response;
+
   try {
     const body = await req.json();
     const { email, password, nombre, role } = body;
 
     if (!email || !password || !nombre) {
       return NextResponse.json({ error: 'Faltan campos obligatorios' }, { status: 400 });
+    }
+
+    const rolAsignado = role || 'registro';
+    if (!esRolValido(rolAsignado)) {
+      return NextResponse.json({ error: 'Rol inválido' }, { status: 400 });
     }
 
     // Hashear contraseña
@@ -19,7 +28,7 @@ export async function POST(req: Request) {
     // Nota: MySQL gestiona automáticamente id (AUTO_INCREMENT) y fechas (DEFAULT CURRENT_TIMESTAMP)
     await query(
       'INSERT INTO users (email, password_hash, nombre, role, estado) VALUES (?, ?, ?, ?, ?)',
-      [email, passwordHash, nombre, role || 'registro', 'activo']
+      [email, passwordHash, nombre, rolAsignado, 'activo']
     );
 
     emitSocketEvent('users:created');

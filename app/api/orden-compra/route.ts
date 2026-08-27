@@ -5,8 +5,12 @@ import { cookies } from 'next/headers';
 import { sessionOptions, SessionData } from '@/lib/session';
 import { emitSocketEvent } from '@/lib/socket-server';
 import { registrarLog, getUsuarioFromRequest, getClientIp } from '@/lib/audit-log';
+import { requireAuth } from '@/lib/auth-guard';
 
 export async function GET() {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   try {
     const ordenes = await query(`SELECT oc.id, oc.tipo, oc.proveedor_id AS proveedorId, pv.nombre AS proveedorNombre, oc.producto_id AS productoId, CONCAT(pd.resistencia, ' - ', pd.pulgada) AS productoNombre, oc.cantidad_m3 AS cantidadM3, oc.precio_m3 AS precioM3, oc.iva_aplicado AS ivaAplicado, oc.iva_monto AS ivaMonto, oc.total, oc.usuario_id AS usuarioId, oc.created_at AS fecha FROM orden_compra oc LEFT JOIN proveedores pv ON oc.proveedor_id = pv.id LEFT JOIN productos pd ON oc.producto_id = pd.id ORDER BY oc.id DESC`);
     return NextResponse.json({ success: true, ordenes }, { status: 200 });

@@ -3,8 +3,12 @@ import { query } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import { emitSocketEvent } from '@/lib/socket-server';
 import { registrarLog, getUsuarioFromRequest, getClientIp } from '@/lib/audit-log';
+import { requireAuth, esRolValido } from '@/lib/auth-guard';
 
 export async function GET() {
+  const auth = await requireAuth(['admin', 'gerencia']);
+  if (auth.response) return auth.response;
+
   try {
     const users = await query(
       'SELECT id, email, nombre, role, estado, created_at, last_login FROM users ORDER BY created_at DESC'
@@ -17,10 +21,17 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const auth = await requireAuth(['admin', 'gerencia']);
+  if (auth.response) return auth.response;
+
   try {
     const data = await req.json();
     if (!data.email || !data.password || !data.nombre || !data.role) {
       return NextResponse.json({ error: 'Todos los campos son obligatorios' }, { status: 400 });
+    }
+
+    if (!esRolValido(data.role)) {
+      return NextResponse.json({ error: 'Rol inválido' }, { status: 400 });
     }
 
     const passwordHash = await bcrypt.hash(data.password, 10);
@@ -58,10 +69,17 @@ export async function POST(req: Request) {
 }
 
 export async function PUT(req: Request) {
+  const auth = await requireAuth(['admin', 'gerencia']);
+  if (auth.response) return auth.response;
+
   try {
     const data = await req.json();
     if (!data.id) {
       return NextResponse.json({ error: 'ID de usuario requerido' }, { status: 400 });
+    }
+
+    if (data.role !== undefined && !esRolValido(data.role)) {
+      return NextResponse.json({ error: 'Rol inválido' }, { status: 400 });
     }
 
     const anterior: any = await query('SELECT id, nombre, email, role, estado FROM users WHERE id = ?', [data.id]);
@@ -102,6 +120,9 @@ export async function PUT(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  const auth = await requireAuth(['admin', 'gerencia']);
+  if (auth.response) return auth.response;
+
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');

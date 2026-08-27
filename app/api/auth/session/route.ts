@@ -18,7 +18,7 @@ export async function GET() {
     }
 
     const users = await query(
-      'SELECT id, email, role, nombre FROM users WHERE id = ?',
+      'SELECT id, email, role, nombre, estado FROM users WHERE id = ?',
       [session.userId]
     ) as any[];
 
@@ -30,6 +30,15 @@ export async function GET() {
     }
 
     const user = users[0];
+
+    // Si el usuario fue desactivado con la sesion abierta, se cierra al instante
+    if (user.estado !== 'activo') {
+      session.destroy();
+      return NextResponse.json(
+        { user: null, message: 'Usuario inactivo' },
+        { status: 401 }
+      );
+    }
 
     return NextResponse.json({
       user: {

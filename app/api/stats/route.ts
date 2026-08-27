@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { requireAuth } from '@/lib/auth-guard';
 
 export async function GET() {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   try {
     const [clientes]: any = await query('SELECT COUNT(*) as total FROM clientes');
     const [proveedores]: any = await query('SELECT COUNT(*) as total FROM proveedores');

@@ -5,6 +5,7 @@ import { cookies } from 'next/headers';
 import { sessionOptions, SessionData } from '@/lib/session';
 import { emitSocketEvent } from '@/lib/socket-server';
 import { registrarLog, getUsuarioFromRequest, getClientIp } from '@/lib/audit-log';
+import { requireAuth } from '@/lib/auth-guard';
 
 async function ensureTable() {
   await query(`CREATE TABLE IF NOT EXISTS pedidos (id INT AUTO_INCREMENT PRIMARY KEY, cliente_id INT NOT NULL, producto_id INT NOT NULL, cantidad_m3 DECIMAL(10,2) NOT NULL, estado ENUM('pendiente','en_proceso','completado','cancelado') DEFAULT 'pendiente', notas TEXT, obra VARCHAR(255), usuario_id INT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP)`);
@@ -12,6 +13,9 @@ async function ensureTable() {
 }
 
 export async function GET() {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   try {
     await ensureTable();
     const pedidos = await query(`SELECT pe.id, pe.cliente_id AS clienteId, c.nombre AS clienteNombre, pe.producto_id AS productoId, CONCAT(p.resistencia, ' - ', p.pulgada) AS productoNombre, pe.cantidad_m3 AS cantidadM3, pe.estado, pe.notas, pe.obra, pe.usuario_id AS usuarioId, u.nombre AS usuarioNombre, pe.created_at AS fecha FROM pedidos pe LEFT JOIN clientes c ON pe.cliente_id = c.id LEFT JOIN productos p ON pe.producto_id = p.id LEFT JOIN users u ON pe.usuario_id = u.id ORDER BY pe.id DESC`);

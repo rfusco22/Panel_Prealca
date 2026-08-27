@@ -2,8 +2,12 @@ import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { emitSocketEvent } from '@/lib/socket-server';
 import { registrarLog, getUsuarioFromRequest, getClientIp } from '@/lib/audit-log';
+import { requireAuth } from '@/lib/auth-guard';
 
 export async function GET(req: Request) {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   try {
     const { searchParams } = new URL(req.url);
     const clienteId = searchParams.get('cliente_id');
@@ -22,6 +26,9 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   try {
     const data = await req.json();
     const sql = `INSERT INTO retenciones_impuestos (cliente_id, factura_id, monto_retenido, porcentaje_retencion, fecha, usuario_id) VALUES (?, ?, ?, ?, NOW(), ?)`;

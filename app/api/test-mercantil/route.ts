@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
 import { MERCANTIL_CONFIG } from '@/lib/ApiBank/mercantil';
+import { requireAuth } from '@/lib/auth-guard';
 
 export async function GET() {
+  const auth = await requireAuth(['admin']);
+  if (auth.response) return auth.response;
+
   try {
     // Usamos EXACTAMENTE el mismo payload que te dio éxito en Postman
     const payload = {

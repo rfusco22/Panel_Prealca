@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/auth-guard';
 
 interface Tasa {
   moneda: string;
@@ -84,6 +85,9 @@ async function fetchUSDTVES(): Promise<Tasa | null> {
 }
 
 export async function GET() {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   try {
     const [dolar, euro, usdt] = await Promise.all([
       fetchBCVDolar(),

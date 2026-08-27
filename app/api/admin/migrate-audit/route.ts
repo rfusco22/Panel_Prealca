@@ -1,7 +1,11 @@
 import { query } from '@/lib/db';
 import { emitSocketEvent } from '@/lib/socket-server';
+import { requireAuth } from '@/lib/auth-guard';
 
 export async function GET() {
+  const auth = await requireAuth(['admin']);
+  if (auth.response) return auth.response;
+
   try {
     await query(`
       CREATE TABLE IF NOT EXISTS auditoria_log (

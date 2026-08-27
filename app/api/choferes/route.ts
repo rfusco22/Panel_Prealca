@@ -2,8 +2,12 @@ import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { emitSocketEvent } from '@/lib/socket-server';
 import { registrarLog, getUsuarioFromRequest, getClientIp } from '@/lib/audit-log';
+import { requireAuth } from '@/lib/auth-guard';
 
 export async function GET() {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   try {
     const resultados = await query('SELECT * FROM choferes ORDER BY id DESC');
     return NextResponse.json({ success: true, choferes: resultados }, { status: 200 });
@@ -14,6 +18,9 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   try {
     const data = await req.json();
     const sql = `INSERT INTO choferes (nombre, cedula, telefono, correo, direccion, licencia_documento, licencia_vencimiento, certificado_documento, certificado_vencimiento, rif, rif_vencimiento, estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
@@ -38,6 +45,9 @@ export async function POST(req: Request) {
 }
 
 export async function PUT(req: Request) {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   try {
     const data = await req.json();
     const anterior: any = await query('SELECT id, nombre, cedula FROM choferes WHERE id = ?', [data.id]);
@@ -65,6 +75,9 @@ export async function PUT(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');

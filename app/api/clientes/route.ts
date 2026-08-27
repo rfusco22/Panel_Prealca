@@ -2,8 +2,12 @@ import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { emitSocketEvent } from '@/lib/socket-server';
 import { registrarLog, getUsuarioFromRequest, getClientIp } from '@/lib/audit-log';
+import { requireAuth } from '@/lib/auth-guard';
 
 export async function GET() {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   try {
     const sql = `SELECT id, nombre, rif, direccion, telefono, vendedor, es_contribuyente_especial AS esContribuyenteEspecial FROM clientes ORDER BY nombre ASC`;
     const resultados = await query(sql);
@@ -15,6 +19,9 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   try {
     const data = await req.json();
     if (!data.nombre || !data.rif || !data.telefono || !data.direccion || !data.vendedor) {

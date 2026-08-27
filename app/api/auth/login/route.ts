@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import bcrypt from 'bcryptjs';
 import { query } from '@/lib/db';
 import { sessionOptions, SessionData } from '@/lib/session';
+import { esRolValido } from '@/lib/auth-guard';
 
 export async function POST(req: Request) {
   try {
@@ -17,7 +18,7 @@ export async function POST(req: Request) {
     }
 
     const users = await query(
-      'SELECT id, password_hash, role FROM users WHERE email = ?',
+      'SELECT id, password_hash, role, estado FROM users WHERE email = ?',
       [email]
     ) as any[];
 
@@ -36,6 +37,21 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { error: 'Credenciales inválidas' },
         { status: 401 }
+      );
+    }
+
+    // Se valida despues de la contrasena para no revelar que la cuenta existe
+    if (user.estado !== 'activo') {
+      return NextResponse.json(
+        { error: 'Usuario inactivo. Contacte al administrador.' },
+        { status: 403 }
+      );
+    }
+
+    if (!esRolValido(user.role)) {
+      return NextResponse.json(
+        { error: 'El usuario no tiene un rol valido asignado.' },
+        { status: 403 }
       );
     }
 
