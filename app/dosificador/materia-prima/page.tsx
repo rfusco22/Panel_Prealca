@@ -8,6 +8,8 @@ export default function MateriaPrimaPage() {
   const { socket } = useSocket();
   const [agregados, setAgregados] = useState<any[]>([]);
   const [proveedores, setProveedores] = useState<any[]>([]);
+  const [choferes, setChoferes] = useState<any[]>([]);
+  const [unidades, setUnidades] = useState<any[]>([]);
   const [materiaPrima, setMateriaPrima] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -27,8 +29,33 @@ export default function MateriaPrimaPage() {
     cantidad: "",
     fecha: getLocalDate(),
     proveedor_id: "",
+    planta_id: "",
+    chofer_id: "",
+    unidad_id: "",
     es_saldo_inicial: false,
   });
+
+  const formVacio = {
+    agregado_id: "",
+    cantidad: "",
+    fecha: getLocalDate(),
+    proveedor_id: "",
+    planta_id: "",
+    chofer_id: "",
+    unidad_id: "",
+    es_saldo_inicial: false,
+  };
+
+  // Plantas del proveedor elegido. Vienen dentro de cada proveedor desde
+  // /api/proveedores, que ya hace el join con proveedor_plantas.
+  const proveedorSeleccionado = proveedores.find(
+    (p: any) => String(p.id) === form.proveedor_id
+  );
+  const plantasDelProveedor: any[] = proveedorSeleccionado?.plantas || [];
+
+  // Un saldo inicial es un ajuste de arranque: no hay despacho, así que no se
+  // exige chofer ni unidad.
+  const requiereDespacho = !form.es_saldo_inicial;
 
   const getMaxDate = () => getLocalDate();
   const getMinDate = () => {
@@ -65,10 +92,12 @@ export default function MateriaPrimaPage() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [aggRes, mpRes, pvRes] = await Promise.all([
+      const [aggRes, mpRes, pvRes, chRes, unRes] = await Promise.all([
         fetch("/api/agregados"),
         fetch("/api/materia-prima"),
         fetch("/api/proveedores"),
+        fetch("/api/choferes"),
+        fetch("/api/unidades"),
       ]);
       if (aggRes.ok) {
         const aggData = await aggRes.json();
@@ -81,6 +110,14 @@ export default function MateriaPrimaPage() {
       if (pvRes.ok) {
         const pvData = await pvRes.json();
         setProveedores(pvData.proveedores || pvData.data || []);
+      }
+      if (chRes.ok) {
+        const chData = await chRes.json();
+        setChoferes(Array.isArray(chData) ? chData : (chData.choferes || chData.data || []));
+      }
+      if (unRes.ok) {
+        const unData = await unRes.json();
+        setUnidades(Array.isArray(unData) ? unData : (unData.unidades || unData.data || []));
       }
     } catch {} finally {
       setIsLoading(false);
@@ -101,8 +138,10 @@ export default function MateriaPrimaPage() {
           unidad: getUnidadByAgregado(form.agregado_id),
           fecha: form.fecha,
           proveedor_id: parseInt(form.proveedor_id),
+          planta_id: form.planta_id ? parseInt(form.planta_id) : null,
+          chofer_id: form.chofer_id ? parseInt(form.chofer_id) : null,
+          unidad_id: form.unidad_id ? parseInt(form.unidad_id) : null,
           es_saldo_inicial: form.es_saldo_inicial,
-          usuario_id: 1,
         }),
       });
       if (!res.ok) {
@@ -113,7 +152,7 @@ export default function MateriaPrimaPage() {
       setTimeout(() => {
         setShowSuccess(false);
         setIsModalOpen(false);
-        setForm({ agregado_id: "", cantidad: "", fecha: getLocalDate(), proveedor_id: "", es_saldo_inicial: false });
+        setForm({ ...formVacio, fecha: getLocalDate() });
         fetchData();
       }, 1500);
     } catch (err: any) {
@@ -159,6 +198,8 @@ export default function MateriaPrimaPage() {
                 <tr>
                   <th className="px-6 py-4">Fecha</th>
                   <th className="px-6 py-4">Proveedor - Agregado</th>
+                  <th className="px-6 py-4">Chofer</th>
+                  <th className="px-6 py-4">Unidad Transporte</th>
                   <th className="px-6 py-4">Cantidad</th>
                   <th className="px-6 py-4">Unidad</th>
                   <th className="px-6 py-4">Tipo</th>
@@ -171,7 +212,17 @@ export default function MateriaPrimaPage() {
                       {new Date(mp.fecha || mp.created_at).toLocaleDateString("es-VE")}
                     </td>
                     <td className="px-6 py-4 font-bold text-slate-800">
-                      {mp.proveedor_nombre ? `${mp.proveedor_nombre}${mp.proveedor_planta ? ` - ${mp.proveedor_planta}` : ''} - ${mp.agregado_nombre}` : mp.agregado_nombre}
+                      {mp.proveedor_nombre
+                        ? `${mp.proveedor_nombre}${mp.planta_nombre || mp.proveedor_planta ? ` - ${mp.planta_nombre || mp.proveedor_planta}` : ''} - ${mp.agregado_nombre}`
+                        : mp.agregado_nombre}
+                    </td>
+                    <td className="px-6 py-4 text-slate-600">
+                      {mp.chofer_nombre || <span className="text-slate-300">—</span>}
+                    </td>
+                    <td className="px-6 py-4 text-slate-600">
+                      {mp.unidad_numero || mp.unidad_placa
+                        ? `${mp.unidad_numero || ''}${mp.unidad_numero && mp.unidad_placa ? ' — ' : ''}${mp.unidad_placa || ''}`
+                        : <span className="text-slate-300">—</span>}
                     </td>
                     <td className="px-6 py-4 font-bold text-slate-900">
                       {Number(mp.cantidad).toLocaleString("es-VE", { minimumFractionDigits: 2 })}
@@ -248,16 +299,45 @@ export default function MateriaPrimaPage() {
                 <select
                   required
                   value={form.proveedor_id}
-                  onChange={(e) => setForm({ ...form, proveedor_id: e.target.value })}
+                  onChange={(e) => setForm({ ...form, proveedor_id: e.target.value, planta_id: "" })}
                   className={inputCls}
                 >
                   <option value="">Seleccionar proveedor...</option>
                   {proveedores.map((p: any) => (
                     <option key={p.id} value={p.id}>
-                      {p.nombre}{p.planta ? ` - ${p.planta}` : ''}
+                      {p.nombre}
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className={labelCls}>
+                  Planta {plantasDelProveedor.length > 0 ? "*" : ""}
+                </label>
+                <select
+                  required={plantasDelProveedor.length > 0}
+                  disabled={!form.proveedor_id || plantasDelProveedor.length === 0}
+                  value={form.planta_id}
+                  onChange={(e) => setForm({ ...form, planta_id: e.target.value })}
+                  className={`${inputCls} disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed`}
+                >
+                  <option value="">
+                    {!form.proveedor_id
+                      ? "Seleccioná un proveedor primero..."
+                      : plantasDelProveedor.length === 0
+                        ? "Este proveedor no tiene plantas registradas"
+                        : "Seleccionar planta..."}
+                  </option>
+                  {plantasDelProveedor.map((pl: any) => (
+                    <option key={pl.id} value={pl.id}>{pl.nombre}</option>
+                  ))}
+                </select>
+                {form.proveedor_id && plantasDelProveedor.length === 0 && (
+                  <p className="text-[11px] text-slate-400 mt-1.5">
+                    Podés cargarle plantas a este proveedor desde el módulo de Proveedores.
+                  </p>
+                )}
               </div>
 
               <div>
@@ -296,6 +376,42 @@ export default function MateriaPrimaPage() {
                     value={form.agregado_id ? getUnidadByAgregado(form.agregado_id) : ""}
                     className={`${inputCls} bg-slate-50 cursor-not-allowed font-bold text-slate-900`}
                   />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={labelCls}>Chofer {requiereDespacho ? "*" : ""}</label>
+                  <select
+                    required={requiereDespacho}
+                    value={form.chofer_id}
+                    onChange={(e) => setForm({ ...form, chofer_id: e.target.value })}
+                    className={inputCls}
+                  >
+                    <option value="">Seleccionar chofer...</option>
+                    {choferes.map((c: any) => (
+                      <option key={c.id} value={c.id}>
+                        {c.nombre}{c.cedula ? ` — ${c.cedula}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelCls}>Unidad {requiereDespacho ? "*" : ""}</label>
+                  <select
+                    required={requiereDespacho}
+                    value={form.unidad_id}
+                    onChange={(e) => setForm({ ...form, unidad_id: e.target.value })}
+                    className={inputCls}
+                  >
+                    <option value="">Seleccionar unidad...</option>
+                    {unidades.map((u: any) => (
+                      <option key={u.id} value={u.id}>
+                        {u.numeroUnidad || u.numero_unidad || `Unidad ${u.id}`}
+                        {u.placa ? ` — ${u.placa}` : ''}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
