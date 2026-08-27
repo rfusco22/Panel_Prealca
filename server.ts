@@ -7,7 +7,20 @@ import { parse } from 'url';
 import next from 'next';
 import { Server } from 'socket.io';
 import { unsealData } from 'iron-session';
-import { sessionOptions, SessionData } from './lib/session';
+import { sessionOptions, SessionData, leerSessionSecret } from './lib/session';
+import { verificarConfigDb } from './lib/db';
+
+// Las validaciones viven acá, al arrancar, y no al importar cada módulo: el
+// build de Next evalúa todas las rutas y no tiene por qué conocer las
+// credenciales. Con esto se sigue fallando temprano y con un mensaje claro si
+// falta una variable, pero en el contenedor y no en el build.
+try {
+  verificarConfigDb();
+  leerSessionSecret();
+} catch (err) {
+  console.error('Configuración incompleta:', err instanceof Error ? err.message : err);
+  process.exit(1);
+}
 
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = '0.0.0.0';
