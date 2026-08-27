@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-
+import { formatearFecha } from '@/lib/fecha';
 export default function GerenciaOrdenesCompraPage() {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,7 +43,7 @@ export default function GerenciaOrdenesCompraPage() {
                   <tr key={o.id} className="hover:bg-slate-50/80 transition-colors">
                     <td className="px-6 py-4 font-semibold text-slate-900">#{o.id}</td>
                     <td className="px-6 py-4 text-slate-600">{o.proveedorNombre || o.proveedorId}</td>
-                    <td className="px-6 py-4 text-slate-600">{o.fecha ? new Date(o.fecha).toLocaleDateString('es-VE') : '-'}</td>
+                    <td className="px-6 py-4 text-slate-600">{o.fecha ? formatearFecha(o.fecha) : '-'}</td>
                     <td className="px-6 py-4 font-medium text-slate-900">{o.montoTotal ? `Bs. ${o.montoTotal.toLocaleString('es-ES', { minimumFractionDigits: 2 })}` : '-'}</td>
                     <td className="px-6 py-4">
                       <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${

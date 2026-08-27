@@ -17,6 +17,15 @@ const pool = mysql.createPool({
   user: requerido('DB_USER'),
   password: requerido('DB_PASSWORD'),
   database: requerido('DB_NAME'),
+  // Las fechas se devuelven como texto tal cual están en la tabla, sin
+  // convertirlas a Date. Es la causa de raíz del corrimiento de un día:
+  // las columnas de negocio son DATE (un día del calendario, sin hora), y
+  // mysql2 las convertía a Date usando la zona del proceso Node. En el
+  // contenedor esa zona es UTC, así que un 2026-08-26 salía como
+  // 2026-08-26T00:00:00.000Z y el navegador, en UTC-4, lo mostraba como 25.
+  // Con esto un DATE llega como '2026-08-26' y un DATETIME como
+  // '2026-08-26 14:30:00'. Para formatearlas usar lib/fecha.ts.
+  dateStrings: true,
   waitForConnections: true,
   connectionLimit: 10,
   idleTimeout: 60000,

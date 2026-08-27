@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Truck, ArrowLeft, Download } from 'lucide-react';
 import Link from 'next/link';
-
+import { formatearFecha } from '@/lib/fecha';
 function formatBs(v: number) { return 'Bs. ' + v.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 function formatUsd(v: number) { return '$ ' + v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 }); }
 
@@ -151,7 +151,7 @@ export default function ReporteProveedoresPage() {
               <tbody>
                 {filteredDetalles.map((d: any, i: number) => (
                   <tr key={i} className="border-t border-slate-100">
-                    <td className="px-4 py-2.5 text-slate-600">{d.fecha ? new Date(d.fecha).toLocaleDateString('es-VE') : '-'}</td>
+                    <td className="px-4 py-2.5 text-slate-600">{d.fecha ? formatearFecha(d.fecha) : '-'}</td>
                     <td className="px-4 py-2.5"><span className="px-2 py-0.5 rounded-full bg-orange-50 text-orange-700 text-xs font-bold">{d.clasificacionGasto}</span></td>
                     <td className="px-4 py-2.5 text-slate-500">{d.subCategoria || '-'}</td>
                     <td className="px-4 py-2.5 text-slate-500">{d.referencia || '-'}</td>

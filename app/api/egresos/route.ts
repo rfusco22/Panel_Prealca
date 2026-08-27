@@ -3,7 +3,7 @@ import { query } from '@/lib/db';
 import { emitSocketEvent } from '@/lib/socket-server';
 import { registrarLog, getUsuarioFromRequest, getClientIp } from '@/lib/audit-log';
 import { requireAuth } from '@/lib/auth-guard';
-
+import { hoyLocal } from '@/lib/fecha';
 export async function GET() {
   const auth = await requireAuth();
   if (auth.response) return auth.response;
@@ -34,7 +34,7 @@ export async function POST(req: Request) {
       detalleExtra = JSON.stringify(extra);
     }
     const sql = `INSERT INTO egresos (banco, nombreProveedor, rif, clasificacionGasto, subCategoria, detalleExtra, descripcion, montoBs, montoDivisa, tasaCambio, referencia, fecha) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-    const fechaEgreso = data.fecha ? data.fecha : new Date().toISOString().split('T')[0];
+    const fechaEgreso = data.fecha ? data.fecha : hoyLocal();
     const valores = [data.banco, data.nombreProveedor, rif, data.clasificacionGasto, data.subCategoria || null, detalleExtra, data.descripcion || null, parseFloat(data.montoBs), parseFloat(data.montoDivisa), parseFloat(data.tasaCambio), data.referencia, fechaEgreso];
     const resultado: any = await query(sql, valores);
     emitSocketEvent('egresos:created');

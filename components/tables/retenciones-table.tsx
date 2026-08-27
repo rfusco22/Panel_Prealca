@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Loader2, Search, X } from "lucide-react";
-
+import { formatearFecha } from '@/lib/fecha';
 function RetencionesTable() {
   const [data, setData] = useState<any[]>([]);
   const [clientes, setClientes] = useState<any[]>([]);
@@ -146,7 +146,7 @@ function RetencionesTable() {
               {data.map((ret) => (
                 <tr key={ret.id} className="hover:bg-slate-50/80 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap font-medium text-slate-900">
-                    {new Date(ret.fecha || ret.created_at).toLocaleDateString("es-VE")}
+                    {formatearFecha(ret.fecha || ret.created_at)}
                   </td>
                   <td className="px-6 py-4">
                     <span className="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-full text-xs font-bold">

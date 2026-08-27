@@ -1,5 +1,6 @@
 // lib/ApiBank/mercantil.ts
 import crypto from 'crypto';
+import { hoyLocal } from '../fecha';
 
 export const MERCANTIL_CONFIG = {
   ted: {
@@ -65,7 +66,7 @@ export async function verifyTransfer(referencia: string, cuentaDestino: string, 
       transferSearch: {
           account: encryptedAccount,
           issuerCustomerId: encryptedCustomerId, // Agregado y encriptado
-          trxDate: new Date().toISOString().split('T')[0], // Formato "YYYY-MM-DD"
+          trxDate: hoyLocal(), // Formato "YYYY-MM-DD"
           issuerBankId: 105, // ID estandarizado en el ejemplo
           transactionType: 1, // ID estandarizado en el ejemplo
           paymentReference: referencia, // Nombre de variable corregido

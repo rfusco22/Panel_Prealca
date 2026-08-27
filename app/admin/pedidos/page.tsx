@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSocket } from "@/contexts/SocketContext";
 import { Plus, X, Trash2, Clock, CheckCircle2, XCircle, Loader2, ShoppingCart, AlertCircle } from "lucide-react";
-
+import { formatearFecha } from '@/lib/fecha';
 interface Pedido {
   id: number;
   clienteId: number;
@@ -190,7 +190,7 @@ export default function PedidosPage() {
                     )}
                     <div className="flex items-center justify-between text-[11px] text-slate-400 mb-3">
                       <span>{pedido.usuarioNombre}</span>
-                      <span>{new Date(pedido.fecha).toLocaleDateString("es-VE")}</span>
+                      <span>{formatearFecha(pedido.fecha)}</span>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
                       {pedido.estado === "pendiente" && (
@@ -245,7 +245,7 @@ export default function PedidosPage() {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-slate-500 text-xs">{pedido.usuarioNombre}</td>
-                        <td className="px-4 py-3 text-slate-500 text-xs">{new Date(pedido.fecha).toLocaleDateString("es-VE")}</td>
+                        <td className="px-4 py-3 text-slate-500 text-xs">{formatearFecha(pedido.fecha)}</td>
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-end gap-1.5">
                             {pedido.estado === "pendiente" && (

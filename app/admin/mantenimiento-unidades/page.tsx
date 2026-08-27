@@ -6,7 +6,7 @@ import {
   Truck, DollarSign, User, FileText, Clock, CheckCircle2, AlertTriangle,
   TrendingUp, Activity, ChevronRight, History, Loader2, ClipboardList
 } from "lucide-react";
-
+import { formatearFechaCorta, hoyLocal } from '@/lib/fecha';
 interface Unidad {
   id: number;
   numeroUnidad: string;
@@ -65,7 +65,7 @@ export default function MantenimientoUnidadesPage() {
 
   const [formData, setFormData] = useState({
     unidadId: "",
-    fecha: new Date().toISOString().split("T")[0],
+    fecha: hoyLocal(),
     tipoMantenimiento: "preventivo",
     descripcion: "",
     km: "",
@@ -237,7 +237,7 @@ export default function MantenimientoUnidadesPage() {
     setFormData((prev) => ({
       ...prev,
       unidadId: unidadIdPre ? String(unidadIdPre) : "",
-      fecha: new Date().toISOString().split("T")[0],
+      fecha: hoyLocal(),
       tipoMantenimiento: "preventivo",
       descripcion: "",
       km: "",
@@ -343,7 +343,7 @@ export default function MantenimientoUnidadesPage() {
 
   const formatDate = (d: string | null) => {
     if (!d) return "—";
-    return new Date(d).toLocaleDateString("es-VE", { day: "2-digit", month: "short", year: "numeric" });
+    return formatearFechaCorta(d);
   };
 
   const diasDesde = (fecha: string) => {

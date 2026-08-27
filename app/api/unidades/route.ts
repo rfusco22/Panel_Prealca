@@ -5,7 +5,7 @@ import { cookies } from 'next/headers';
 import { sessionOptions, SessionData } from '@/lib/session';
 import { emitSocketEvent } from '@/lib/socket-server';
 import { registrarLog, getUsuarioFromRequest, getClientIp } from '@/lib/audit-log';
-
+import { hoyLocal } from '@/lib/fecha';
 async function ensureColumns() {
   try { await query(`ALTER TABLE unidades ADD COLUMN km_actual DECIMAL(10,2) DEFAULT 0`); } catch {}
   try { await query(`ALTER TABLE unidades ADD COLUMN ultimo_mantenimiento DATE NULL`); } catch {}
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     const { numeroUnidad, placa, marca, modelo, ano, color, polizaRcvNumero, polizaRcvVencimiento, rotNumero, rotVencimiento } = body;
     if (!numeroUnidad || !placa || !marca || !modelo || !ano || !color) return NextResponse.json({ error: 'Todos los campos son obligatorios' }, { status: 400 });
 
-    const hoy = new Date().toISOString().split('T')[0];
+    const hoy = hoyLocal();
     if (polizaRcvVencimiento && polizaRcvVencimiento < hoy) return NextResponse.json({ error: 'La fecha de vencimiento de la Póliza RCV no puede ser anterior a hoy.' }, { status: 400 });
     if (rotVencimiento && rotVencimiento < hoy) return NextResponse.json({ error: 'La fecha de vencimiento del ROT no puede ser anterior a hoy.' }, { status: 400 });
     const result: any = await query(
@@ -73,7 +73,7 @@ export async function PUT(request: Request) {
     const { id, numeroUnidad, placa, marca, modelo, ano, color, polizaRcvNumero, polizaRcvVencimiento, rotNumero, rotVencimiento } = body;
     if (!id || !numeroUnidad || !placa || !marca || !modelo || !ano || !color) return NextResponse.json({ error: 'Faltan datos requeridos' }, { status: 400 });
 
-    const hoy = new Date().toISOString().split('T')[0];
+    const hoy = hoyLocal();
     if (polizaRcvVencimiento && polizaRcvVencimiento < hoy) return NextResponse.json({ error: 'La fecha de vencimiento de la Póliza RCV no puede ser anterior a hoy.' }, { status: 400 });
     if (rotVencimiento && rotVencimiento < hoy) return NextResponse.json({ error: 'La fecha de vencimiento del ROT no puede ser anterior a hoy.' }, { status: 400 });
 

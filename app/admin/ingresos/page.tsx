@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { IngresoForm } from '@/components/forms/ingreso-form';
 import { Plus, X, TrendingUp } from 'lucide-react';
-
+import { formatearFecha } from '@/lib/fecha';
 function formatBs(v: number) { return v.toLocaleString('es-VE', { minimumFractionDigits: 2 }) + ' Bs'; }
 
 export default function IngresosPage() {
@@ -60,7 +60,7 @@ export default function IngresosPage() {
                 <tr><td colSpan={9} className="px-4 py-12 text-center text-slate-400">No hay ingresos registrados</td></tr>
               ) : ingresos.map((ing) => (
                 <tr key={ing.id} className="border-b border-slate-100 hover:bg-slate-50">
-                  <td className="px-4 py-3 text-slate-700">{new Date(ing.fecha).toLocaleDateString('es-VE')}</td>
+                  <td className="px-4 py-3 text-slate-700">{formatearFecha(ing.fecha)}</td>
                   <td className="px-4 py-3 text-slate-700">{ing.banco}</td>
                   <td className="px-4 py-3 text-slate-700">{ing.nombreCliente}</td>
                   <td className="px-4 py-3 text-slate-700">{ing.vendedor || '—'}</td>

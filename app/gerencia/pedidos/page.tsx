@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Clock, CheckCircle2, XCircle, Loader2 } from "lucide-react";
-
+import { formatearFecha } from '@/lib/fecha';
 const estadoBadge: Record<string, { bg: string; text: string; icon: any; label: string }> = {
   pendiente: { bg: "bg-amber-50", text: "text-amber-700", icon: Clock, label: "Pendiente" },
   en_proceso: { bg: "bg-blue-50", text: "text-blue-700", icon: Loader2, label: "En Proceso" },
@@ -62,7 +62,7 @@ export default function GerenciaPedidosPage() {
                           <Icon size={12} /> {badge.label}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-slate-500">{p.fecha ? new Date(p.fecha).toLocaleDateString('es-VE') : '-'}</td>
+                      <td className="px-6 py-4 text-slate-500">{p.fecha ? formatearFecha(p.fecha) : '-'}</td>
                     </tr>
                   );
                 })}

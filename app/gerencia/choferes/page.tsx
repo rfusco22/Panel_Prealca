@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-
+import { formatearFecha } from '@/lib/fecha';
 export default function GerenciaChoferesPage() {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,8 +46,8 @@ export default function GerenciaChoferesPage() {
                     <td className="px-6 py-4 font-medium text-slate-600">{c.cedula || '-'}</td>
                     <td className="px-6 py-4 text-slate-500">{c.telefono || '-'}</td>
                     <td className="px-6 py-4 text-slate-500">{c.licencia || '-'}</td>
-                    <td className="px-6 py-4 text-slate-500">{c.licencia_vencimiento ? new Date(c.licencia_vencimiento).toLocaleDateString('es-VE') : '-'}</td>
-                    <td className="px-6 py-4 text-slate-500">{c.certificado_vencimiento ? new Date(c.certificado_vencimiento).toLocaleDateString('es-VE') : '-'}</td>
+                    <td className="px-6 py-4 text-slate-500">{c.licencia_vencimiento ? formatearFecha(c.licencia_vencimiento) : '-'}</td>
+                    <td className="px-6 py-4 text-slate-500">{c.certificado_vencimiento ? formatearFecha(c.certificado_vencimiento) : '-'}</td>
                   </tr>
                 ))}
               </tbody>

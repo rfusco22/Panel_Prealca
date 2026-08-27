@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Truck, User, Package, Ruler, AlertCircle, Eye, Printer, Loader2, Box } from 'lucide-react';
 import { printDocument, generateGuiaDespachoHtml, generatePrealcaHtml, generateServicioBombaHtml } from '@/lib/document-templates';
-
+import { formatearFecha } from '@/lib/fecha';
 const guiaSchema = z.object({
   clienteId: z.coerce.number().min(1, 'Debe seleccionar un cliente'),
   productoId: z.coerce.number().min(1, 'Debe seleccionar un producto'),
@@ -390,7 +390,7 @@ export function GuiaDespachoForm({
                   <div className="text-right text-[10px] space-y-1">
                     <div className="border border-slate-400 px-2 py-1">
                       <span className="font-semibold text-slate-500">Fecha de Emisión:</span>{' '}
-                      <span className="text-slate-700">{new Date().toLocaleDateString('es-VE')}</span>
+                      <span className="text-slate-700">{formatearFecha(new Date())}</span>
                     </div>
                     <div className="border border-slate-400 px-2 py-1">
                       <span className="font-semibold text-slate-500">Fecha de Vencimiento:</span>{' '}
@@ -505,7 +505,7 @@ export function GuiaDespachoForm({
                   <div className="text-right text-[9px] shrink-0">
                     <div className="border border-black px-3 py-1 mb-1">
                       <p className="font-bold">FECHA DE EMISIÓN</p>
-                      <p>{new Date().toLocaleDateString('es-VE')}</p>
+                      <p>{formatearFecha(new Date())}</p>
                     </div>
                     <div className="border border-black px-3 py-1">
                       <p className="font-bold">FECHA DE VENCIMIENTO</p>
@@ -628,7 +628,7 @@ export function GuiaDespachoForm({
                   <div className="text-right text-[10px] space-y-1">
                     <div className="border border-slate-400 px-2 py-1">
                       <span className="font-semibold text-slate-500">Fecha de Emisión:</span>{' '}
-                      <span className="text-slate-700">{new Date().toLocaleDateString('es-VE')}</span>
+                      <span className="text-slate-700">{formatearFecha(new Date())}</span>
                     </div>
                     <div className="border border-slate-400 px-2 py-1">
                       <span className="font-semibold text-slate-500">Fecha de Vencimiento:</span>{' '}

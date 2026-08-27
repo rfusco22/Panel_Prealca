@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Loader2, Trash2, CheckCircle2, XCircle, AlertTriangle, Clock, Pencil } from "lucide-react";
-
+import { diasHasta, formatearFecha } from '@/lib/fecha';
 function ChoferesTable({ refreshKey, onEdit }: { refreshKey?: number; onEdit?: (chofer: any) => void }) {
   const [data, setData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -38,15 +38,13 @@ function ChoferesTable({ refreshKey, onEdit }: { refreshKey?: number; onEdit?: (
 
   const getDocStatus = (fecha: string | null) => {
     if (!fecha) return { label: "Sin fecha", color: "bg-slate-100 text-slate-500", icon: null };
-    const d = new Date(fecha);
-    const ahora = new Date();
-    const diff = d.getTime() - ahora.getTime();
-    const dias = Math.ceil(diff / (1000 * 60 * 60 * 24));
+    const dias = diasHasta(fecha);
+    if (dias === null) return { label: "Sin fecha", color: "bg-slate-100 text-slate-500", icon: null };
 
     if (dias < 0) return { label: `Vencido (${Math.abs(dias)}d)`, color: "bg-red-100 text-red-700", icon: XCircle };
     if (dias <= 7) return { label: `Vence en ${dias}d`, color: "bg-amber-100 text-amber-700", icon: AlertTriangle };
     if (dias <= 30) return { label: `Vence en ${dias}d`, color: "bg-orange-100 text-orange-700", icon: Clock };
-    return { label: d.toLocaleDateString("es-VE"), color: "bg-emerald-50 text-emerald-700", icon: null };
+    return { label: formatearFecha(fecha), color: "bg-emerald-50 text-emerald-700", icon: null };
   };
 
   if (isLoading) {

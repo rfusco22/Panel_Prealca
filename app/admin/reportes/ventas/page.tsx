@@ -6,7 +6,7 @@ import { DateRangePicker, QuickDateFilters } from '@/components/reports/DateRang
 import { SummaryCards } from '@/components/reports/SummaryCards';
 import { ExportButtons } from '@/components/reports/ExportButtons';
 import { BarChartCard, PieChartCard } from '@/components/reports/ReportCharts';
-
+import { formatearFecha } from '@/lib/fecha';
 function formatBs(v: number) { return v.toLocaleString('es-VE', { minimumFractionDigits: 2 }) + ' Bs'; }
 
 export default function ReporteVentasPage() {
@@ -34,7 +34,7 @@ export default function ReporteVentasPage() {
   const excelData = {
     title: 'Reporte de Ventas',
     columns: ['N° Factura', 'Fecha', 'Cliente', 'Forma Pago', 'Total'],
-    data: data.map(r => [`F-${r.id}`, r.fecha ? new Date(r.fecha).toLocaleDateString('es-VE') : '—', r.clienteNombre || '—', r.formaPago, Number(r.total)]),
+    data: data.map(r => [`F-${r.id}`, r.fecha ? formatearFecha(r.fecha) : '—', r.clienteNombre || '—', r.formaPago, Number(r.total)]),
   };
 
   return (
@@ -88,7 +88,7 @@ export default function ReporteVentasPage() {
               ) : data.map((r, i) => (
                 <tr key={i} className="border-t border-slate-100 hover:bg-slate-50">
                   <td className="px-4 py-3 font-medium text-slate-900">F-{r.id}</td>
-                  <td className="px-4 py-3 text-slate-700">{r.fecha ? new Date(r.fecha).toLocaleDateString('es-VE') : '—'}</td>
+                  <td className="px-4 py-3 text-slate-700">{r.fecha ? formatearFecha(r.fecha) : '—'}</td>
                   <td className="px-4 py-3 text-slate-700">{r.clienteNombre || '—'}</td>
                   <td className="px-4 py-3 text-slate-700">{r.formaPago}</td>
                   <td className="px-4 py-3 text-right font-medium text-slate-900">{formatBs(Number(r.total))}</td>

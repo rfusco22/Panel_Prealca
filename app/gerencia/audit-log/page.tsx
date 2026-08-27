@@ -6,7 +6,7 @@ import {
   PlusCircle, Pencil, Trash2, Clock, User, FileText, Filter
 } from "lucide-react";
 import { useSocket } from '@/contexts/SocketContext';
-
+import { aFechaLocal, formatearFechaHora } from '@/lib/fecha';
 interface AuditLog {
   id: number;
   usuarioId: number | null;
@@ -84,7 +84,8 @@ export default function GerenciaAuditLogPage() {
   });
 
   const formatFecha = (fecha: string) => {
-    const d = new Date(fecha);
+    const d = aFechaLocal(fecha);
+    if (!d) return '—';
     const diffMs = Date.now() - d.getTime();
     const diffMin = Math.floor(diffMs / 60000);
     const diffH = Math.floor(diffMin / 60);
@@ -93,7 +94,7 @@ export default function GerenciaAuditLogPage() {
     if (diffMin < 60) return `Hace ${diffMin} min`;
     if (diffH < 24) return `Hace ${diffH}h`;
     if (diffD < 7) return `Hace ${diffD}d`;
-    return d.toLocaleDateString("es-VE", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    return formatearFechaHora(fecha);
   };
 
   const getAccionInfo = (accion: string) => {
@@ -131,7 +132,6 @@ export default function GerenciaAuditLogPage() {
           <button onClick={() => setError(null)} className="ml-auto"><X size={16} /></button>
         </div>
       )}
-
 
       {/* STATS */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">

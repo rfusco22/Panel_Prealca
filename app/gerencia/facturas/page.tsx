@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-
+import { formatearFecha } from '@/lib/fecha';
 export default function GerenciaFacturasPage() {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,7 +48,7 @@ export default function GerenciaFacturasPage() {
                     <td className="px-6 py-4 text-slate-600">Cliente #{f.clienteId}</td>
                     <td className="px-6 py-4 font-medium text-slate-900">Bs. {f.montoTotal?.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</td>
                     <td className="px-6 py-4 text-slate-600">{f.iva ? `Bs. ${f.iva.toLocaleString('es-ES', { minimumFractionDigits: 2 })}` : 'N/A'}</td>
-                    <td className="px-6 py-4 text-slate-600">{new Date(f.fechaEmision).toLocaleDateString('es-ES')}</td>
+                    <td className="px-6 py-4 text-slate-600">{formatearFecha(f.fechaEmision)}</td>
                     <td className="px-6 py-4">
                       <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                         f.estatus === 'Pagada' ? 'bg-green-100 text-green-800' :

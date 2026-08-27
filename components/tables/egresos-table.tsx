@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
-
+import { formatearFecha } from '@/lib/fecha';
 function EgresosTable() {
   const [data, setData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -69,7 +69,7 @@ function EgresosTable() {
           {data.map((egreso) => (
             <tr key={egreso.id} className="hover:bg-slate-50/80 transition-colors">
               <td className="px-6 py-4 whitespace-nowrap font-medium text-slate-900">
-                {new Date(egreso.fecha || egreso.createdAt).toLocaleDateString("es-VE")}
+                {formatearFecha(egreso.fecha || egreso.createdAt)}
               </td>
               <td className="px-6 py-4 font-bold text-slate-800">{egreso.nombreProveedor}</td>
               <td className="px-6 py-4">

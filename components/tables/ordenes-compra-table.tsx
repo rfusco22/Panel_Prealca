@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Trash2 } from 'lucide-react';
 import { useState } from 'react';
-
+import { formatearFecha } from '@/lib/fecha';
 interface OrdenCompra {
   id: number;
   fecha: string;
@@ -63,7 +63,7 @@ export function OrdenesCompraTable({ data, onDelete }: OrdenesCompraTableProps) 
             {data.map((orden) => (
               <tr key={orden.id} className="border-b hover:bg-gray-50 transition">
                 <td className="px-6 py-3 text-sm text-gray-900">
-                  {new Date(orden.fecha).toLocaleDateString('es-ES')}
+                  {formatearFecha(orden.fecha)}
                 </td>
                 <td className="px-6 py-3 text-sm text-gray-600">{orden.tipo}</td>
                 <td className="px-6 py-3 text-sm text-gray-600">{orden.proveedorNombre}</td>

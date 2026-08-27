@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-
+import { formatearFecha } from '@/lib/fecha';
 function IngresosTable() {
   // 1. Inicializar siempre con un arreglo vacío
   const [data, setData] = useState<any[]>([]);
@@ -80,7 +80,7 @@ function IngresosTable() {
             <tr key={ingreso.id} className="hover:bg-gray-50 transition-colors">
               <td className="px-4 py-3 text-gray-500">#{ingreso.id}</td>
               <td className="px-4 py-3 whitespace-nowrap">
-                {new Date(ingreso.createdAt || ingreso.fecha).toLocaleDateString('es-VE')}
+                {formatearFecha(ingreso.createdAt || ingreso.fecha)}
               </td>
               <td className="px-4 py-3 font-medium text-gray-900">{ingreso.banco}</td>
               <td className="px-4 py-3 text-gray-600">{ingreso.referencia}</td>

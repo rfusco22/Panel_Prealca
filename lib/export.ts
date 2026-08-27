@@ -1,7 +1,7 @@
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-
+import { formatearFecha, hoyLocal } from './fecha';
 interface ExportData {
   title: string;
   columns: string[];
@@ -22,7 +22,7 @@ export function exportToExcel(data: ExportData) {
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Reporte');
 
-  const filename = `${data.title.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`;
+  const filename = `${data.title.replace(/\s+/g, '_')}_${hoyLocal()}.xlsx`;
   XLSX.writeFile(workbook, filename);
 }
 
@@ -40,7 +40,7 @@ export function exportToPDF(data: ExportData) {
   // Date
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text(`Generado: ${new Date().toLocaleDateString('es-ES')}`, margin, 28);
+  doc.text(`Generado: ${formatearFecha(new Date())}`, margin, 28);
 
   // Table
   const startY = 35;
@@ -79,7 +79,7 @@ export function exportToPDF(data: ExportData) {
     doc.text(`Página ${i} de ${pageCount}`, pageWidth - margin - 20, pageHeight - 10);
   }
 
-  const filename = `${data.title.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+  const filename = `${data.title.replace(/\s+/g, '_')}_${hoyLocal()}.pdf`;
   doc.save(filename);
 }
 
@@ -96,7 +96,7 @@ export function generateIngresoReport(ingresos: any[]) {
   ];
 
   const data = ingresos.map((ingreso) => [
-    new Date(ingreso.fecha).toLocaleDateString('es-ES'),
+    formatearFecha(ingreso.fecha),
     `Banco ${ingreso.bancoId}`,
     `Cliente ${ingreso.clienteId}`,
     ingreso.vendedor || '-',
@@ -121,7 +121,7 @@ export function generateEgresoReport(egresos: any[]) {
   ];
 
   const data = egresos.map((egreso) => [
-    new Date(egreso.fecha).toLocaleDateString('es-ES'),
+    formatearFecha(egreso.fecha),
     `Banco ${egreso.bancoId}`,
     `Proveedor ${egreso.proveedorId}`,
     egreso.clasificacionGasto,
@@ -147,7 +147,7 @@ export function generateFacturaReport(facturas: any[]) {
 
   const data = facturas.map((factura) => [
     factura.numeroFactura,
-    new Date(factura.fechaEmision).toLocaleDateString('es-ES'),
+    formatearFecha(factura.fechaEmision),
     `Cliente ${factura.clienteId}`,
     factura.tipoFactura,
     factura.montoTotal.toFixed(2),
@@ -170,7 +170,7 @@ export function generateRetencionReport(retenciones: any[]) {
   ];
 
   const data = retenciones.map((r) => [
-    new Date(r.fecha).toLocaleDateString('es-ES'),
+    formatearFecha(r.fecha),
     r.cliente_nombre || '-',
     r.cliente_rif || '-',
     `F-${r.factura_id}`,

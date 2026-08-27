@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Loader2, Plus, X, CheckCircle2, Pencil, Trash2, AlertTriangle } from "lucide-react";
 import { useSocket } from '@/contexts/SocketContext';
 import { useAuth } from '@/hooks/useAuth';
-
+import { formatearFecha, hoyLocal, hoyLocalMasDias } from '@/lib/fecha';
 export default function MateriaPrimaPage() {
   const { socket } = useSocket();
   const { session } = useAuth();
@@ -27,12 +27,7 @@ export default function MateriaPrimaPage() {
   const [aEliminar, setAEliminar] = useState<any | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const getLocalDate = () => {
-    const d = new Date();
-    const offset = d.getTimezoneOffset();
-    const local = new Date(d.getTime() - offset * 60000);
-    return local.toISOString().split("T")[0];
-  };
+  const getLocalDate = () => hoyLocal();
 
   const [form, setForm] = useState({
     agregado_id: "",
@@ -68,13 +63,7 @@ export default function MateriaPrimaPage() {
   const requiereDespacho = !form.es_saldo_inicial;
 
   const getMaxDate = () => getLocalDate();
-  const getMinDate = () => {
-    const d = new Date();
-    d.setDate(d.getDate() - 30);
-    const offset = d.getTimezoneOffset();
-    const local = new Date(d.getTime() - offset * 60000);
-    return local.toISOString().split("T")[0];
-  };
+  const getMinDate = () => hoyLocalMasDias(-30);
 
   // El alta se limita a los últimos 30 días. Al editar un registro más viejo esa
   // cota lo dejaría inguardable, así que se corre hasta la fecha del registro.
@@ -288,7 +277,7 @@ export default function MateriaPrimaPage() {
                 {materiaPrima.map((mp) => (
                   <tr key={mp.id} className="hover:bg-slate-50/80 transition-colors">
                     <td className="px-6 py-4 font-medium text-slate-900">
-                      {new Date(mp.fecha || mp.created_at).toLocaleDateString("es-VE")}
+                      {formatearFecha(mp.fecha || mp.created_at)}
                     </td>
                     <td className="px-6 py-4 font-bold text-slate-800">
                       {mp.proveedor_nombre

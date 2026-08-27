@@ -3,7 +3,7 @@
 import { Printer, Download } from 'lucide-react';
 import { useState } from 'react';
 import { generateGuiaDespachoHtml, generatePrealcaHtml } from '@/lib/document-templates';
-
+import { formatearFecha } from '@/lib/fecha';
 interface GuiaDespacho {
   id: number;
   fecha: string;
@@ -166,7 +166,7 @@ export function GuiaDespachoTable({ data }: GuiaDespachoTableProps) {
             {data.map((guia) => (
               <tr key={guia.id} className="border-b hover:bg-gray-50 transition">
                 <td className="px-6 py-3 text-sm text-gray-900">
-                  {new Date(guia.fecha).toLocaleDateString('es-ES')}
+                  {formatearFecha(guia.fecha)}
                 </td>
                 <td className="px-6 py-3 text-sm">
                   <span

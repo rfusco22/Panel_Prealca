@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-
+import { formatearFecha } from '@/lib/fecha';
 export default function GerenciaVendedoresPage() {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,7 +47,7 @@ export default function GerenciaVendedoresPage() {
                     <td className="px-6 py-4 font-medium text-slate-600">{v.cedula}</td>
                     <td className="px-6 py-4 text-slate-500">{v.telefono || 'N/A'}</td>
                     <td className="px-6 py-4 text-slate-500 max-w-xs truncate">{v.direccion || 'N/A'}</td>
-                    <td className="px-6 py-4 text-slate-500">{new Date(v.createdAt).toLocaleDateString('es-VE')}</td>
+                    <td className="px-6 py-4 text-slate-500">{formatearFecha(v.createdAt)}</td>
                   </tr>
                 ))}
               </tbody>

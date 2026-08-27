@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { AlertCircle, CheckCircle2, TrendingDown, Loader2, Upload, X, Paperclip } from 'lucide-react';
-
+import { hoyLocal } from '@/lib/fecha';
 interface EgresoFormProps {
   onAdd: (data: any) => void;
   onClose?: () => void;
@@ -60,7 +60,7 @@ const SUB_CATEGORIAS: Record<string, { value: string; label: string; extra?: str
   ],
 };
 
-function getTodayStr() { return new Date().toISOString().split('T')[0]; }
+function getTodayStr() { return hoyLocal(); }
 
 export function EgresoForm({ onAdd, onClose }: EgresoFormProps) {
   const [tasaCambio, setTasaCambio] = useState<number>(0);

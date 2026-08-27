@@ -6,7 +6,7 @@ import { DateRangePicker, QuickDateFilters } from '@/components/reports/DateRang
 import { SummaryCards } from '@/components/reports/SummaryCards';
 import { ExportButtons } from '@/components/reports/ExportButtons';
 import { BarChartCard, PieChartCard } from '@/components/reports/ReportCharts';
-
+import { formatearFecha } from '@/lib/fecha';
 function formatBs(v: number) { return v.toLocaleString('es-VE', { minimumFractionDigits: 2 }) + ' Bs'; }
 
 export default function ReporteRetencionesPage() {
@@ -35,7 +35,7 @@ export default function ReporteRetencionesPage() {
     title: 'Reporte de Retenciones',
     columns: ['Fecha', 'Cliente', 'RIF', 'Factura N°', 'Monto Retenido', '% Retención'],
     data: data.map(r => [
-      r.fecha ? new Date(r.fecha).toLocaleDateString('es-VE') : '—',
+      r.fecha ? formatearFecha(r.fecha) : '—',
       r.cliente_nombre || '—',
       r.cliente_rif || '—',
       `F-${r.factura_id}`,
@@ -94,7 +94,7 @@ export default function ReporteRetencionesPage() {
                 <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-400">Sin datos para el período seleccionado</td></tr>
               ) : data.map((r, i) => (
                 <tr key={i} className="border-t border-slate-100 hover:bg-slate-50">
-                  <td className="px-4 py-3 text-slate-700">{r.fecha ? new Date(r.fecha).toLocaleDateString('es-VE') : '—'}</td>
+                  <td className="px-4 py-3 text-slate-700">{r.fecha ? formatearFecha(r.fecha) : '—'}</td>
                   <td className="px-4 py-3 text-slate-700">{r.cliente_nombre}</td>
                   <td className="px-4 py-3 text-slate-700">{r.cliente_rif}</td>
                   <td className="px-4 py-3 font-medium text-slate-900">F-{r.factura_id}</td>

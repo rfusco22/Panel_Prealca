@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-
+import { formatearFecha } from '@/lib/fecha';
 export default function GerenciaMateriaPrimaPage() {
   const [agregados, setAgregados] = useState<any[]>([]);
   const [materiaPrima, setMateriaPrima] = useState<any[]>([]);
@@ -51,7 +51,7 @@ export default function GerenciaMateriaPrimaPage() {
                     <td className="px-6 py-4 font-bold text-slate-800">{mp.agregadoNombre || mp.nombre || '-'}</td>
                     <td className="px-6 py-4 font-medium text-slate-600">{mp.cantidad}</td>
                     <td className="px-6 py-4 text-slate-500">{getUnidad(mp.agregado_id || mp.agregadoId) || mp.unidadMedida || '-'}</td>
-                    <td className="px-6 py-4 text-slate-500">{mp.fecha ? new Date(mp.fecha).toLocaleDateString('es-VE') : '-'}</td>
+                    <td className="px-6 py-4 text-slate-500">{mp.fecha ? formatearFecha(mp.fecha) : '-'}</td>
                   </tr>
                 ))}
               </tbody>

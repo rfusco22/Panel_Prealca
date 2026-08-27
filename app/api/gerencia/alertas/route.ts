@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { requireAuth } from '@/lib/auth-guard';
-
+import { diasHasta } from '@/lib/fecha';
 export async function GET() {
   const auth = await requireAuth(['admin', 'gerencia']);
   if (auth.response) return auth.response;
@@ -28,7 +28,6 @@ export async function GET() {
 
     const choferes = [];
     for (const c of choferesRaw) {
-      const ahora = new Date();
       const docs = [
         { nombre: 'Licencia', fecha: c.licencia_vencimiento },
         { nombre: 'Cert. Médico', fecha: c.certificado_vencimiento },
@@ -36,8 +35,8 @@ export async function GET() {
       ];
       for (const doc of docs) {
         if (!doc.fecha) continue;
-        const d = new Date(doc.fecha);
-        const diff = Math.ceil((d.getTime() - ahora.getTime()) / (1000 * 60 * 60 * 24));
+        const diff = diasHasta(doc.fecha);
+        if (diff === null) continue;
         if (diff < 0) {
           choferes.push({ chofer: c.nombre, cedula: c.cedula, documento: doc.nombre, fecha: doc.fecha, dias: diff, tipo: 'vencido' });
         } else if (diff <= 30) {

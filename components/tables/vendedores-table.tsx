@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-
+import { formatearFecha } from '@/lib/fecha';
 export default function VendedoresTable() {
   const [data, setData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -76,7 +76,7 @@ export default function VendedoresTable() {
               <td className="px-4 py-3 text-gray-600">{vendedor.telefono || 'N/A'}</td>
               <td className="px-4 py-3 text-gray-500 truncate max-w-xs">{vendedor.direccion || 'N/A'}</td>
               <td className="px-4 py-3 whitespace-nowrap text-gray-500">
-                {new Date(vendedor.createdAt).toLocaleDateString('es-VE')}
+                {formatearFecha(vendedor.createdAt)}
               </td>
             </tr>
           ))}

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Building2, ArrowLeft, Download } from 'lucide-react';
 import Link from 'next/link';
-
+import { formatearFecha } from '@/lib/fecha';
 function formatBs(v: number) { return 'Bs. ' + v.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 function formatUsd(v: number) { return '$ ' + v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 }); }
 
@@ -161,7 +161,7 @@ export default function ReporteBancosPage() {
               <tbody>
                 {movimientosBanco.map((m: any, i: number) => (
                   <tr key={i} className="border-t border-slate-100">
-                    <td className="px-4 py-2.5 text-slate-600">{m.fecha ? new Date(m.fecha).toLocaleDateString('es-VE') : '-'}</td>
+                    <td className="px-4 py-2.5 text-slate-600">{m.fecha ? formatearFecha(m.fecha) : '-'}</td>
                     <td className="px-4 py-2.5">
                       <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${m.tipo === 'Ingreso' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>{m.tipo}</span>
                     </td>

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Trash2, Edit2, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
-
+import { formatearFecha } from '@/lib/fecha';
 interface Factura {
   id: number;
   clienteId: number;
@@ -78,7 +78,7 @@ export function FacturasTable({ data, onDelete, editLink, pdfLink }: FacturasTab
                   {factura.iva ? `Bs. ${factura.iva.toLocaleString('es-ES', { minimumFractionDigits: 2 })}` : 'N/A'}
                 </td>
                 <td className="px-6 py-3 text-sm text-gray-600">
-                  {new Date(factura.fechaEmision).toLocaleDateString('es-ES')}
+                  {formatearFecha(factura.fechaEmision)}
                 </td>
                 <td className="px-6 py-3 text-sm">
                   <span

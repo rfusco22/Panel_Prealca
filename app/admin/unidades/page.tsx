@@ -344,7 +344,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus, X, Trash2, Edit2, AlertCircle, Truck, Hash, Tag, Car, Calendar, Palette } from 'lucide-react';
 import { useSocket } from '@/contexts/SocketContext';
-
+import { formatearFecha, hoyLocal } from '@/lib/fecha';
 interface Unidad {
   id: number;
   numeroUnidad: string;
@@ -370,12 +370,7 @@ export default function AdminUnidadesPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
 
   // Estado con los campos exactos que pediste
-  const getToday = () => {
-    const d = new Date();
-    const offset = d.getTimezoneOffset();
-    const local = new Date(d.getTime() - offset * 60000);
-    return local.toISOString().split("T")[0];
-  };
+  const getToday = () => hoyLocal();
 
   const [formData, setFormData] = useState({
     numeroUnidad: '',
@@ -611,7 +606,7 @@ export default function AdminUnidadesPage() {
                         <div>
                           <span className="text-xs font-bold text-slate-700">{unidad.polizaRcvNumero}</span>
                           {unidad.polizaRcvVencimiento && (
-                            <p className="text-[10px] text-slate-500 mt-0.5">Vence: {new Date(unidad.polizaRcvVencimiento).toLocaleDateString("es-VE")}</p>
+                            <p className="text-[10px] text-slate-500 mt-0.5">Vence: {formatearFecha(unidad.polizaRcvVencimiento)}</p>
                           )}
                         </div>
                       ) : <span className="text-slate-400 text-xs">—</span>}
@@ -621,7 +616,7 @@ export default function AdminUnidadesPage() {
                         <div>
                           <span className="text-xs font-bold text-slate-700">{unidad.rotNumero}</span>
                           {unidad.rotVencimiento && (
-                            <p className="text-[10px] text-slate-500 mt-0.5">Vence: {new Date(unidad.rotVencimiento).toLocaleDateString("es-VE")}</p>
+                            <p className="text-[10px] text-slate-500 mt-0.5">Vence: {formatearFecha(unidad.rotVencimiento)}</p>
                           )}
                         </div>
                       ) : <span className="text-slate-400 text-xs">—</span>}

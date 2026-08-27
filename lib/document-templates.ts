@@ -1,7 +1,9 @@
+import { formatearFecha } from './fecha';
 function formatDate(dateString: string) {
   if (!dateString) return "N/A"
-  const date = new Date(dateString)
-  return date.toLocaleDateString("es-ES")
+  // Pasa por aFechaLocal: new Date('2026-08-26') se interpreta como medianoche
+  // UTC y en UTC-4 imprimia el dia anterior en guias y facturas.
+  return formatearFecha(dateString, "N/A")
 }
 
 function formatCurrency(value: number) {
@@ -434,7 +436,7 @@ export function generateServicioBombaHtml(data: ServicioBombaPrintData): string 
     </div>
     <div class="guia-fechas">
       <div class="fecha-box">
-        <span class="fecha-label">Fecha de Emisión:</span> ${new Date().toLocaleDateString('es-VE')}
+        <span class="fecha-label">Fecha de Emisión:</span> ${formatearFecha(new Date())}
       </div>
       <br>
       <div class="fecha-box">
@@ -619,7 +621,7 @@ export function generatePrealcaHtml(data: PrealcaPrintData): string {
     <div class="header-right">
       <div class="date-box">
         <div class="label">FECHA DE EMISIÓN</div>
-        <div>${new Date().toLocaleDateString('es-VE')}</div>
+        <div>${formatearFecha(new Date())}</div>
       </div>
       <div class="date-box">
         <div class="label">FECHA DE VENCIMIENTO</div>

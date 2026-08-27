@@ -6,7 +6,7 @@ import {
   Shield, UserCircle, FileText, Clock, Mail, Key, Eye
 } from "lucide-react";
 import { useSocket } from '@/contexts/SocketContext';
-
+import { formatearFecha, formatearFechaCorta } from '@/lib/fecha';
 interface User {
   id: number;
   email: string;
@@ -178,7 +178,7 @@ export default function AdminUsersPage() {
     if (diffMin < 60) return `Hace ${diffMin} min`;
     if (diffH < 24) return `Hace ${diffH}h`;
     if (diffD < 7) return `Hace ${diffD}d`;
-    return new Date(ts).toLocaleDateString("es-VE", { day: "2-digit", month: "short", year: "numeric" });
+    return formatearFechaCorta(ts);
   };
 
   const getRoleInfo = (role: string) => ROLES.find(r => r.value === role) || ROLES[1];
@@ -288,7 +288,7 @@ export default function AdminUsersPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-xs text-slate-400">
-                        {new Date(user.created_at).toLocaleDateString("es-VE")}
+                        {formatearFecha(user.created_at)}
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

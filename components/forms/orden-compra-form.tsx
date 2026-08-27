@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Building2, Package, Ruler, DollarSign, Calculator, Loader2, CheckCircle2, AlertCircle, Eye, Printer, Calendar, Banknote, Plus, X } from 'lucide-react';
 import { printDocument, generateOrdenCompraHtml } from '@/lib/document-templates';
-
+import { formatearFecha, hoyLocal } from '@/lib/fecha';
 const ordenCompraSchema = z.object({
   fecha: z.string().min(1, 'Fecha requerida'),
   tipo: z.enum(['Prealca', 'Premezclado'], { message: 'Selecciona un tipo válido' }),
@@ -37,7 +37,7 @@ function formatCurrencyUsd(value: number) {
 }
 
 function getTodayStr() {
-  return new Date().toISOString().split('T')[0];
+  return hoyLocal();
 }
 
 export function OrdenCompraForm({ onSubmit, isLoading = false }: OrdenCompraFormProps) {
@@ -346,7 +346,7 @@ export function OrdenCompraForm({ onSubmit, isLoading = false }: OrdenCompraForm
             <h4 className="text-center font-bold text-base text-slate-900 mb-4 tracking-wide">ORDEN DE COMPRA A PROVEEDOR: NUEVA</h4>
             <div className="flex justify-between items-center mb-5">
               <p className="text-xs text-slate-500"><span className="font-semibold">Tipo:</span> {tipo || '—'}</p>
-              <p className="text-xs text-slate-500"><span className="font-semibold">Fecha:</span> {watch('fecha') ? new Date(watch('fecha') + 'T00:00:00').toLocaleDateString('es-VE') : '—'}</p>
+              <p className="text-xs text-slate-500"><span className="font-semibold">Fecha:</span> {watch('fecha') ? formatearFecha(watch('fecha') + 'T00:00:00') : '—'}</p>
             </div>
 
             <div className="mb-4 space-y-1.5">

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Calendar, X } from 'lucide-react';
-
+import { aISOLocal } from '@/lib/fecha';
 interface DateRangePickerProps {
   from: string;
   to: string;
@@ -46,7 +46,10 @@ export function DateRangePicker({ from, to, onChange }: DateRangePickerProps) {
 
 export function QuickDateFilters({ onChange }: { onChange: (from: string, to: string) => void }) {
   const today = new Date();
-  const fmt = (d: Date) => d.toISOString().split('T')[0];
+  // aISOLocal usa los componentes locales. Con toISOString() el "1 del mes" a
+  // medianoche local se convertía al último día del mes anterior en UTC-4, así
+  // que "Este mes" y "Mes pasado" arrancaban un día antes.
+  const fmt = (d: Date) => aISOLocal(d);
 
   const presets = [
     { label: 'Hoy', from: fmt(today), to: fmt(today) },

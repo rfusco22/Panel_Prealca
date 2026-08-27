@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-
+import { formatearFecha } from '@/lib/fecha';
 export default function GerenciaGuiaDespachoPage() {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,7 +47,7 @@ export default function GerenciaGuiaDespachoPage() {
                     <td className="px-6 py-4 font-medium text-slate-900">{g.cantidadM3 || g.cantidad || '-'}</td>
                     <td className="px-6 py-4 text-slate-600">{g.choferNombre || g.choferId || '-'}</td>
                     <td className="px-6 py-4 text-slate-600">{g.unidadNumero || g.unidadId || '-'}</td>
-                    <td className="px-6 py-4 text-slate-500">{g.fecha ? new Date(g.fecha).toLocaleDateString('es-VE') : '-'}</td>
+                    <td className="px-6 py-4 text-slate-500">{g.fecha ? formatearFecha(g.fecha) : '-'}</td>
                   </tr>
                 ))}
               </tbody>

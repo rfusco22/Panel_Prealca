@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { FileText, CreditCard, AlertCircle, CheckCircle2, Loader2, Eye, Printer, DollarSign } from 'lucide-react';
 import { calculateIVA, calculateRetention } from '@/lib/calculations';
 import { printDocument, generateFacturaHtml } from '@/lib/document-templates';
-
+import { formatearFecha } from '@/lib/fecha';
 interface FacturaFormProps {
   initialData?: {
     clienteId?: string;
@@ -296,8 +296,8 @@ export function FacturaForm({ initialData }: FacturaFormProps) {
               </div>
               <div className="text-right">
                 <p className="text-sm font-bold">FACTURA <span className="font-normal text-base">NUEVA</span></p>
-                <p className="text-xs">Fecha: {new Date().toLocaleDateString('es-VE')}</p>
-                {vence && <p className="text-xs">Vence: {new Date(vence + 'T00:00:00').toLocaleDateString('es-VE')}</p>}
+                <p className="text-xs">Fecha: {formatearFecha(new Date())}</p>
+                {vence && <p className="text-xs">Vence: {formatearFecha(vence + 'T00:00:00')}</p>}
               </div>
             </div>
 
