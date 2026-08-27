@@ -1,4 +1,4 @@
-import { RetencionForm } from '@/components/forms/retencion-form';
+import { RetencionFormWrapper } from './retencion-form-wrapper';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
@@ -20,7 +20,7 @@ export default function NewRetencionPage() {
       </div>
 
       <div className="max-w-2xl">
-        <RetencionForm />
+        <RetencionFormWrapper />
       </div>
     </div>
   );

@@ -11,7 +11,9 @@ import { printDocument, generateGuiaDespachoHtml, generatePrealcaHtml } from '@/
 export default function NewGuiaDespachoPage() {
   const router = useRouter();
   const [clientes, setClientes] = useState<Array<{ id: number; nombre: string; rif?: string; direccion?: string; telefono?: string }>>([]);
-  const [productos, setProductos] = useState<Array<{ id: number; nombre: string; resistencia?: string }>>([]);
+  // Refleja lo que devuelve GET /api/productos: id, resistencia, pulgada, unidad.
+  // No trae "nombre", por eso es opcional y se arma a partir de los otros campos.
+  const [productos, setProductos] = useState<Array<{ id: number; nombre?: string; resistencia?: string; pulgada?: string; unidad?: string }>>([]);
   const [unidades, setUnidades] = useState<Array<{ id: number; nombre: string; tipo: string; placa?: string }>>([]);
   const [choferes, setChoferes] = useState<Array<{ id: number; nombre: string }>>([]);
   const [pedidos, setPedidos] = useState<Array<{ id: number; clienteId: number; clienteNombre: string; productoId: number; productoNombre: string; totalM3: number; acumuladoM3: number; obra: string | null }>>([]);
@@ -108,8 +110,8 @@ export default function NewGuiaDespachoPage() {
           clienteRif: cliente?.rif || '',
           clienteDireccion: cliente?.direccion || '',
           clienteTelefono: cliente?.telefono || '',
-          operador: formData.chofer || '',
-          unidad: unidad?.placa || '',
+          chofer: formData.chofer || '',
+          placa: unidad?.placa || '',
           items: producto ? [{
             resistencia: producto.resistencia || '',
             pulgada: producto.pulgada || '',

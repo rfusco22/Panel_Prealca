@@ -536,7 +536,9 @@ export interface PrealcaPrintData {
   clienteTelefono?: string
   obra?: string
   chofer: string
-  placa: string
+  // La plantilla de Prealca no imprime la placa (solo el chofer), por eso es
+  // opcional. Si algún día se quiere mostrar, hay que agregarla al HTML.
+  placa?: string
   vanM3?: number
   deM3?: number
   items: Array<{

@@ -29,43 +29,57 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   const [lastSeen, setLastSeen] = useState<Record<number, number>>({});
 
   useEffect(() => {
-    const newSocket = ioClient({
-      path: '/api/socketio',
-      transports: ['polling', 'websocket'],
-      reconnection: true,
-      reconnectionAttempts: Infinity,
-      reconnectionDelay: 1000,
-    });
+    let socketActual: any = null;
+    let reintento: ReturnType<typeof setTimeout> | null = null;
+    let desmontado = false;
 
-    const identifyUser = () => {
-      fetch('/api/auth/session')
-        .then(res => res.json())
-        .then(data => {
-          if (data?.user?.id) {
-            newSocket.emit('user:identify', data.user.id);
-          }
-        })
-        .catch(() => {});
+    const conectar = () => {
+      if (desmontado) return;
+
+      const newSocket = ioClient({
+        path: '/api/socketio',
+        transports: ['polling', 'websocket'],
+        reconnection: true,
+        reconnectionAttempts: Infinity,
+        reconnectionDelay: 1000,
+        withCredentials: true,
+      });
+      socketActual = newSocket;
+
+      // Ya no hace falta anunciar quién es: el servidor saca la identidad de la
+      // cookie de sesión durante el handshake.
+      newSocket.on('connect', () => setConnected(true));
+      newSocket.on('disconnect', () => setConnected(false));
+
+      // Sin sesión el servidor rechaza el handshake. Este provider envuelve
+      // también la pantalla de login, así que hay que cortar el reintento
+      // automático: si no, quedaría pidiendo una vez por segundo para siempre.
+      // Se vuelve a probar cada 15s, y así engancha solo al iniciar sesión.
+      newSocket.on('connect_error', () => {
+        setConnected(false);
+        newSocket.close();
+        if (!desmontado && !reintento) {
+          reintento = setTimeout(() => {
+            reintento = null;
+            conectar();
+          }, 15000);
+        }
+      });
+
+      newSocket.on('presence:update', (data: { onlineUserIds: number[], lastSeen: Record<number, number> }) => {
+        setOnlineUserIds(data.onlineUserIds);
+        setLastSeen(data.lastSeen);
+      });
+
+      setSocket(newSocket);
     };
 
-    newSocket.on('connect', () => {
-      setConnected(true);
-      identifyUser();
-    });
-
-    newSocket.on('disconnect', () => {
-      setConnected(false);
-    });
-
-    newSocket.on('presence:update', (data: { onlineUserIds: number[], lastSeen: Record<number, number> }) => {
-      setOnlineUserIds(data.onlineUserIds);
-      setLastSeen(data.lastSeen);
-    });
-
-    setSocket(newSocket);
+    conectar();
 
     return () => {
-      newSocket.disconnect();
+      desmontado = true;
+      if (reintento) clearTimeout(reintento);
+      if (socketActual) socketActual.disconnect();
     };
   }, []);
 

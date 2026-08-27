@@ -18,7 +18,10 @@ const ordenCompraSchema = z.object({
   ivaAplicado: z.boolean().default(false),
 });
 
-type OrdenCompraFormData = z.infer<typeof ordenCompraSchema>;
+// Con z.coerce.* el tipo de ENTRADA del form (lo que escribe el usuario) y el
+// de SALIDA (ya convertido a number) son distintos. useForm necesita ambos.
+type OrdenCompraFormInput = z.input<typeof ordenCompraSchema>;
+type OrdenCompraFormData = z.output<typeof ordenCompraSchema>;
 
 export interface OrdenCompraFormProps {
   onSubmit: (data: any) => Promise<void>;
@@ -51,7 +54,7 @@ export function OrdenCompraForm({ onSubmit, isLoading = false }: OrdenCompraForm
   const [tasaBCV, setTasaBCV] = useState<number>(0);
   const [loadingTasa, setLoadingTasa] = useState(true);
 
-  const { register, handleSubmit, watch, setValue } = useForm<OrdenCompraFormData>({
+  const { register, handleSubmit, watch, setValue } = useForm<OrdenCompraFormInput, any, OrdenCompraFormData>({
     resolver: zodResolver(ordenCompraSchema),
     defaultValues: { fecha: getTodayStr(), ivaAplicado: false },
   });
@@ -59,8 +62,10 @@ export function OrdenCompraForm({ onSubmit, isLoading = false }: OrdenCompraForm
   const tipo = watch('tipo');
   const proveedorId = watch('proveedorId');
   const productoId = watch('productoId');
-  const cantidadM3 = watch('cantidadM3');
-  const precioM3 = watch('precioM3');
+  // watch() devuelve el valor crudo del input (string), no el numero que produce
+  // el schema al validar, asi que se convierte una sola vez acá.
+  const cantidadM3 = Number(watch('cantidadM3')) || 0;
+  const precioM3 = Number(watch('precioM3')) || 0;
   const ivaAplicado = watch('ivaAplicado');
 
   useEffect(() => {

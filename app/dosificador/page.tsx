@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { LayoutDashboard, AlertTriangle, Package, FileText, TrendingUp, TrendingDown } from "lucide-react";
 import Link from "next/link";
 import { useSocket } from '@/contexts/SocketContext';
@@ -9,30 +9,33 @@ export default function DosificadorDashboard() {
   const { socket } = useSocket();
   const [stats, setStats] = useState({ guias: 0, materiaPrima: 0, alertas: 0 });
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const [guiasRes, mpRes, alertaRes] = await Promise.all([
-          fetch("/api/guia-despacho"),
-          fetch("/api/materia-prima"),
-          fetch("/api/alerta"),
-        ]);
-        if (guiasRes.ok) {
-          const g = await guiasRes.json();
-          setStats(s => ({ ...s, guias: Array.isArray(g) ? g.length : (g.guias || g.data || []).length }));
-        }
-        if (mpRes.ok) {
-          const m = await mpRes.json();
-          setStats(s => ({ ...s, materiaPrima: Array.isArray(m) ? m.length : (m.materiaPrima || m.data || []).length }));
-        }
-        if (alertaRes.ok) {
-          const a = await alertaRes.json();
-          setStats(s => ({ ...s, alertas: (a.productos || []).length }));
-        }
-      } catch {}
-    };
-    fetchStats();
+  // Definida a nivel de componente: el efecto de sockets de abajo también la
+  // usa, y estando dentro del useEffect quedaba fuera de su alcance.
+  const fetchStats = useCallback(async () => {
+    try {
+      const [guiasRes, mpRes, alertaRes] = await Promise.all([
+        fetch("/api/guia-despacho"),
+        fetch("/api/materia-prima"),
+        fetch("/api/alerta"),
+      ]);
+      if (guiasRes.ok) {
+        const g = await guiasRes.json();
+        setStats(s => ({ ...s, guias: Array.isArray(g) ? g.length : (g.guias || g.data || []).length }));
+      }
+      if (mpRes.ok) {
+        const m = await mpRes.json();
+        setStats(s => ({ ...s, materiaPrima: Array.isArray(m) ? m.length : (m.materiaPrima || m.data || []).length }));
+      }
+      if (alertaRes.ok) {
+        const a = await alertaRes.json();
+        setStats(s => ({ ...s, alertas: (a.productos || []).length }));
+      }
+    } catch {}
   }, []);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
 
   useEffect(() => {
     if (!socket) return;
@@ -56,7 +59,7 @@ export default function DosificadorDashboard() {
       socket.off('productos:updated', handleUpdate);
       socket.off('alerta:updated', handleUpdate);
     };
-  }, [socket]);
+  }, [socket, fetchStats]);
 
   const modules = [
     { title: "Alerta", description: "Productos con stock bajo 200 M³", href: "/dosificador/alerta", icon: AlertTriangle, color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-200" },

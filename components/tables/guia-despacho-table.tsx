@@ -47,10 +47,8 @@ function buildGuiaHtml(guia: GuiaDespacho, van: number, de: number): string {
         clienteRif: guia.clienteRif || '',
         clienteDireccion: guia.clienteDireccion || '',
         chofer: guia.chofer,
-        unidad: guia.placa || '',
-        operador: guia.chofer,
+        placa: guia.placa || '',
         items: [item],
-        total: Number(guia.cantidadM3),
       })
     : generateGuiaDespachoHtml({
         guiaNumber: `GD-${guia.id}`,

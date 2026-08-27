@@ -34,12 +34,12 @@ export function exportToPDF(data: ExportData) {
 
   // Title
   doc.setFontSize(16);
-  doc.setFont(undefined, 'bold');
+  doc.setFont('helvetica', 'bold');
   doc.text(data.title, margin, 20);
 
   // Date
   doc.setFontSize(10);
-  doc.setFont(undefined, 'normal');
+  doc.setFont('helvetica', 'normal');
   doc.text(`Generado: ${new Date().toLocaleDateString('es-ES')}`, margin, 28);
 
   // Table
@@ -67,7 +67,7 @@ export function exportToPDF(data: ExportData) {
   if (data.footer) {
     const finalY = (doc as any).lastAutoTable.finalY || startY;
     doc.setFontSize(9);
-    doc.setFont(undefined, 'normal');
+    doc.setFont('helvetica', 'normal');
     doc.text(data.footer, margin, finalY + 10);
   }
 

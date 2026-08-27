@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Loader2, AlertTriangle, TrendingDown } from "lucide-react";
 import { useSocket } from '@/contexts/SocketContext';
 
@@ -9,21 +9,24 @@ export default function AlertaPage() {
   const [productos, setProductos] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await fetch("/api/alerta");
-        if (!res.ok) throw new Error("Error");
-        const data = await res.json();
-        setProductos(data.productos || []);
-      } catch {
-        setProductos([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchData();
+  // Definida a nivel de componente: el efecto de sockets de abajo también la
+  // usa, y estando dentro del useEffect quedaba fuera de su alcance.
+  const fetchData = useCallback(async () => {
+    try {
+      const res = await fetch("/api/alerta");
+      if (!res.ok) throw new Error("Error");
+      const data = await res.json();
+      setProductos(data.productos || []);
+    } catch {
+      setProductos([]);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   useEffect(() => {
     if (!socket) return;
@@ -39,7 +42,7 @@ export default function AlertaPage() {
       socket.off('guia-despacho:created', handleUpdate);
       socket.off('guia-despacho:deleted', handleUpdate);
     };
-  }, [socket]);
+  }, [socket, fetchData]);
 
   return (
     <div className="flex-1 space-y-6 p-4 md:p-8 pt-6 animate-in fade-in slide-in-from-bottom-4 duration-700">

@@ -17,7 +17,10 @@ const guiaSchema = z.object({
   obra: z.string().optional(),
 });
 
-type GuiaFormData = z.infer<typeof guiaSchema>;
+// Con z.coerce.* el tipo de ENTRADA del form (lo que escribe el usuario) y el
+// de SALIDA (ya convertido a number) son distintos. useForm necesita ambos.
+type GuiaFormInput = z.input<typeof guiaSchema>;
+type GuiaFormData = z.output<typeof guiaSchema>;
 
 interface GuiaDespachoFormProps {
   onSubmit: (data: GuiaFormData & { tipo: string; total: number; ivaMonto: number }) => Promise<void>;
@@ -25,7 +28,9 @@ interface GuiaDespachoFormProps {
   initialData?: Partial<GuiaFormData>;
   title?: string;
   clientes?: Array<{ id: number; nombre: string; rif?: string; direccion?: string; telefono?: string }>;
-  productos?: Array<{ id: number; nombre: string; resistencia?: string; pulgada?: string }>;
+  // "nombre" es opcional: /api/productos no lo devuelve y abajo se arma con
+  // resistencia + pulgada cuando falta.
+  productos?: Array<{ id: number; nombre?: string; resistencia?: string; pulgada?: string; unidad?: string }>;
   unidades?: Array<{ id: number; nombre: string; tipo: string }>;
   choferes?: Array<{ id: number; nombre: string }>;
   pedidos?: Array<{ id: number; clienteId: number; clienteNombre: string; productoId: number; productoNombre: string; totalM3: number; acumuladoM3: number; obra: string | null }>;
@@ -68,7 +73,7 @@ export function GuiaDespachoForm({
     }
   }, [stockProductos]);
 
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<GuiaFormData>({
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<GuiaFormInput, any, GuiaFormData>({
     resolver: zodResolver(guiaSchema),
     defaultValues: initialData,
   });
