@@ -1,11 +1,17 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Loader2, Plus, X, CheckCircle2 } from "lucide-react";
+import { Loader2, Plus, X, CheckCircle2, Pencil, Trash2, AlertTriangle } from "lucide-react";
 import { useSocket } from '@/contexts/SocketContext';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function MateriaPrimaPage() {
   const { socket } = useSocket();
+  const { session } = useAuth();
+  // Esta misma página la sirve /admin/materia-prima, que la reexporta. Editar y
+  // eliminar son solo para admin, igual que en el API.
+  const puedeGestionar = session?.user.role === 'admin';
+
   const [agregados, setAgregados] = useState<any[]>([]);
   const [proveedores, setProveedores] = useState<any[]>([]);
   const [choferes, setChoferes] = useState<any[]>([]);
@@ -16,6 +22,10 @@ export default function MateriaPrimaPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [error, setError] = useState("");
+  // null = alta; un id = edición de ese registro
+  const [editandoId, setEditandoId] = useState<number | null>(null);
+  const [aEliminar, setAEliminar] = useState<any | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const getLocalDate = () => {
     const d = new Date();
@@ -66,6 +76,14 @@ export default function MateriaPrimaPage() {
     return local.toISOString().split("T")[0];
   };
 
+  // El alta se limita a los últimos 30 días. Al editar un registro más viejo esa
+  // cota lo dejaría inguardable, así que se corre hasta la fecha del registro.
+  const getMinDateForm = () => {
+    const min = getMinDate();
+    if (editandoId !== null && form.fecha && form.fecha < min) return form.fecha;
+    return min;
+  };
+
   const getUnidadByAgregado = (id: string) => {
     const agg = agregados.find((a: any) => String(a.id) === id);
     return agg ? (agg.unidadMedida || agg.unidad_medida) : "";
@@ -83,9 +101,13 @@ export default function MateriaPrimaPage() {
     };
 
     socket.on('materia-prima:created', handleUpdate);
+    socket.on('materia-prima:updated', handleUpdate);
+    socket.on('materia-prima:deleted', handleUpdate);
 
     return () => {
       socket.off('materia-prima:created', handleUpdate);
+      socket.off('materia-prima:updated', handleUpdate);
+      socket.off('materia-prima:deleted', handleUpdate);
     };
   }, [socket]);
 
@@ -124,15 +146,41 @@ export default function MateriaPrimaPage() {
     }
   };
 
+  const abrirNuevo = () => {
+    setEditandoId(null);
+    setError("");
+    setForm({ ...formVacio, fecha: getLocalDate() });
+    setIsModalOpen(true);
+  };
+
+  const abrirEditar = (mp: any) => {
+    setEditandoId(mp.id);
+    setError("");
+    setForm({
+      agregado_id: mp.agregado_id ? String(mp.agregado_id) : "",
+      cantidad: mp.cantidad != null ? String(mp.cantidad) : "",
+      // El input date necesita YYYY-MM-DD; la API puede devolver un datetime.
+      fecha: mp.fecha ? String(mp.fecha).split("T")[0].slice(0, 10) : getLocalDate(),
+      proveedor_id: mp.proveedor_id ? String(mp.proveedor_id) : "",
+      planta_id: mp.planta_id ? String(mp.planta_id) : "",
+      chofer_id: mp.chofer_id ? String(mp.chofer_id) : "",
+      unidad_id: mp.unidad_id ? String(mp.unidad_id) : "",
+      es_saldo_inicial: !!mp.es_saldo_inicial,
+    });
+    setIsModalOpen(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError("");
+    const esEdicion = editandoId !== null;
     try {
       const res = await fetch("/api/materia-prima", {
-        method: "POST",
+        method: esEdicion ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          ...(esEdicion ? { id: editandoId } : {}),
           agregado_id: parseInt(form.agregado_id),
           cantidad: parseFloat(form.cantidad),
           unidad: getUnidadByAgregado(form.agregado_id),
@@ -146,12 +194,13 @@ export default function MateriaPrimaPage() {
       });
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || "Error al registrar");
+        throw new Error(data.error || (esEdicion ? "Error al actualizar" : "Error al registrar"));
       }
       setShowSuccess(true);
       setTimeout(() => {
         setShowSuccess(false);
         setIsModalOpen(false);
+        setEditandoId(null);
         setForm({ ...formVacio, fecha: getLocalDate() });
         fetchData();
       }, 1500);
@@ -159,6 +208,26 @@ export default function MateriaPrimaPage() {
       setError(err.message);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!aEliminar) return;
+    setIsDeleting(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/materia-prima?id=${aEliminar.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Error al eliminar");
+      }
+      setAEliminar(null);
+      fetchData();
+    } catch (err: any) {
+      setError(err.message);
+      setAEliminar(null);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -173,13 +242,22 @@ export default function MateriaPrimaPage() {
           <p className="text-slate-500 mt-1">Registrar cantidades de materia prima y agregados.</p>
         </div>
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={abrirNuevo}
           className="bg-slate-900 hover:bg-slate-800 text-white rounded-lg shadow-sm px-5 py-2.5 flex items-center gap-2 transition-all font-medium"
         >
           <Plus size={18} />
           Nuevo Registro
         </button>
       </div>
+
+      {!isModalOpen && error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm font-medium flex items-center justify-between">
+          <span>{error}</span>
+          <button onClick={() => setError("")} className="text-red-400 hover:text-red-700 p-1">
+            <X size={16} />
+          </button>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="p-12 text-center bg-white border border-slate-200 rounded-2xl">
@@ -203,6 +281,7 @@ export default function MateriaPrimaPage() {
                   <th className="px-6 py-4">Cantidad</th>
                   <th className="px-6 py-4">Unidad</th>
                   <th className="px-6 py-4">Tipo</th>
+                  {puedeGestionar && <th className="px-6 py-4 text-right">Acciones</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -243,6 +322,26 @@ export default function MateriaPrimaPage() {
                         </span>
                       )}
                     </td>
+                    {puedeGestionar && (
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => abrirEditar(mp)}
+                            title="Editar registro"
+                            className="p-2 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+                          >
+                            <Pencil size={16} />
+                          </button>
+                          <button
+                            onClick={() => setAEliminar(mp)}
+                            title="Eliminar registro"
+                            className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -260,14 +359,20 @@ export default function MateriaPrimaPage() {
                 <div className="bg-emerald-100 text-emerald-500 p-4 rounded-full mb-4 animate-bounce">
                   <CheckCircle2 size={48} strokeWidth={2.5} />
                 </div>
-                <h3 className="text-xl font-black text-slate-900">Registrado</h3>
+                <h3 className="text-xl font-black text-slate-900">{editandoId !== null ? "Actualizado" : "Registrado"}</h3>
               </div>
             )}
 
             <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-bold text-slate-900">Registrar Materia Prima</h3>
-                <p className="text-sm text-slate-500 mt-1">Selecciona el agregado y la cantidad.</p>
+                <h3 className="text-xl font-bold text-slate-900">
+                  {editandoId !== null ? "Editar Materia Prima" : "Registrar Materia Prima"}
+                </h3>
+                <p className="text-sm text-slate-500 mt-1">
+                  {editandoId !== null
+                    ? "Corregí los datos del registro."
+                    : "Selecciona el agregado y la cantidad."}
+                </p>
               </div>
               <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-700 p-2 rounded-full hover:bg-slate-100 transition-colors">
                 <X size={20} />
@@ -287,7 +392,7 @@ export default function MateriaPrimaPage() {
                   type="date"
                   required
                   value={form.fecha}
-                  min={getMinDate()}
+                  min={getMinDateForm()}
                   max={getMaxDate()}
                   onChange={(e) => setForm({ ...form, fecha: e.target.value })}
                   className={inputCls}
@@ -434,10 +539,61 @@ export default function MateriaPrimaPage() {
                 </button>
                 <button type="submit" disabled={isSubmitting} className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-md transition-all active:scale-[0.98] disabled:opacity-50 flex items-center gap-2">
                   {isSubmitting && <Loader2 size={14} className="animate-spin" />}
-                  {isSubmitting ? "Registrando..." : "Registrar"}
+                  {isSubmitting
+                    ? (editandoId !== null ? "Guardando..." : "Registrando...")
+                    : (editandoId !== null ? "Guardar cambios" : "Registrar")}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {aEliminar && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => !isDeleting && setAEliminar(null)}></div>
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-8">
+              <div className="flex items-start gap-4">
+                <div className="bg-red-50 text-red-600 p-3 rounded-full shrink-0">
+                  <AlertTriangle size={24} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">Eliminar registro</h3>
+                  <p className="text-sm text-slate-500 mt-1.5">
+                    Se va a eliminar{" "}
+                    <span className="font-bold text-slate-700">
+                      {Number(aEliminar.cantidad).toLocaleString("es-VE", { minimumFractionDigits: 2 })} {aEliminar.unidad}
+                    </span>{" "}
+                    de <span className="font-bold text-slate-700">{aEliminar.agregado_nombre}</span>
+                    {aEliminar.proveedor_nombre ? ` (${aEliminar.proveedor_nombre})` : ""}.
+                  </p>
+                  <p className="text-sm text-slate-500 mt-2">
+                    Esto descuenta esa cantidad del stock y no se puede deshacer.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setAEliminar(null)}
+                  disabled={isDeleting}
+                  className="px-5 py-2.5 rounded-lg text-sm font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-all disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                  className="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-md transition-all active:scale-[0.98] disabled:opacity-50 flex items-center gap-2"
+                >
+                  {isDeleting && <Loader2 size={14} className="animate-spin" />}
+                  {isDeleting ? "Eliminando..." : "Eliminar"}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

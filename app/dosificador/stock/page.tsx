@@ -49,12 +49,16 @@ export default function DosificadorStockPage() {
     if (!socket) return;
     const handleUpdate = () => fetchStock();
     socket.on('materia-prima:created', handleUpdate);
+    socket.on('materia-prima:updated', handleUpdate);
+    socket.on('materia-prima:deleted', handleUpdate);
     socket.on('guia-despacho:created', handleUpdate);
     socket.on('guia-despacho:deleted', handleUpdate);
     socket.on('productos:created', handleUpdate);
     socket.on('productos:updated', handleUpdate);
     return () => {
       socket.off('materia-prima:created', handleUpdate);
+      socket.off('materia-prima:updated', handleUpdate);
+      socket.off('materia-prima:deleted', handleUpdate);
       socket.off('guia-despacho:created', handleUpdate);
       socket.off('guia-despacho:deleted', handleUpdate);
       socket.off('productos:created', handleUpdate);
