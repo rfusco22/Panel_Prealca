@@ -59,7 +59,7 @@ function ChoferForm({ onClose, initialData, isEditing }: ChoferFormProps) {
   const smallLabel = "block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1";
 
   return (
-    <form onSubmit={handleSubmit} className="p-8">
+    <form onSubmit={handleSubmit} className="p-5 sm:p-8">
       {showSuccess && (
         <div className="absolute inset-0 bg-white/90 z-50 flex flex-col items-center justify-center rounded-2xl">
           <div className="bg-emerald-100 text-emerald-500 p-4 rounded-full mb-4 animate-bounce">
@@ -169,11 +169,11 @@ function ChoferForm({ onClose, initialData, isEditing }: ChoferFormProps) {
         </div>
       </div>
 
-      <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-slate-100">
-        <button type="button" onClick={onClose} disabled={isSubmitting} className="px-6 py-3 text-slate-600 hover:bg-slate-100 rounded-xl text-sm font-bold transition-colors disabled:opacity-50">
+      <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 mt-8 pt-6 border-t border-slate-100">
+        <button type="button" onClick={onClose} disabled={isSubmitting} className="px-6 py-3 text-slate-600 hover:bg-slate-100 rounded-xl text-sm font-bold transition-colors disabled:opacity-50 w-full sm:w-auto">
           Cancelar
         </button>
-        <button type="submit" disabled={isSubmitting} className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-3 rounded-xl text-sm font-bold shadow-md transition-all active:scale-[0.98] disabled:opacity-50 flex items-center gap-2">
+        <button type="submit" disabled={isSubmitting} className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-3 rounded-xl text-sm font-bold shadow-md transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 w-full sm:w-auto">
           {isSubmitting && <Loader2 size={14} className="animate-spin" />}
           {isSubmitting ? "Guardando..." : isEditing ? "Actualizar" : "Registrar Chofer"}
         </button>

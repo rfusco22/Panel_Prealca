@@ -247,18 +247,18 @@ export default function GerenciaAuditLogPage() {
         const ant = log.datosAnteriores;
         const nuevos = log.datosNuevos;
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:px-4">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setExpandedId(null)} />
-            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
-              <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
+            <div className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-lg max-h-[95vh] sm:max-h-[90vh] flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-200">
+              <div className="px-5 sm:px-8 py-5 sm:py-6 border-b border-slate-100 flex items-center justify-between shrink-0">
                 <div>
                   <h3 className="text-lg font-bold text-slate-900">Detalle del Registro #{log.id}</h3>
                   <p className="text-sm text-slate-500 mt-1">{log.descripcion}</p>
                 </div>
                 <button onClick={() => setExpandedId(null)} className="text-slate-400 hover:text-slate-700 p-2 rounded-full hover:bg-slate-100"><X size={18} /></button>
               </div>
-              <div className="p-8 space-y-4">
-                <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="flex-1 overflow-y-auto p-5 sm:p-8 space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                   <div><span className="text-slate-400 text-xs">Fecha:</span><p className="font-medium">{new Date(log.createdAt).toLocaleString("es-VE")}</p></div>
                   <div><span className="text-slate-400 text-xs">IP:</span><p className="font-medium font-mono">{log.ipAddress || '-'}</p></div>
                 </div>

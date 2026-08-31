@@ -274,13 +274,13 @@ export default function PedidosPage() {
 
       {/* Modal Nuevo Pedido */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:px-4">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-lg max-h-[95vh] sm:max-h-[90vh] flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-200">
             {/* Header */}
-            <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between shrink-0">
+            <div className="px-5 sm:px-8 py-5 sm:py-6 border-b border-slate-100 flex items-center justify-between shrink-0">
               <div>
-                <h3 className="text-xl font-bold text-slate-900">Nuevo Pedido</h3>
+                <h3 className="text-lg sm:text-xl font-bold text-slate-900">Nuevo Pedido</h3>
                 <p className="text-sm text-slate-500 mt-1">Selecciona cliente, producto y cantidad.</p>
               </div>
               <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-700 p-2 rounded-full transition-colors bg-slate-50 hover:bg-slate-100">
@@ -289,7 +289,7 @@ export default function PedidosPage() {
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-8 space-y-5">
+            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 sm:p-8 space-y-5">
               {error && (
                 <div className="flex items-center gap-3 bg-red-50 border border-red-100 text-red-800 p-4 rounded-xl">
                   <AlertCircle size={20} className="text-red-500 shrink-0" />
@@ -328,9 +328,9 @@ export default function PedidosPage() {
                 <textarea value={formNotas} onChange={(e) => setFormNotas(e.target.value)} placeholder="Notas adicionales..." rows={3} className={`${inputCls} resize-none`} />
               </div>
 
-              <div className="flex justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 rounded-lg text-sm font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-all duration-200">Cancelar</button>
-                <button type="submit" disabled={submitting} className="px-6 py-2.5 bg-slate-900 hover:bg-slate-700 active:scale-[0.98] text-white text-sm font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2">
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 rounded-lg text-sm font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-all duration-200 w-full sm:w-auto">Cancelar</button>
+                <button type="submit" disabled={submitting} className="px-6 py-2.5 bg-slate-900 hover:bg-slate-700 active:scale-[0.98] text-white text-sm font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 w-full sm:w-auto">
                   {submitting && <Loader2 size={15} className="animate-spin" />}
                   {submitting ? "Guardando..." : "Crear Pedido"}
                 </button>

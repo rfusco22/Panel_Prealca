@@ -50,7 +50,7 @@ export default function VendedorForm({ onClose }: { onClose?: () => void }) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col h-full">
-      <div className="p-8 space-y-6">
+      <div className="p-5 sm:p-8 space-y-6">
         {mensaje.texto && (
           <div className={`p-4 rounded-xl flex items-center gap-3 text-sm font-medium border ${mensaje.tipo === "error" ? "bg-red-50 text-red-700 border-red-100" : "bg-emerald-50 text-emerald-700 border-emerald-100"}`}>
             {mensaje.texto}
@@ -132,18 +132,18 @@ export default function VendedorForm({ onClose }: { onClose?: () => void }) {
         </div>
       </div>
 
-      <div className="px-8 py-6 bg-slate-50 flex items-center justify-end gap-3 border-t border-slate-100 mt-auto">
+      <div className="px-5 sm:px-8 py-5 sm:py-6 bg-slate-50 flex flex-col-reverse sm:flex-row sm:items-center justify-end gap-3 border-t border-slate-100 mt-auto">
         <button
           type="button"
           onClick={onClose}
-          className="text-slate-500 hover:text-slate-700 hover:bg-slate-200 bg-slate-100 border border-slate-200 rounded-xl px-6 py-4 text-sm font-medium transition-colors"
+          className="text-slate-500 hover:text-slate-700 hover:bg-slate-200 bg-slate-100 border border-slate-200 rounded-xl px-6 py-4 text-sm font-medium transition-colors w-full sm:w-auto"
         >
           Cancelar
         </button>
         <button
           type="submit"
           disabled={isLoading}
-          className="bg-slate-900 hover:bg-slate-800 text-white rounded-xl px-8 py-4 shadow-md transition-all text-sm font-semibold disabled:opacity-50"
+          className="bg-slate-900 hover:bg-slate-800 text-white rounded-xl px-8 py-4 shadow-md transition-all text-sm font-semibold disabled:opacity-50 w-full sm:w-auto"
         >
           {isLoading ? "Guardando..." : "Guardar vendedor"}
         </button>

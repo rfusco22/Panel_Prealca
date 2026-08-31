@@ -153,7 +153,7 @@ export function IngresoForm({ onAdd, onClose }: IngresoFormProps) {
               <span className="w-5 h-5 rounded-md bg-slate-200 flex items-center justify-center text-slate-600 text-[10px]">1</span> Datos Bancarios
             </h4>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className={labelCls}>Banco *</label>
                 <select value={bancoId} onChange={e => setBancoId(e.target.value)} required className={inputCls}>
@@ -199,7 +199,7 @@ export function IngresoForm({ onAdd, onClose }: IngresoFormProps) {
                   <button type="button" onClick={() => setTipoDocumento('ANTICIPO')} className={`px-3 py-1 text-xs font-bold rounded-lg border transition ${tipoDocumento === 'ANTICIPO' ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200'}`}>Anticipo</button>
                 </div>
               )}
-              <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-slate-100">
                 <div>
                   <label className={labelCls}>Total (Bs)</label>
                   <input type="text" readOnly value={totalBs.toFixed(2)} className={`${inputCls} bg-slate-50 cursor-not-allowed font-bold`} />
@@ -223,7 +223,7 @@ export function IngresoForm({ onAdd, onClose }: IngresoFormProps) {
               <span className="w-5 h-5 rounded-md bg-slate-200 flex items-center justify-center text-slate-600 text-[10px]">2</span> Cliente y Operación
             </h4>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className={labelCls}>Nombre Cliente *</label>
                 <select
@@ -247,7 +247,7 @@ export function IngresoForm({ onAdd, onClose }: IngresoFormProps) {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className={labelCls}>Vendedor</label>
                 <select value={vendedor} onChange={e => setVendedor(e.target.value)} className={inputCls}>
@@ -272,7 +272,7 @@ export function IngresoForm({ onAdd, onClose }: IngresoFormProps) {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className={labelCls}>Volumen (M³)</label>
                 <input type="number" step="0.01" value={m3} onChange={e => setM3(e.target.value)} className={inputCls} placeholder="Opcional" />
@@ -312,11 +312,11 @@ export function IngresoForm({ onAdd, onClose }: IngresoFormProps) {
         </div>
       </div>
 
-      <div className="px-6 py-4 bg-slate-50 flex items-center justify-end gap-3 border-t border-slate-100 shrink-0">
-        <button type="button" onClick={onClose} className="text-slate-500 hover:text-slate-700 hover:bg-slate-200 bg-slate-100 border border-slate-200 rounded-lg px-5 py-2 text-sm font-medium transition-colors">
+      <div className="px-4 sm:px-6 py-4 bg-slate-50 flex flex-col-reverse sm:flex-row sm:items-center justify-end gap-3 border-t border-slate-100 shrink-0">
+        <button type="button" onClick={onClose} className="text-slate-500 hover:text-slate-700 hover:bg-slate-200 bg-slate-100 border border-slate-200 rounded-lg px-5 py-2 text-sm font-medium transition-colors w-full sm:w-auto">
           Cancelar
         </button>
-        <button type="submit" className="bg-slate-900 hover:bg-slate-800 text-white rounded-lg px-6 py-2 shadow-md transition-all text-sm font-semibold flex items-center gap-2">
+        <button type="submit" className="bg-slate-900 hover:bg-slate-800 text-white rounded-lg px-6 py-2 shadow-md transition-all text-sm font-semibold flex items-center justify-center gap-2 w-full sm:w-auto">
           Registrar Ingreso
         </button>
       </div>
