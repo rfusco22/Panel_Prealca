@@ -6,6 +6,24 @@ function formatDate(dateString: string) {
   return formatearFecha(dateString, "N/A")
 }
 
+// Estos documentos se arman como strings de HTML e imprimen con
+// printDocument() -> window.open + document.write. Los datos vienen de
+// clientes/proveedores/choferes/productos, que cualquier usuario logueado
+// puede crear via API sin pasar por la UI. Sin escapar, un nombre como
+// <img src=x onerror=...> ejecuta en la sesion de quien imprime el
+// documento (tipicamente admin o gerencia) — es la unica linea de defensa
+// contra ese XSS, así que TODO campo de texto que venga de una tabla debe
+// pasar por acá antes de interpolarse.
+function escapeHtml(value: unknown): string {
+  if (value === null || value === undefined) return ''
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("es-VE", {
     style: "currency",
@@ -117,9 +135,9 @@ export interface OrdenCompraPrintData {
 export function generateOrdenCompraHtml(data: OrdenCompraPrintData): string {
   const itemsHtml = data.items.map(item => `
     <tr>
-      <td style="border:1px solid #ddd;padding:8px;">${item.nombreMaterial}</td>
+      <td style="border:1px solid #ddd;padding:8px;">${escapeHtml(item.nombreMaterial)}</td>
       <td style="border:1px solid #ddd;padding:8px;text-align:right;">${item.cantidad.toLocaleString("es-ES")}</td>
-      <td style="border:1px solid #ddd;padding:8px;">${item.unidadMedida}</td>
+      <td style="border:1px solid #ddd;padding:8px;">${escapeHtml(item.unidadMedida)}</td>
       <td style="border:1px solid #ddd;padding:8px;text-align:right;">${formatCurrency(item.precioUnitario)}</td>
       <td style="border:1px solid #ddd;padding:8px;text-align:right;">${formatCurrency(item.subtotalItem)}</td>
     </tr>
@@ -128,22 +146,22 @@ export function generateOrdenCompraHtml(data: OrdenCompraPrintData): string {
   return `<!DOCTYPE html>
 <html lang="es">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Orden de Compra ${data.poNumber}</title>
+<title>Orden de Compra ${escapeHtml(data.poNumber)}</title>
 <style>${documentStyles()}</style></head>
 <body>
 <div class="container">
   ${companyHeader()}
-  <h4>ORDEN DE COMPRA A PROVEEDOR: ${data.poNumber}</h4>
+  <h4>ORDEN DE COMPRA A PROVEEDOR: ${escapeHtml(data.poNumber)}</h4>
   <div style="display:flex;justify-content:space-between;margin-bottom:20px;">
-    ${data.tipo ? `<p><strong>Tipo:</strong> ${data.tipo}</p>` : ''}
+    ${data.tipo ? `<p><strong>Tipo:</strong> ${escapeHtml(data.tipo)}</p>` : ''}
     <p style="text-align:right;">Fecha: ${formatDate(data.fecha)}</p>
   </div>
   <div class="section-details">
-    <p><strong>Proveedor:</strong> ${data.proveedorNombre}</p>
-    <p><strong>RIF:</strong> ${data.proveedorRif}</p>
-    <p><strong>Dirección:</strong> ${data.proveedorDireccion}</p>
-    <p><strong>CONTACTO:</strong> ${data.proveedorContacto}</p>
-    <p><strong>TELF:</strong> ${data.proveedorTelefono}</p>
+    <p><strong>Proveedor:</strong> ${escapeHtml(data.proveedorNombre)}</p>
+    <p><strong>RIF:</strong> ${escapeHtml(data.proveedorRif)}</p>
+    <p><strong>Dirección:</strong> ${escapeHtml(data.proveedorDireccion)}</p>
+    <p><strong>CONTACTO:</strong> ${escapeHtml(data.proveedorContacto)}</p>
+    <p><strong>TELF:</strong> ${escapeHtml(data.proveedorTelefono)}</p>
   </div>
   <table>
     <thead><tr>
@@ -193,7 +211,7 @@ export function generateGuiaDespachoHtml(data: GuiaDespachoPrintData): string {
   return `<!DOCTYPE html>
 <html lang="es">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Guía de Despacho ${data.guiaNumber}</title>
+<title>Guía de Despacho ${escapeHtml(data.guiaNumber)}</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -263,7 +281,7 @@ export function generateGuiaDespachoHtml(data: GuiaDespachoPrintData): string {
     <div class="guia-title">CONCRETO PREMEZCLADO</div>
     <div class="guia-center">
       <div class="subtitle">Guía de Despacho</div>
-      <div class="guia-num">Nº ${data.guiaNumber}</div>
+      <div class="guia-num">Nº ${escapeHtml(data.guiaNumber)}</div>
     </div>
     <div class="guia-fechas">
       <div class="fecha-box">
@@ -282,17 +300,17 @@ export function generateGuiaDespachoHtml(data: GuiaDespachoPrintData): string {
   <div class="cliente-section">
     <div class="cliente-row">
       <span class="label">Cliente:</span>
-      <span class="value">${data.clienteNombre}</span>
+      <span class="value">${escapeHtml(data.clienteNombre)}</span>
       <span class="label" style="min-width:40px;">RIF:</span>
-      <span class="value" style="max-width:150px;">${data.clienteRif}</span>
+      <span class="value" style="max-width:150px;">${escapeHtml(data.clienteRif)}</span>
     </div>
     <div class="cliente-row">
       <span class="label">Dirección:</span>
-      <span class="value">${data.clienteDireccion}</span>
+      <span class="value">${escapeHtml(data.clienteDireccion)}</span>
     </div>
     <div class="cliente-row">
       <span class="label">Teléfono:</span>
-      <span class="value">${data.clienteTelefono || ''}</span>
+      <span class="value">${escapeHtml(data.clienteTelefono) || ''}</span>
     </div>
   </div>
   
@@ -315,8 +333,8 @@ export function generateGuiaDespachoHtml(data: GuiaDespachoPrintData): string {
     <tbody>
       <tr>
         <td class="col-cant">${item.cantidad}</td>
-        <td class="col-resistencia" style="text-align:center;">${item.resistencia || ''}</td>
-        <td class="col-asent" style="text-align:center;">${item.pulgada ? item.pulgada + '&quot;' : ''}</td>
+        <td class="col-resistencia" style="text-align:center;">${escapeHtml(item.resistencia) || ''}</td>
+        <td class="col-asent" style="text-align:center;">${item.pulgada ? escapeHtml(item.pulgada) + '&quot;' : ''}</td>
         <td class="col-obs observaciones-cell">&nbsp;</td>
       </tr>
     </tbody>
@@ -337,7 +355,7 @@ export function generateGuiaDespachoHtml(data: GuiaDespachoPrintData): string {
     </div>
     <div class="footer-row">
         <span class="label">CHOFER:</span>
-        <span class="value" style="max-width:200px;">${data.chofer}</span>
+        <span class="value" style="max-width:200px;">${escapeHtml(data.chofer)}</span>
         <span class="label" style="min-width:80px;">Hora salida:</span>
         <span class="value" style="max-width:80px;">${horaSalida}</span>
       <span class="label" style="min-width:80px;">Hora llegada:</span>
@@ -345,7 +363,7 @@ export function generateGuiaDespachoHtml(data: GuiaDespachoPrintData): string {
     </div>
     <div class="footer-row">
       <span class="label">N° UNIDAD:</span>
-      <span class="value" style="max-width:120px;">${data.placa}</span>
+      <span class="value" style="max-width:120px;">${escapeHtml(data.placa)}</span>
       <span class="label" style="min-width:60px;">NOMBRE:</span>
       <span class="value"></span>
     </div>
@@ -389,7 +407,7 @@ export function generateServicioBombaHtml(data: ServicioBombaPrintData): string 
   return `<!DOCTYPE html>
 <html lang="es">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Orden Servicio de Bomba ${data.guiaNumber}</title>
+<title>Orden Servicio de Bomba ${escapeHtml(data.guiaNumber)}</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -432,7 +450,7 @@ export function generateServicioBombaHtml(data: ServicioBombaPrintData): string 
     </div>
     <div class="guia-center">
       <div class="subtitle">Orden Servicio de Bomba</div>
-      <div class="guia-num">Nº ${data.guiaNumber}</div>
+      <div class="guia-num">Nº ${escapeHtml(data.guiaNumber)}</div>
     </div>
     <div class="guia-fechas">
       <div class="fecha-box">
@@ -448,17 +466,17 @@ export function generateServicioBombaHtml(data: ServicioBombaPrintData): string 
   <div class="cliente-section">
     <div class="cliente-row">
       <span class="label">CLIENTE:</span>
-      <span class="value">${data.clienteNombre}</span>
+      <span class="value">${escapeHtml(data.clienteNombre)}</span>
       <span class="label" style="min-width:50px;">R.I.F:</span>
-      <span class="value" style="max-width:150px;">${data.clienteRif}</span>
+      <span class="value" style="max-width:150px;">${escapeHtml(data.clienteRif)}</span>
     </div>
     <div class="cliente-row">
       <span class="label">DIRECCIÓN:</span>
-      <span class="value">${data.clienteDireccion}</span>
+      <span class="value">${escapeHtml(data.clienteDireccion)}</span>
     </div>
     <div class="cliente-row">
       <span class="label">TELÉFONOS:</span>
-      <span class="value">${data.clienteTelefono || ''}</span>
+      <span class="value">${escapeHtml(data.clienteTelefono) || ''}</span>
       <span class="label" style="min-width:50px;">N.I.T:</span>
       <span class="value" style="max-width:120px;"></span>
       <span class="label" style="min-width:90px;">CONDICIONES:</span>
@@ -480,7 +498,7 @@ export function generateServicioBombaHtml(data: ServicioBombaPrintData): string 
     <tbody>
       <tr>
         <td>&nbsp;</td>
-        <td>${item.resistencia}</td>
+        <td>${escapeHtml(item.resistencia)}</td>
         <td>${item.cantidad}</td>
         <td>&nbsp;</td>
         <td>&nbsp;</td>
@@ -500,9 +518,9 @@ export function generateServicioBombaHtml(data: ServicioBombaPrintData): string 
   <div class="footer-section">
     <div class="footer-row">
       <span class="label">UNIDAD:</span>
-      <span class="value" style="max-width:200px;">${data.unidad}</span>
+      <span class="value" style="max-width:200px;">${escapeHtml(data.unidad)}</span>
       <span class="label" style="min-width:90px;">OPERADOR:</span>
-      <span class="value">${data.operador}</span>
+      <span class="value">${escapeHtml(data.operador)}</span>
     </div>
     <div class="footer-row">
       <span class="label">Observaciones:</span>
@@ -557,7 +575,7 @@ export function generatePrealcaHtml(data: PrealcaPrintData): string {
   return `<!DOCTYPE html>
 <html lang="es">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Guía de Despacho Prealca ${data.guiaNumber}</title>
+<title>Guía de Despacho Prealca ${escapeHtml(data.guiaNumber)}</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -616,7 +634,7 @@ export function generatePrealcaHtml(data: PrealcaPrintData): string {
     <div class="header-center">
       <div class="rif">R.I.F.: J-30913171-0</div>
       <div class="title">Guía de Despacho</div>
-      <div class="guia-num">${data.guiaNumber}</div>
+      <div class="guia-num">${escapeHtml(data.guiaNumber)}</div>
     </div>
     <div class="header-right">
       <div class="date-box">
@@ -633,17 +651,17 @@ export function generatePrealcaHtml(data: PrealcaPrintData): string {
   <div class="cliente-section">
     <div class="cliente-row">
       <span class="label">Cliente:</span>
-      <span class="value">${data.clienteNombre}</span>
+      <span class="value">${escapeHtml(data.clienteNombre)}</span>
       <span class="label" style="margin-left:16px;">R.I.F.:</span>
-      <span class="short-value" style="width:200px;">${data.clienteRif}</span>
+      <span class="short-value" style="width:200px;">${escapeHtml(data.clienteRif)}</span>
     </div>
     <div class="cliente-row">
       <span class="label">Dirección:</span>
-      <span class="value">${data.clienteDireccion}</span>
+      <span class="value">${escapeHtml(data.clienteDireccion)}</span>
     </div>
     <div class="cliente-row">
       <span class="label">Teléfonos:</span>
-      <span class="short-value" style="width:150px;">${data.clienteTelefono || ''}</span>
+      <span class="short-value" style="width:150px;">${escapeHtml(data.clienteTelefono) || ''}</span>
       <span class="label" style="margin-left:16px;">N.I.T.:</span>
       <span class="short-value" style="width:100px;"></span>
       <span class="label" style="margin-left:16px;">Condiciones:</span>
@@ -668,8 +686,8 @@ export function generatePrealcaHtml(data: PrealcaPrintData): string {
     <tbody>
       <tr>
         <td style="text-align:center;font-weight:700;font-size:14px;padding:12px 8px;">${item.cantidad}</td>
-        <td style="text-align:center;font-weight:700;padding:12px 8px;">${item.resistencia || ''}${item.pulgada ? ' ' + item.pulgada + 'ST' : ''}</td>
-        <td style="text-align:center;padding:12px 8px;">${item.pulgada ? item.pulgada + '&quot;' : ''}</td>
+        <td style="text-align:center;font-weight:700;padding:12px 8px;">${escapeHtml(item.resistencia) || ''}${item.pulgada ? ' ' + escapeHtml(item.pulgada) + 'ST' : ''}</td>
+        <td style="text-align:center;padding:12px 8px;">${item.pulgada ? escapeHtml(item.pulgada) + '&quot;' : ''}</td>
         <td style="font-size:9px;line-height:1.6;padding:10px;">
           <p>El Concreto suministrado cumple con la Norma COVENIN 633.</p>
           <p>Cualquier adición de agua va por cuenta y riesgo del Cliente.</p>
@@ -688,11 +706,11 @@ export function generatePrealcaHtml(data: PrealcaPrintData): string {
   <div class="footer-section">
     <div class="footer-row">
       <span class="label">OBRA:</span>
-      <span class="value">${data.obra || ''}</span>
+      <span class="value">${escapeHtml(data.obra) || ''}</span>
     </div>
     <div class="footer-row">
       <span class="label">CHOFER:</span>
-      <span class="value" style="max-width:250px;">${data.chofer}</span>
+      <span class="value" style="max-width:250px;">${escapeHtml(data.chofer)}</span>
       <span class="label" style="margin-left:24px;">HORA DE SALIDA:</span>
       <span class="value" style="max-width:120px;font-weight:700;">${horaSalida}</span>
       <span class="label" style="margin-left:24px;">HORA DE LLEGADA:</span>
@@ -713,7 +731,7 @@ export function generatePrealcaHtml(data: PrealcaPrintData): string {
   <div class="control-row">
     <div>
       <span style="font-weight:700;">N° DE CONTROL:</span>
-      <span class="control-num">00-${data.guiaNumber}</span>
+      <span class="control-num">00-${escapeHtml(data.guiaNumber)}</span>
     </div>
     <span class="legal">ORIGINAL CLIENTE - SIN DERECHO A CREDITO FISCAL</span>
   </div>
@@ -763,8 +781,8 @@ function formatBsValue(value: number): string {
 export function generateFacturaHtml(data: FacturaPrintData): string {
   const itemsHtml = data.items.map(item => `
     <tr>
-      <td style="padding:6px 8px;border-bottom:1px solid #ddd;">${item.codigo || ''}</td>
-      <td style="padding:6px 8px;border-bottom:1px solid #ddd;">${item.descripcion}</td>
+      <td style="padding:6px 8px;border-bottom:1px solid #ddd;">${escapeHtml(item.codigo) || ''}</td>
+      <td style="padding:6px 8px;border-bottom:1px solid #ddd;">${escapeHtml(item.descripcion)}</td>
       <td style="padding:6px 8px;border-bottom:1px solid #ddd;text-align:center;">${item.cantidad.toLocaleString("es-VE")}</td>
       <td style="padding:6px 8px;border-bottom:1px solid #ddd;text-align:right;">${formatBsValue(item.precioUnitario)}</td>
       <td style="padding:6px 8px;border-bottom:1px solid #ddd;text-align:right;">${formatBsValue(item.subtotalItem)}</td>
@@ -786,7 +804,7 @@ export function generateFacturaHtml(data: FacturaPrintData): string {
   return `<!DOCTYPE html>
 <html lang="es">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Factura ${data.facturaNumber}</title>
+<title>Factura ${escapeHtml(data.facturaNumber)}</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -842,7 +860,7 @@ export function generateFacturaHtml(data: FacturaPrintData): string {
       </div>
     </div>
     <div class="top-right">
-      <div class="factura-num">FACTURA <span>${data.facturaNumber}</span></div>
+      <div class="factura-num">FACTURA <span>${escapeHtml(data.facturaNumber)}</span></div>
       <div class="fecha-line">Fecha: ${formatDate(data.fecha)}</div>
       ${data.vence ? `<div class="fecha-line">Vence: ${formatDate(data.vence)}</div>` : ''}
     </div>
@@ -850,10 +868,10 @@ export function generateFacturaHtml(data: FacturaPrintData): string {
 
   <div class="client-info">
     <table>
-      <tr><td>Cliente:</td><td>${data.clienteNombre}</td></tr>
-      <tr><td>Dirección:</td><td>${data.clienteDireccion}</td></tr>
-      <tr><td>Rif:</td><td>${data.clienteRif}</td></tr>
-      ${data.vendedor ? `<tr><td>Vendedor:</td><td>${data.vendedor}</td></tr>` : ''}
+      <tr><td>Cliente:</td><td>${escapeHtml(data.clienteNombre)}</td></tr>
+      <tr><td>Dirección:</td><td>${escapeHtml(data.clienteDireccion)}</td></tr>
+      <tr><td>Rif:</td><td>${escapeHtml(data.clienteRif)}</td></tr>
+      ${data.vendedor ? `<tr><td>Vendedor:</td><td>${escapeHtml(data.vendedor)}</td></tr>` : ''}
     </table>
   </div>
 
@@ -872,9 +890,9 @@ export function generateFacturaHtml(data: FacturaPrintData): string {
 
   <div class="bottom-section">
     <div class="bottom-left">
-      <div class="nota-line">GUIA DE DESPACHO: ${data.nota ? 'GD-' + data.nota : ''}</div>
+      <div class="nota-line">GUIA DE DESPACHO: ${data.nota ? 'GD-' + escapeHtml(data.nota) : ''}</div>
       <div class="detail-line"><strong>TASA OFICIAL (BCV)</strong> ${data.tasaBcv ? data.tasaBcv.toLocaleString("es-VE", { minimumFractionDigits: 4 }) : ''}</div>
-      <div class="detail-line"><strong>FORMA DE PAGO:</strong> ${data.formaPago}</div>
+      <div class="detail-line"><strong>FORMA DE PAGO:</strong> ${escapeHtml(data.formaPago)}</div>
       <div class="detail-line"><strong>RET. IVA</strong> Bs.${formatBsValue(retIva)}</div>
       <div class="detail-line"><strong>POR COBRAR</strong> Bs.${formatBsValue(porCobrar)}</div>
       <div class="detail-line"><strong>TRANSFERENCIA</strong> Bs.${formatBsValue(transferencia)}</div>

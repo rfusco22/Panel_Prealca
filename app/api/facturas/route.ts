@@ -1,8 +1,5 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { getIronSession } from 'iron-session';
-import { cookies } from 'next/headers';
-import { sessionOptions, SessionData } from '@/lib/session';
 import { emitSocketEvent } from '@/lib/socket-server';
 import { registrarLog, getUsuarioFromRequest, getClientIp } from '@/lib/audit-log';
 import { requireAuth } from '@/lib/auth-guard';
@@ -21,12 +18,24 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   try {
-    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-    if (!session.userId) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     const data = await request.json();
-    const { guiaDespachoId, clienteId, formaPago, comprobanteRetencion, total } = data;
-    const result: any = await query(`INSERT INTO facturas (guia_despacho_id, cliente_id, forma_pago, comprobante_retencion, total, usuario_id) VALUES (?, ?, ?, ?, ?, ?)`, [guiaDespachoId || null, clienteId, formaPago, comprobanteRetencion || null, total, session.userId]);
+    const { guiaDespachoId, clienteId, formaPago, comprobanteRetencion } = data;
+
+    // facturas solo guarda un total (no hay desglose de items en la tabla),
+    // así que no hay una fórmula server-side de la que derivarlo — a
+    // diferencia de orden_compra, acá no hay cantidad*precio en esta misma
+    // request. Lo mínimo exigible sin inventar una regla de negocio: que sea
+    // un número real y no negativo.
+    const total = parseFloat(data.total);
+    if (!Number.isFinite(total) || total < 0) {
+      return NextResponse.json({ error: 'total inválido.' }, { status: 400 });
+    }
+
+    const result: any = await query(`INSERT INTO facturas (guia_despacho_id, cliente_id, forma_pago, comprobante_retencion, total, usuario_id) VALUES (?, ?, ?, ?, ?, ?)`, [guiaDespachoId || null, clienteId, formaPago, comprobanteRetencion || null, total, auth.session.userId]);
     emitSocketEvent('facturas:created');
 
     const usuario = await getUsuarioFromRequest();

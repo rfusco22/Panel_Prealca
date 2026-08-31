@@ -30,12 +30,30 @@ export async function POST(req: Request) {
       detalleExtra = data.detalleExtra;
     }
     if (data.cantidadProduccion && data.precioUnitario) {
-      const extra = { cantidad: parseFloat(data.cantidadProduccion), precioUnitario: parseFloat(data.precioUnitario), subtotal: parseFloat(data.cantidadProduccion) * parseFloat(data.precioUnitario) };
+      const cantidad = parseFloat(data.cantidadProduccion);
+      const precioUnitario = parseFloat(data.precioUnitario);
+      // subtotal recalculado, no el que mandaba el cliente: antes podía no
+      // coincidir con cantidad * precioUnitario.
+      const extra = { cantidad, precioUnitario, subtotal: cantidad * precioUnitario };
       detalleExtra = JSON.stringify(extra);
     }
+
+    // montoBs (cuánto salió realmente del banco) y tasaCambio son hechos que
+    // trae quien registra el egreso. montoDivisa se recalcula a partir de esos
+    // dos en vez de confiar en el valor que mandaba el cliente.
+    const montoBs = parseFloat(data.montoBs);
+    const tasaCambioNum = parseFloat(data.tasaCambio);
+    if (!Number.isFinite(montoBs) || montoBs < 0) {
+      return NextResponse.json({ error: 'montoBs inválido.' }, { status: 400 });
+    }
+    if (!Number.isFinite(tasaCambioNum) || tasaCambioNum <= 0) {
+      return NextResponse.json({ error: 'tasaCambio inválida.' }, { status: 400 });
+    }
+    const montoDivisa = montoBs / tasaCambioNum;
+
     const sql = `INSERT INTO egresos (banco, nombreProveedor, rif, clasificacionGasto, subCategoria, detalleExtra, descripcion, montoBs, montoDivisa, tasaCambio, referencia, fecha) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
     const fechaEgreso = data.fecha ? data.fecha : hoyLocal();
-    const valores = [data.banco, data.nombreProveedor, rif, data.clasificacionGasto, data.subCategoria || null, detalleExtra, data.descripcion || null, parseFloat(data.montoBs), parseFloat(data.montoDivisa), parseFloat(data.tasaCambio), data.referencia, fechaEgreso];
+    const valores = [data.banco, data.nombreProveedor, rif, data.clasificacionGasto, data.subCategoria || null, detalleExtra, data.descripcion || null, montoBs, montoDivisa, tasaCambioNum, data.referencia, fechaEgreso];
     const resultado: any = await query(sql, valores);
     emitSocketEvent('egresos:created');
 

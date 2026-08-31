@@ -1,11 +1,20 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { getIronSession } from 'iron-session';
-import { cookies } from 'next/headers';
-import { sessionOptions, SessionData } from '@/lib/session';
 import { emitSocketEvent } from '@/lib/socket-server';
 import { registrarLog, getUsuarioFromRequest, getClientIp } from '@/lib/audit-log';
 import { requireAuth } from '@/lib/auth-guard';
+
+// No hay catálogo de precios: precioM3 es el precio negociado con el
+// proveedor para esa orden puntual, así que se confía en lo que se registra.
+// Lo que NO se confía es la aritmética que se deriva de ahí: antes ivaMonto y
+// total llegaban del cliente sin relación real con cantidadM3 * precioM3, así
+// que cualquier usuario podía mandar, por ejemplo, precioM3: 1000 con
+// total: 0.01 y quedaba guardado tal cual.
+function calcularTotalesOrdenCompra(cantidadM3: number, precioM3: number, ivaAplicado: boolean) {
+  const subtotal = cantidadM3 * precioM3;
+  const ivaMonto = ivaAplicado ? subtotal * 0.16 : 0;
+  return { ivaMonto, total: subtotal + ivaMonto };
+}
 
 export async function GET() {
   const auth = await requireAuth();
@@ -21,12 +30,23 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   try {
-    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-    if (!session.userId) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     const data = await request.json();
-    const { tipo, proveedorId, productoId, cantidadM3, precioM3, ivaAplicado, ivaMonto, total } = data;
-    const result: any = await query(`INSERT INTO orden_compra (tipo, proveedor_id, producto_id, cantidad_m3, precio_m3, iva_aplicado, iva_monto, total, usuario_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, [tipo, proveedorId, productoId, cantidadM3, precioM3, ivaAplicado ? 1 : 0, ivaMonto, total, session.userId]);
+    const { tipo, proveedorId, productoId, ivaAplicado } = data;
+    const cantidadM3 = parseFloat(data.cantidadM3);
+    const precioM3 = parseFloat(data.precioM3);
+    if (!Number.isFinite(cantidadM3) || cantidadM3 <= 0) {
+      return NextResponse.json({ error: 'cantidadM3 inválida.' }, { status: 400 });
+    }
+    if (!Number.isFinite(precioM3) || precioM3 < 0) {
+      return NextResponse.json({ error: 'precioM3 inválido.' }, { status: 400 });
+    }
+    const { ivaMonto, total } = calcularTotalesOrdenCompra(cantidadM3, precioM3, !!ivaAplicado);
+
+    const result: any = await query(`INSERT INTO orden_compra (tipo, proveedor_id, producto_id, cantidad_m3, precio_m3, iva_aplicado, iva_monto, total, usuario_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, [tipo, proveedorId, productoId, cantidadM3, precioM3, ivaAplicado ? 1 : 0, ivaMonto, total, auth.session.userId]);
     emitSocketEvent('orden-compra:created');
 
     const usuario = await getUsuarioFromRequest();
@@ -45,9 +65,10 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   try {
-    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-    if (!session.userId) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     if (!id) return NextResponse.json({ error: 'ID es requerido' }, { status: 400 });
