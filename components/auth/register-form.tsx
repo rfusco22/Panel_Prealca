@@ -79,6 +79,7 @@ export function RegisterForm() {
           <option value="dosificador">Dosificador</option>
           <option value="admin">Administrador</option>
           <option value="gerencia">Gerencia</option>
+          <option value="seguridad-vial">Seguridad Vial</option>
         </select>
       </div>
 

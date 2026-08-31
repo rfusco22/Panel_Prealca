@@ -4,7 +4,7 @@ import { getIronSession } from 'iron-session';
 import { cookies } from 'next/headers';
 import { sessionOptions, SessionData } from '@/lib/session';
 
-export const ROLES_VALIDOS = ['admin', 'gerencia', 'registro', 'dosificador'] as const;
+export const ROLES_VALIDOS = ['admin', 'gerencia', 'registro', 'dosificador', 'seguridad-vial'] as const;
 export type Rol = (typeof ROLES_VALIDOS)[number];
 
 export function esRolValido(role: unknown): role is Rol {

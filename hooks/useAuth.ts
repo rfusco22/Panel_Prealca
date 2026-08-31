@@ -7,7 +7,7 @@ export interface User {
   id: string;
   email: string;
   nombre: string;
-  role: 'admin' | 'registro' | 'dosificador' | 'gerencia';
+  role: 'admin' | 'registro' | 'dosificador' | 'gerencia' | 'seguridad-vial';
   estado: string;
 }
 

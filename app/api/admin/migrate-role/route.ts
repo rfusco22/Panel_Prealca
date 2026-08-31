@@ -6,8 +6,8 @@ export async function GET() {
   if (auth.response) return auth.response;
 
   try {
-    await query("ALTER TABLE users MODIFY COLUMN role ENUM('admin','registro','dosificador','gerencia') NOT NULL DEFAULT 'registro'");
-    return Response.json({ success: true, message: 'ENUM de role actualizado correctamente. Ya puedes crear usuarios con rol gerencia.' });
+    await query("ALTER TABLE users MODIFY COLUMN role ENUM('admin','registro','dosificador','gerencia','seguridad-vial') NOT NULL DEFAULT 'registro'");
+    return Response.json({ success: true, message: 'ENUM de role actualizado correctamente. Ya puedes crear usuarios con rol seguridad-vial.' });
   } catch (error: any) {
     return Response.json({ success: false, error: error.message }, { status: 500 });
   }
