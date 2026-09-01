@@ -1,15 +1,14 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { getIronSession } from 'iron-session';
-import { cookies } from 'next/headers';
-import { sessionOptions, SessionData } from '@/lib/session';
 import { emitSocketEvent } from '@/lib/socket-server';
 import { registrarLog, getUsuarioFromRequest, getClientIp } from '@/lib/audit-log';
+import { requireAuth } from '@/lib/auth-guard';
 
 export async function GET() {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   try {
-    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-    if (!session.userId) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     const productos: any = await query(`SELECT id, resistencia, pulgada, unidad FROM productos ORDER BY id DESC`);
     for (let i = 0; i < productos.length; i++) {
       const formula = await query(`SELECT pf.agregado_id AS agregadoId, a.nombre, pf.cantidad, a.unidad_medida AS unidadMedida FROM producto_formulas pf INNER JOIN agregados a ON pf.agregado_id = a.id WHERE pf.producto_id = ?`, [productos[i].id]);
@@ -23,9 +22,10 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   try {
-    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-    if (!session.userId) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     const { resistencia, pulgada, unidad, formula } = await request.json();
     if (!resistencia || !pulgada || !unidad) return NextResponse.json({ error: 'Datos básicos obligatorios' }, { status: 400 });
     const result: any = await query(`INSERT INTO productos (resistencia, pulgada, unidad) VALUES (?, ?, ?)`, [resistencia, pulgada, unidad]);
@@ -53,9 +53,10 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   try {
-    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-    if (!session.userId) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     const { id, resistencia, pulgada, unidad, formula } = await request.json();
 
     const anterior: any = await query('SELECT id, resistencia, pulgada, unidad FROM productos WHERE id = ?', [id]);
@@ -87,9 +88,10 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   try {
-    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-    if (!session.userId) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 

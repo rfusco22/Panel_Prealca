@@ -1,15 +1,14 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { getIronSession } from 'iron-session';
-import { cookies } from 'next/headers';
-import { sessionOptions, SessionData } from '@/lib/session';
 import { emitSocketEvent } from '@/lib/socket-server';
 import { registrarLog, getUsuarioFromRequest, getClientIp } from '@/lib/audit-log';
+import { requireAuth } from '@/lib/auth-guard';
 
 export async function GET() {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   try {
-    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-    if (!session.userId) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     const agregados = await query(`SELECT id, nombre, unidad_medida AS unidadMedida FROM agregados ORDER BY id DESC`);
     return NextResponse.json(agregados);
   } catch (error) {
@@ -19,9 +18,10 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   try {
-    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-    if (!session.userId) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     const body = await request.json();
     const { nombre, unidadMedida } = body;
     if (!nombre || !unidadMedida) return NextResponse.json({ error: 'Todos los campos son obligatorios' }, { status: 400 });
@@ -44,9 +44,10 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   try {
-    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-    if (!session.userId) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     const body = await request.json();
     const { id, nombre, unidadMedida } = body;
     if (!id || !nombre || !unidadMedida) return NextResponse.json({ error: 'Faltan datos requeridos' }, { status: 400 });
@@ -74,9 +75,10 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   try {
-    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-    if (!session.userId) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     if (!id) return NextResponse.json({ error: 'ID es requerido' }, { status: 400 });

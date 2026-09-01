@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { getIronSession } from 'iron-session';
-import { cookies } from 'next/headers';
-import { sessionOptions, SessionData } from '@/lib/session';
 import { emitSocketEvent } from '@/lib/socket-server';
 import { registrarLog, getUsuarioFromRequest, getClientIp } from '@/lib/audit-log';
+import { requireAuth } from '@/lib/auth-guard';
 
 async function ensureTables() {
   try {
@@ -42,9 +40,10 @@ async function ensureTables() {
 }
 
 export async function GET(request: Request) {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   try {
-    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-    if (!session.userId) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     await ensureTables();
 
     const { searchParams } = new URL(request.url);
@@ -74,9 +73,10 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   try {
-    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-    if (!session.userId) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     await ensureTables();
 
     const body = await request.json();
@@ -89,7 +89,7 @@ export async function POST(request: Request) {
     const result: any = await query(
       `INSERT INTO unidad_mantenimientos (unidad_id, fecha, tipo_mantenimiento, descripcion, km, costo, costo_usd, tasa_bcv, moneda, proximo_servicio_km, proximo_servicio_fecha, realizado_por, notas, usuario_id)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [unidadId, fecha, tipoMantenimiento || 'preventivo', descripcion, km || null, costo || null, costoUsd || null, tasaBcv || null, moneda || 'BS', proximoServicioKm || null, proximoServicioFecha || null, realizadoPor || null, notas || null, session.userId]
+      [unidadId, fecha, tipoMantenimiento || 'preventivo', descripcion, km || null, costo || null, costoUsd || null, tasaBcv || null, moneda || 'BS', proximoServicioKm || null, proximoServicioFecha || null, realizadoPor || null, notas || null, auth.session.userId]
     );
 
     // Smart update: actualizar km_actual y fechas en la unidad
@@ -119,9 +119,10 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   try {
-    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-    if (!session.userId) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     await ensureTables();
 
     const body = await request.json();
@@ -156,9 +157,10 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
   try {
-    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-    if (!session.userId) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     await ensureTables();
 
     const { searchParams } = new URL(request.url);

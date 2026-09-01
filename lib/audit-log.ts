@@ -59,7 +59,19 @@ export async function getUsuarioFromRequest(): Promise<{ id: number | null; nomb
 }
 
 export function getClientIp(req: Request): string | null {
+  // X-Forwarded-For es una cadena "cliente, proxy1, proxy2, ..." donde cada
+  // proxy AGREGA al final la IP desde la que vio llegar la request. El
+  // cliente puede mandar su propio X-Forwarded-For con cualquier valor
+  // falso, que termina como el PRIMER elemento de la cadena una vez que el
+  // proxy de EasyPanel le agrega la IP real al final. Por eso se toma el
+  // ÚLTIMO elemento (lo que el proxy de EasyPanel vio de verdad), no el
+  // primero (lo que haya mandado el cliente). Esto asume exactamente un
+  // proxy de confianza delante de la app -- el deploy actual en EasyPanel --,
+  // no una cadena mas larga de proxies intermedios.
   const forwarded = req.headers.get('x-forwarded-for');
-  if (forwarded) return forwarded.split(',')[0].trim();
+  if (forwarded) {
+    const partes = forwarded.split(',').map(p => p.trim()).filter(Boolean);
+    if (partes.length > 0) return partes[partes.length - 1];
+  }
   return req.headers.get('x-real-ip') || null;
 }

@@ -34,6 +34,10 @@ export async function POST(request: Request) {
     });
 
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    // El mensaje crudo puede traer detalles internos de la libreria de
+    // cifrado o de la API del banco; se loguea completo en el servidor y se
+    // devuelve algo generico al cliente.
+    console.error('Error verificando transferencia Mercantil:', error);
+    return NextResponse.json({ success: false, error: 'Error al verificar el pago con el banco.' }, { status: 500 });
   }
 }

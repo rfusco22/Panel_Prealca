@@ -6,6 +6,12 @@ import { query } from '@/lib/db';
 import { sessionOptions, SessionData } from '@/lib/session';
 import { esRolValido } from '@/lib/auth-guard';
 
+// Hash señuelo, sin contraseña real detrás: se usa cuando el email no existe,
+// para que bcrypt.compare() siempre corra y el tiempo de respuesta no delate
+// si una cuenta está registrada (email inexistente respondía casi al
+// instante; uno existente tardaba lo que tarda bcrypt, ~100ms).
+const HASH_SENUELO = '$2b$10$uGo07eTsrLiScqSUcH2hZuoyXiZYkEYcIISv8VkVz3wB/.Vz7GQ5.';
+
 export async function POST(req: Request) {
   try {
     const { email, password } = await req.json();
@@ -23,6 +29,11 @@ export async function POST(req: Request) {
     ) as any[];
 
     if (users.length === 0) {
+      // Se compara igual contra el hash señuelo en vez de retornar directo:
+      // sin esto, un email inexistente respondía casi al instante mientras
+      // que uno existente tardaba lo que tarda bcrypt, filtrando por timing
+      // qué correos están registrados.
+      await bcrypt.compare(password, HASH_SENUELO);
       return NextResponse.json(
         { error: 'Credenciales inválidas' },
         { status: 401 }

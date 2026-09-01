@@ -1,8 +1,10 @@
 import { query } from '@/lib/db';
-import { emitSocketEvent } from '@/lib/socket-server';
 import { requireAuth } from '@/lib/auth-guard';
 
-export async function GET() {
+// POST, no GET: esto muta el esquema (CREATE TABLE). Un GET se dispara con
+// una simple navegacion -- con sameSite:lax alcanza un link malicioso para
+// que el navegador de un admin logueado lo ejecute sin que se de cuenta.
+export async function POST() {
   const auth = await requireAuth(['admin']);
   if (auth.response) return auth.response;
 
@@ -30,6 +32,7 @@ export async function GET() {
     `);
     return Response.json({ success: true, message: 'Tabla auditoria_log creada correctamente.' });
   } catch (error: any) {
-    return Response.json({ success: false, error: error.message }, { status: 500 });
+    console.error('Error creando tabla auditoria_log:', error);
+    return Response.json({ success: false, error: 'Error al aplicar la migración.' }, { status: 500 });
   }
 }

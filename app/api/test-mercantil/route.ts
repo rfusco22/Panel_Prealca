@@ -50,6 +50,7 @@ export async function GET() {
     });
 
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    console.error('Error en prueba Mercantil:', error);
+    return NextResponse.json({ success: false, error: 'Error al conectar con el banco.' }, { status: 500 });
   }
 }
