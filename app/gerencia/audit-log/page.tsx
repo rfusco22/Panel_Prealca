@@ -23,10 +23,13 @@ interface AuditLog {
   createdAt: string;
 }
 
+// Debe coincidir con los valores de `modulo` que usa cada registrarLog() en
+// app/api/**. Si se agrega un módulo nuevo ahí y no acá, sus registros
+// siguen apareciendo con el filtro "Todos", pero no se pueden filtrar solos.
 const MODULOS = [
   "Todos", "Usuarios", "Clientes", "Proveedores", "Vendedores", "Bancos",
-  "Choferes", "Unidades", "Productos", "Agregados", "Materia Prima",
-  "Ingresos", "Egresos", "Facturas", "Retenciones", "Pedidos",
+  "Choferes", "Unidades", "Mantenimiento Unidades", "Productos", "Agregados",
+  "Materia Prima", "Ingresos", "Egresos", "Facturas", "Retenciones", "Pedidos",
   "Guías de Despacho", "Órdenes de Compra"
 ];
 
