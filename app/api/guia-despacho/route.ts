@@ -7,9 +7,23 @@ import { emitSocketEvent } from '@/lib/socket-server';
 import { registrarLog, getUsuarioFromRequest, getClientIp } from '@/lib/audit-log';
 import { requireAuth } from '@/lib/auth-guard';
 
-async function ensurePedidoColumn() {
+async function ensureColumns() {
   try { await query(`ALTER TABLE guia_despacho ADD COLUMN pedido_id INT NULL`); } catch {}
   try { await query(`ALTER TABLE guia_despacho ADD COLUMN obra VARCHAR(255) NULL`); } catch {}
+  // Ver sql/migracion_numero_guia.sql
+  try { await query(`ALTER TABLE guia_despacho ADD COLUMN numero_guia INT NULL`); } catch {}
+  try { await query(`CREATE TABLE IF NOT EXISTS guia_numero_secuencia (numero INT AUTO_INCREMENT PRIMARY KEY)`); } catch {}
+}
+
+// numero_guia es una numeración aparte del id real, que arranca en 1 para las
+// guías de acá en adelante (las guías viejas quedan con numero_guia NULL, no
+// se les asigna uno retroactivo para no invalidar documentos ya impresos).
+// Se apoya en el AUTO_INCREMENT de una tabla dedicada en vez de un
+// SELECT MAX()+1 manual: dos guías creadas al mismo tiempo no pueden terminar
+// con el mismo número, porque AUTO_INCREMENT ya resuelve esa concurrencia.
+async function siguienteNumeroGuia(): Promise<number> {
+  const resultado: any = await query(`INSERT INTO guia_numero_secuencia (numero) VALUES (NULL)`);
+  return resultado.insertId;
 }
 
 export async function GET() {
@@ -17,8 +31,8 @@ export async function GET() {
   if (auth.response) return auth.response;
 
   try {
-    await ensurePedidoColumn();
-    const guias = await query(`SELECT gd.id, gd.tipo, gd.cliente_id AS clienteId, c.nombre AS clienteNombre, c.rif AS clienteRif, c.direccion AS clienteDireccion, c.telefono AS clienteTelefono, gd.producto_id AS productoId, CONCAT(p.resistencia, ' - ', p.pulgada) AS productoNombre, p.resistencia, p.pulgada, gd.cantidad_m3 AS cantidadM3, gd.precio_m3 AS precioM3, gd.iva_aplicado AS ivaAplicado, gd.iva_monto AS ivaMonto, gd.total, gd.chofer, gd.unidad_id AS unidadId, un.numero_unidad AS numeroUnidad, un.placa, gd.pedido_id AS pedidoId, pe.cantidad_m3 AS pedidoTotalM3, pe.obra AS pedidoObra, gd.obra, gd.usuario_id AS usuarioId, gd.created_at AS fecha FROM guia_despacho gd LEFT JOIN clientes c ON gd.cliente_id = c.id LEFT JOIN productos p ON gd.producto_id = p.id LEFT JOIN unidades un ON gd.unidad_id = un.id LEFT JOIN pedidos pe ON gd.pedido_id = pe.id ORDER BY gd.id DESC`);
+    await ensureColumns();
+    const guias = await query(`SELECT gd.id, gd.numero_guia AS numeroGuia, gd.tipo, gd.cliente_id AS clienteId, c.nombre AS clienteNombre, c.rif AS clienteRif, c.direccion AS clienteDireccion, c.telefono AS clienteTelefono, gd.producto_id AS productoId, CONCAT(p.resistencia, ' - ', p.pulgada) AS productoNombre, p.resistencia, p.pulgada, gd.cantidad_m3 AS cantidadM3, gd.precio_m3 AS precioM3, gd.iva_aplicado AS ivaAplicado, gd.iva_monto AS ivaMonto, gd.total, gd.chofer, gd.unidad_id AS unidadId, un.numero_unidad AS numeroUnidad, un.placa, gd.pedido_id AS pedidoId, pe.cantidad_m3 AS pedidoTotalM3, pe.obra AS pedidoObra, gd.obra, gd.usuario_id AS usuarioId, gd.created_at AS fecha FROM guia_despacho gd LEFT JOIN clientes c ON gd.cliente_id = c.id LEFT JOIN productos p ON gd.producto_id = p.id LEFT JOIN unidades un ON gd.unidad_id = un.id LEFT JOIN pedidos pe ON gd.pedido_id = pe.id ORDER BY gd.id DESC`);
     return NextResponse.json({ success: true, guias }, { status: 200 });
   } catch (error) {
     console.error('Error GET guia_despacho:', error);
@@ -28,7 +42,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    await ensurePedidoColumn();
+    await ensureColumns();
     const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
     if (!session.userId) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     const data = await request.json();
@@ -70,7 +84,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: `La cantidad solicitada (${cantidadM3} M³) excede el stock disponible (${stockDisponible} M³)` }, { status: 400 });
     }
 
-    const result: any = await query(`INSERT INTO guia_despacho (tipo, cliente_id, producto_id, cantidad_m3, chofer, unidad_id, pedido_id, obra, usuario_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, [tipo, clienteId, productoId, cantidadM3, chofer, unidadId || null, pedidoId || null, obraFinal, session.userId]);
+    const numeroGuia = await siguienteNumeroGuia();
+    const result: any = await query(`INSERT INTO guia_despacho (tipo, cliente_id, producto_id, cantidad_m3, chofer, unidad_id, pedido_id, obra, usuario_id, numero_guia) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [tipo, clienteId, productoId, cantidadM3, chofer, unidadId || null, pedidoId || null, obraFinal, session.userId, numeroGuia]);
 
     if (pedidoId) {
       const [pedidoRows]: any = await query('SELECT cantidad_m3 FROM pedidos WHERE id = ?', [pedidoId]);
@@ -95,7 +110,7 @@ export async function POST(request: Request) {
       ip_address: getClientIp(request),
     });
 
-    return NextResponse.json({ success: true, id: result.insertId }, { status: 201 });
+    return NextResponse.json({ success: true, id: result.insertId, numeroGuia }, { status: 201 });
   } catch (error) {
     console.error('Error POST guia_despacho:', error);
     return NextResponse.json({ error: 'Error al crear guía de despacho' }, { status: 500 });

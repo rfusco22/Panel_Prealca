@@ -124,7 +124,7 @@ export function GuiaDespachoForm({
   const handlePrint = () => {
     if (esServicioBomba) {
       printDocument(generateServicioBombaHtml({
-        guiaNumber: 'NUEVA',
+        guiaNumber: 'Vista previa',
         fecha: new Date().toISOString(),
         clienteNombre: clienteSeleccionado?.nombre || '',
         clienteRif: clienteSeleccionado?.rif || '',
@@ -140,7 +140,7 @@ export function GuiaDespachoForm({
       }));
     } else if (esPrealca) {
       printDocument(generatePrealcaHtml({
-        guiaNumber: 'NUEVA',
+        guiaNumber: 'Vista previa',
         fecha: new Date().toISOString(),
         clienteNombre: clienteSeleccionado?.nombre || '',
         clienteRif: clienteSeleccionado?.rif || '',
@@ -159,7 +159,7 @@ export function GuiaDespachoForm({
       }));
     } else {
       printDocument(generateGuiaDespachoHtml({
-        guiaNumber: 'NUEVA',
+        guiaNumber: 'Vista previa',
         fecha: new Date().toISOString(),
         clienteNombre: clienteSeleccionado?.nombre || '',
         clienteRif: clienteSeleccionado?.rif || '',

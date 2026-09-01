@@ -101,10 +101,14 @@ export default function NewGuiaDespachoPage() {
       const producto = productos.find(p => p.id === Number(formData.productoId));
       const unidad = unidades.find(u => u.id === Number(formData.unidadId));
       const esPrealca = formData.tipo === 'Prealca';
+      // numeroGuia arranca en 1 y es independiente del id real de la tabla
+      // (ver sql/migracion_numero_guia.sql); las guías creadas antes de esa
+      // migración no lo tienen, por eso el fallback al id de siempre.
+      const guiaNumber = `GD-${result.numeroGuia ?? result.id}`;
 
       if (esPrealca) {
         printDocument(generatePrealcaHtml({
-          guiaNumber: `GD-${result.id}`,
+          guiaNumber,
           fecha: new Date().toISOString(),
           clienteNombre: cliente?.nombre || '',
           clienteRif: cliente?.rif || '',
@@ -120,7 +124,7 @@ export default function NewGuiaDespachoPage() {
         }));
       } else {
         printDocument(generateGuiaDespachoHtml({
-          guiaNumber: `GD-${result.id}`,
+          guiaNumber,
           fecha: new Date().toISOString(),
           clienteNombre: cliente?.nombre || '',
           clienteRif: cliente?.rif || '',

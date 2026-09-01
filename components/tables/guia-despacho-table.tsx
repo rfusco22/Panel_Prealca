@@ -6,6 +6,10 @@ import { generateGuiaDespachoHtml, generatePrealcaHtml } from '@/lib/document-te
 import { formatearFecha } from '@/lib/fecha';
 interface GuiaDespacho {
   id: number;
+  // Numeración nueva, separada del id, que arranca en 1 (ver
+  // sql/migracion_numero_guia.sql). Las guías creadas antes de esa
+  // migración no lo tienen.
+  numeroGuia?: number;
   fecha: string;
   tipo: string;
   clienteNombre: string;
@@ -39,9 +43,11 @@ function buildGuiaHtml(guia: GuiaDespacho, van: number, de: number): string {
     subtotalItem: 0,
   };
 
+  const guiaNumber = `GD-${guia.numeroGuia ?? guia.id}`;
+
   return guia.tipo === 'Prealca'
     ? generatePrealcaHtml({
-        guiaNumber: `GD-${guia.id}`,
+        guiaNumber,
         fecha: guia.fecha,
         clienteNombre: guia.clienteNombre,
         clienteRif: guia.clienteRif || '',
@@ -51,7 +57,7 @@ function buildGuiaHtml(guia: GuiaDespacho, van: number, de: number): string {
         items: [item],
       })
     : generateGuiaDespachoHtml({
-        guiaNumber: `GD-${guia.id}`,
+        guiaNumber,
         fecha: guia.fecha,
         clienteNombre: guia.clienteNombre,
         clienteRif: guia.clienteRif || '',
