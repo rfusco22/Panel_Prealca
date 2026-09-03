@@ -86,39 +86,50 @@ export function IngresoForm({ onAdd, onClose }: IngresoFormProps) {
     setComprobantes(prev => prev.filter((_, i) => i !== idx));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!bancoId || !clienteId || !referencia) return;
 
     const bancoSeleccionado = listaBancos.find((b: any) => b.id === Number(bancoId));
+    setSubmitError(null);
+    setIsSubmitting(true);
 
-    onAdd({
-      banco: bancoSeleccionado?.nombreBanco || '',
-      bancoId: Number(bancoId), nombreCliente, rif, vendedor, descripcion,
-      clienteId: Number(clienteId),
-      m3: parseFloat(m3) || 0,
-      resistencia,
-      precioBs: precioBsNum,
-      precioDivisa: totalUsd,
-      tasaCambio,
-      aplicaIva,
-      montoIva: ivaBs,
-      totalBs,
-      tipoDocumento,
-      comision_porcentaje: tipoComision === 'PORCENTAJE' ? parseFloat(valorComision) || null : null,
-      comision_monto: tipoComision === 'MONTO' ? parseFloat(valorComision) || null : null,
-      referencia,
-      comprobantes,
-    });
+    try {
+      await onAdd({
+        banco: bancoSeleccionado?.nombreBanco || '',
+        bancoId: Number(bancoId), nombreCliente, rif, vendedor, descripcion,
+        clienteId: Number(clienteId),
+        m3: parseFloat(m3) || 0,
+        resistencia,
+        precioBs: precioBsNum,
+        precioDivisa: totalUsd,
+        tasaCambio,
+        aplicaIva,
+        montoIva: ivaBs,
+        totalBs,
+        tipoDocumento,
+        comision_porcentaje: tipoComision === 'PORCENTAJE' ? parseFloat(valorComision) || null : null,
+        comision_monto: tipoComision === 'MONTO' ? parseFloat(valorComision) || null : null,
+        referencia,
+        comprobantes,
+      });
 
-    setShowSuccess(true);
-    setTimeout(() => {
-      setBancoId(''); setClienteId(''); setNombreCliente(''); setRif(''); setVendedor('');
-      setValorComision(''); setDescripcion(''); setM3(''); setResistencia('');
-      setPrecioBs(''); setPrecioUsd(''); setMonedaEntrada('BS');
-      setAplicaIva(false); setTipoDocumento('FACTURA');
-      setReferencia(''); setComprobantes([]); setShowSuccess(false);
-    }, 1500);
+      setShowSuccess(true);
+      setTimeout(() => {
+        setBancoId(''); setClienteId(''); setNombreCliente(''); setRif(''); setVendedor('');
+        setValorComision(''); setDescripcion(''); setM3(''); setResistencia('');
+        setPrecioBs(''); setPrecioUsd(''); setMonedaEntrada('BS');
+        setAplicaIva(false); setTipoDocumento('FACTURA');
+        setReferencia(''); setComprobantes([]); setShowSuccess(false);
+      }, 1500);
+    } catch (err: any) {
+      setSubmitError(err?.message || 'Error al guardar el ingreso');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const inputCls = "w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 text-sm font-medium text-slate-900 shadow-sm placeholder:text-slate-300 bg-white transition-all";
@@ -312,13 +323,21 @@ export function IngresoForm({ onAdd, onClose }: IngresoFormProps) {
         </div>
       </div>
 
-      <div className="px-4 sm:px-6 py-4 bg-slate-50 flex flex-col-reverse sm:flex-row sm:items-center justify-end gap-3 border-t border-slate-100 shrink-0">
-        <button type="button" onClick={onClose} className="text-slate-500 hover:text-slate-700 hover:bg-slate-200 bg-slate-100 border border-slate-200 rounded-lg px-5 py-2 text-sm font-medium transition-colors w-full sm:w-auto">
-          Cancelar
-        </button>
-        <button type="submit" className="bg-slate-900 hover:bg-slate-800 text-white rounded-lg px-6 py-2 shadow-md transition-all text-sm font-semibold flex items-center justify-center gap-2 w-full sm:w-auto">
-          Registrar Ingreso
-        </button>
+      <div className="px-4 sm:px-6 py-4 bg-slate-50 border-t border-slate-100 shrink-0 space-y-3">
+        {submitError && (
+          <div className="flex items-center gap-2 text-red-600 text-xs font-semibold bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+            <AlertCircle size={14} /> {submitError}
+          </div>
+        )}
+        <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-end gap-3">
+          <button type="button" onClick={onClose} className="text-slate-500 hover:text-slate-700 hover:bg-slate-200 bg-slate-100 border border-slate-200 rounded-lg px-5 py-2 text-sm font-medium transition-colors w-full sm:w-auto">
+            Cancelar
+          </button>
+          <button type="submit" disabled={isSubmitting} className="bg-slate-900 hover:bg-slate-800 text-white rounded-lg px-6 py-2 shadow-md transition-all text-sm font-semibold flex items-center justify-center gap-2 w-full sm:w-auto disabled:opacity-60 disabled:cursor-not-allowed">
+            {isSubmitting && <Loader2 size={16} className="animate-spin" />}
+            Registrar Ingreso
+          </button>
+        </div>
       </div>
     </form>
   );

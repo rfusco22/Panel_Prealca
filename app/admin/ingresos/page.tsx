@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { IngresoForm } from '@/components/forms/ingreso-form';
 import { Plus, X, TrendingUp } from 'lucide-react';
 import { formatearFecha } from '@/lib/fecha';
@@ -10,9 +10,40 @@ export default function IngresosPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [ingresos, setIngresos] = useState<any[]>([]);
 
-  const handleAdd = (data: any) => {
-    setIngresos(prev => [{ ...data, id: Date.now(), fecha: new Date().toISOString() }, ...prev]);
-    setTimeout(() => setIsModalOpen(false), 1500);
+  const fetchIngresos = async () => {
+    try {
+      const res = await fetch('/api/ingresos');
+      const result = await res.json();
+      const lista = Array.isArray(result) ? result : (result.data || result.ingresos || []);
+      setIngresos(lista.map((ing: any) => ({
+        ...ing,
+        totalBs: Number(ing.precioBs || 0) + Number(ing.montoIva || 0),
+      })));
+    } catch (err) {
+      console.error('Error cargando ingresos:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchIngresos();
+  }, []);
+
+  const handleAdd = async (data: any) => {
+    try {
+      const res = await fetch('/api/ingresos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      const result = await res.json();
+      if (!result.success) {
+        throw new Error(result.error || 'Error al guardar el ingreso');
+      }
+      await fetchIngresos();
+      setTimeout(() => setIsModalOpen(false), 1500);
+    } catch (err: any) {
+      throw err;
+    }
   };
 
   return (

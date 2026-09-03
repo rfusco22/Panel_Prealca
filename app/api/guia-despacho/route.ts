@@ -85,7 +85,7 @@ export async function POST(request: Request) {
     }
 
     const numeroGuia = await siguienteNumeroGuia();
-    const result: any = await query(`INSERT INTO guia_despacho (tipo, cliente_id, producto_id, cantidad_m3, chofer, unidad_id, pedido_id, obra, usuario_id, numero_guia) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [tipo, clienteId, productoId, cantidadM3, chofer, unidadId || null, pedidoId || null, obraFinal, session.userId, numeroGuia]);
+    const result: any = await query(`INSERT INTO guia_despacho (tipo, cliente_id, producto_id, cantidad_m3, precio_m3, total, chofer, unidad_id, pedido_id, obra, usuario_id, numero_guia) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [tipo, clienteId, productoId, cantidadM3, 0, 0, chofer, unidadId || null, pedidoId || null, obraFinal, session.userId, numeroGuia]);
 
     if (pedidoId) {
       const [pedidoRows]: any = await query('SELECT cantidad_m3 FROM pedidos WHERE id = ?', [pedidoId]);
