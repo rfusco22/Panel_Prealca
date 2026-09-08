@@ -45,6 +45,16 @@ const BANCOS_LIST = [
   { code: '0191', name: 'BNC' },
 ];
 
+// Métodos de pago que no son bancos venezolanos: no tienen código de 4
+// dígitos ni cuenta de 16 dígitos, así que el número de cuenta se captura
+// como texto libre (correo, teléfono, usuario, etc).
+const METODOS_ESPECIALES = [
+  { code: 'ZELLE', name: 'Zelle', special: true },
+  { code: 'BINANCE', name: 'Binance', special: true },
+];
+
+const TODAS_LAS_OPCIONES = [...BANCOS_LIST, ...METODOS_ESPECIALES];
+
 export default function RegistroBancosPage() {
   const [bancos, setBancos] = useState<Banco[]>([]);
   const [loading, setLoading] = useState(true);
@@ -121,6 +131,12 @@ export default function RegistroBancosPage() {
     setFormData(prev => ({ ...prev, numeroCuentaSufijo: value }));
   };
 
+  // Para Zelle/Binance el "número de cuenta" es texto libre (correo, teléfono,
+  // usuario), no dígitos con longitud fija como en un banco venezolano.
+  const handleCuentaEspecialChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({ ...prev, numeroCuentaSufijo: e.target.value }));
+  };
+
   const handleDocumentoNumeroChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, '');
     setFormData(prev => ({ ...prev, documentoNumero: value }));
@@ -137,10 +153,13 @@ export default function RegistroBancosPage() {
 
   // --- LÓGICA DE EDICIÓN ---
   const handleEdit = (banco: Banco) => {
-    // 1. Extraemos las partes
-    const prefix = banco.numeroCuenta.substring(0, 4);
-    const sufijo = banco.numeroCuenta.substring(4);
-    
+    // 1. Extraemos las partes. Zelle/Binance no llevan el prefijo de 4
+    // dígitos de un banco venezolano: el número de cuenta completo es el
+    // "sufijo" (correo, teléfono, usuario).
+    const especial = METODOS_ESPECIALES.find(m => m.name === banco.nombreBanco);
+    const prefix = especial ? especial.code : banco.numeroCuenta.substring(0, 4);
+    const sufijo = especial ? banco.numeroCuenta : banco.numeroCuenta.substring(4);
+
     // Asumiendo formato "V-12345678"
     const docParts = banco.cedula.split('-');
     const docTipo = docParts.length > 1 ? docParts[0] : 'V';
@@ -164,13 +183,20 @@ export default function RegistroBancosPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.bancoCodigo) return alert("Por favor selecciona un banco.");
-    if (formData.numeroCuentaSufijo.length !== 16) return alert("Faltan dígitos en el número de cuenta.");
+
+    const bancoSeleccionado = TODAS_LAS_OPCIONES.find(b => b.code === formData.bancoCodigo);
+    const esEspecial = 'special' in (bancoSeleccionado || {}) && (bancoSeleccionado as any).special;
+
+    if (esEspecial) {
+      if (!formData.numeroCuentaSufijo.trim()) return alert("Ingresa el correo, teléfono o usuario de la cuenta.");
+    } else if (formData.numeroCuentaSufijo.length !== 16) {
+      return alert("Faltan dígitos en el número de cuenta.");
+    }
     if (!formData.documentoNumero) return alert("Ingresa el número de Cédula/RIF.");
 
-    const bancoSeleccionado = BANCOS_LIST.find(b => b.code === formData.bancoCodigo);
     const payload = {
       nombreBanco: bancoSeleccionado?.name || 'Desconocido',
-      numeroCuenta: `${formData.bancoCodigo}${formData.numeroCuentaSufijo}`,
+      numeroCuenta: esEspecial ? formData.numeroCuentaSufijo.trim() : `${formData.bancoCodigo}${formData.numeroCuentaSufijo}`,
       titularCuenta: formData.titularCuenta.trim(),
       cedula: `${formData.documentoTipo}-${formData.documentoNumero}`
     };
@@ -224,7 +250,8 @@ export default function RegistroBancosPage() {
     setFormData({ bancoCodigo: '', numeroCuentaSufijo: '', titularCuenta: '', documentoTipo: 'V', documentoNumero: '' });
   };
 
-  const selectedBankData = BANCOS_LIST.find(b => b.code === formData.bancoCodigo);
+  const selectedBankData = TODAS_LAS_OPCIONES.find(b => b.code === formData.bancoCodigo);
+  const esMetodoEspecial = !!(selectedBankData as any)?.special;
 
   return (
     <div className="max-w-6xl space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -367,17 +394,21 @@ export default function RegistroBancosPage() {
                   {selectedBankData ? (
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 bg-white rounded-lg border border-slate-100 flex items-center justify-center overflow-hidden shrink-0 shadow-sm p-1">
-                        <Image 
-                          src={`/bancos/${selectedBankData.code}.png`} 
-                          alt={selectedBankData.name} 
-                          width={36} 
-                          height={36} 
-                          className="object-contain w-full h-full"
-                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                        />
+                        {esMetodoEspecial ? (
+                          <Building2 className="w-5 h-5 text-slate-400" />
+                        ) : (
+                          <Image
+                            src={`/bancos/${selectedBankData.code}.png`}
+                            alt={selectedBankData.name}
+                            width={36}
+                            height={36}
+                            className="object-contain w-full h-full"
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                          />
+                        )}
                       </div>
                       <span className="text-base font-semibold text-slate-900">
-                        {selectedBankData.code} - {selectedBankData.name}
+                        {esMetodoEspecial ? selectedBankData.name : `${selectedBankData.code} - ${selectedBankData.name}`}
                       </span>
                     </div>
                   ) : (
@@ -390,18 +421,18 @@ export default function RegistroBancosPage() {
                 {isBankSelectOpen && (
                   <div className="absolute top-[84px] left-0 w-full bg-white border border-slate-200 rounded-xl shadow-xl z-50 max-h-[320px] overflow-y-auto py-2 animate-in fade-in">
                     {BANCOS_LIST.map((banco) => (
-                      <div 
+                      <div
                         key={banco.code}
                         onClick={() => selectBank(banco.code)}
                         className="px-5 py-3 hover:bg-slate-50 cursor-pointer flex items-center justify-between group transition-colors"
                       >
                         <div className="flex items-center gap-4">
                           <div className="w-10 h-10 bg-white rounded-lg border border-slate-100 shadow-sm flex items-center justify-center overflow-hidden shrink-0 p-1 opacity-90 group-hover:opacity-100 transition-opacity">
-                            <Image 
-                              src={`/bancos/${banco.code}.png`} 
-                              alt={banco.name} 
-                              width={36} 
-                              height={36} 
+                            <Image
+                              src={`/bancos/${banco.code}.png`}
+                              alt={banco.name}
+                              width={36}
+                              height={36}
                               className="object-contain w-full h-full"
                               onError={(e) => { e.currentTarget.style.display = 'none'; }}
                             />
@@ -414,6 +445,23 @@ export default function RegistroBancosPage() {
                         {formData.bancoCodigo === banco.code && <Check className="w-5 h-5 text-slate-800" />}
                       </div>
                     ))}
+                    <div className="my-2 border-t border-slate-100" />
+                    <div className="px-5 pt-1 pb-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Otros métodos</div>
+                    {METODOS_ESPECIALES.map((metodo) => (
+                      <div
+                        key={metodo.code}
+                        onClick={() => selectBank(metodo.code)}
+                        className="px-5 py-3 hover:bg-slate-50 cursor-pointer flex items-center justify-between group transition-colors"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 bg-slate-100 rounded-lg border border-slate-100 shadow-sm flex items-center justify-center shrink-0">
+                            <Building2 className="w-5 h-5 text-slate-400" />
+                          </div>
+                          <span className="text-base font-medium text-slate-700 group-hover:text-slate-900">{metodo.name}</span>
+                        </div>
+                        {formData.bancoCodigo === metodo.code && <Check className="w-5 h-5 text-slate-800" />}
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
@@ -422,19 +470,30 @@ export default function RegistroBancosPage() {
               <div className="space-y-2.5">
                 <div className="flex justify-between items-end">
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    Número de Cuenta
+                    {esMetodoEspecial ? 'Correo, teléfono o usuario' : 'Número de Cuenta'}
                   </label>
-                  <span className="text-xs font-semibold text-slate-400">
-                    {formData.numeroCuentaSufijo.length} / 16 dígitos
-                  </span>
+                  {!esMetodoEspecial && (
+                    <span className="text-xs font-semibold text-slate-400">
+                      {formData.numeroCuentaSufijo.length} / 16 dígitos
+                    </span>
+                  )}
                 </div>
-                
+
                 <div className={`flex rounded-xl border transition-all shadow-sm overflow-hidden ${
-                  formData.bancoCodigo 
-                    ? 'border-slate-200 focus-within:border-slate-800 focus-within:ring-1 focus-within:ring-slate-800 bg-white' 
+                  formData.bancoCodigo
+                    ? 'border-slate-200 focus-within:border-slate-800 focus-within:ring-1 focus-within:ring-slate-800 bg-white'
                     : 'border-slate-100 bg-slate-50/50'
                 }`}>
-                  {formData.bancoCodigo ? (
+                  {esMetodoEspecial ? (
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ej: correo@ejemplo.com o +58 412 0000000"
+                      value={formData.numeroCuentaSufijo}
+                      onChange={handleCuentaEspecialChange}
+                      className="flex-1 px-5 py-3.5 bg-transparent focus:outline-none text-base text-slate-900 placeholder:text-slate-400"
+                    />
+                  ) : formData.bancoCodigo ? (
                     <>
                       <div className="px-5 py-3.5 bg-slate-50 border-r border-slate-200 text-slate-500 font-mono text-base flex items-center select-none font-semibold">
                         {formData.bancoCodigo}
