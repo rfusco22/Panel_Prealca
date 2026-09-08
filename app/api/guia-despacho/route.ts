@@ -10,19 +10,24 @@ import { requireAuth } from '@/lib/auth-guard';
 async function ensureColumns() {
   try { await query(`ALTER TABLE guia_despacho ADD COLUMN pedido_id INT NULL`); } catch {}
   try { await query(`ALTER TABLE guia_despacho ADD COLUMN obra VARCHAR(255) NULL`); } catch {}
-  // Ver sql/migracion_numero_guia.sql
+  // Ver sql/migracion_numero_guia.sql y sql/migracion_numero_guia_por_tipo.sql
   try { await query(`ALTER TABLE guia_despacho ADD COLUMN numero_guia INT NULL`); } catch {}
   try { await query(`CREATE TABLE IF NOT EXISTS guia_numero_secuencia (numero INT AUTO_INCREMENT PRIMARY KEY)`); } catch {}
+  try { await query(`CREATE TABLE IF NOT EXISTS guia_numero_secuencia_premezclado (numero INT AUTO_INCREMENT PRIMARY KEY)`); } catch {}
+  try { await query(`CREATE TABLE IF NOT EXISTS guia_numero_secuencia_prealca (numero INT AUTO_INCREMENT PRIMARY KEY)`); } catch {}
 }
 
 // numero_guia es una numeración aparte del id real, que arranca en 1 para las
 // guías de acá en adelante (las guías viejas quedan con numero_guia NULL, no
 // se les asigna uno retroactivo para no invalidar documentos ya impresos).
+// Prealca y Premezclado llevan cada una su propio contador (guia_numero_secuencia_*)
+// para no compartir la misma cronología entre los dos tipos de guía.
 // Se apoya en el AUTO_INCREMENT de una tabla dedicada en vez de un
 // SELECT MAX()+1 manual: dos guías creadas al mismo tiempo no pueden terminar
 // con el mismo número, porque AUTO_INCREMENT ya resuelve esa concurrencia.
-async function siguienteNumeroGuia(): Promise<number> {
-  const resultado: any = await query(`INSERT INTO guia_numero_secuencia (numero) VALUES (NULL)`);
+async function siguienteNumeroGuia(tipo: string): Promise<number> {
+  const tabla = tipo === 'Prealca' ? 'guia_numero_secuencia_prealca' : 'guia_numero_secuencia_premezclado';
+  const resultado: any = await query(`INSERT INTO ${tabla} (numero) VALUES (NULL)`);
   return resultado.insertId;
 }
 
@@ -84,7 +89,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: `La cantidad solicitada (${cantidadM3} M³) excede el stock disponible (${stockDisponible} M³)` }, { status: 400 });
     }
 
-    const numeroGuia = await siguienteNumeroGuia();
+    const numeroGuia = await siguienteNumeroGuia(tipo);
     const result: any = await query(`INSERT INTO guia_despacho (tipo, cliente_id, producto_id, cantidad_m3, precio_m3, total, chofer, unidad_id, pedido_id, obra, usuario_id, numero_guia) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [tipo, clienteId, productoId, cantidadM3, 0, 0, chofer, unidadId || null, pedidoId || null, obraFinal, session.userId, numeroGuia]);
 
     if (pedidoId) {

@@ -24,8 +24,8 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { nombreBanco, numeroCuenta, titularCuenta, cedula } = body;
-    if (!nombreBanco || !numeroCuenta || !titularCuenta || !cedula) return NextResponse.json({ error: 'Todos los campos son obligatorios' }, { status: 400 });
-    const result: any = await query(`INSERT INTO bancos (nombre_banco, numero_cuenta, titular_cuenta, cedula) VALUES (?, ?, ?, ?)`, [nombreBanco, numeroCuenta, titularCuenta, cedula]);
+    if (!nombreBanco || !numeroCuenta || !titularCuenta) return NextResponse.json({ error: 'Nombre, número de cuenta y titular son obligatorios' }, { status: 400 });
+    const result: any = await query(`INSERT INTO bancos (nombre_banco, numero_cuenta, titular_cuenta, cedula) VALUES (?, ?, ?, ?)`, [nombreBanco, numeroCuenta, titularCuenta, cedula || null]);
     emitSocketEvent('bancos:created');
 
     const usuario = await getUsuarioFromRequest();
@@ -50,12 +50,12 @@ export async function PUT(request: Request) {
   try {
     const body = await request.json();
     const { id, nombreBanco, numeroCuenta, titularCuenta, cedula } = body;
-    if (!id || !nombreBanco || !numeroCuenta || !titularCuenta || !cedula) return NextResponse.json({ error: 'Faltan datos requeridos' }, { status: 400 });
+    if (!id || !nombreBanco || !numeroCuenta || !titularCuenta) return NextResponse.json({ error: 'Faltan datos requeridos' }, { status: 400 });
 
     const anterior: any = await query('SELECT id, nombre_banco, numero_cuenta, titular_cuenta FROM bancos WHERE id = ?', [id]);
     const old = anterior.length > 0 ? anterior[0] : null;
 
-    await query(`UPDATE bancos SET nombre_banco = ?, numero_cuenta = ?, titular_cuenta = ?, cedula = ? WHERE id = ?`, [nombreBanco, numeroCuenta, titularCuenta, cedula, id]);
+    await query(`UPDATE bancos SET nombre_banco = ?, numero_cuenta = ?, titular_cuenta = ?, cedula = ? WHERE id = ?`, [nombreBanco, numeroCuenta, titularCuenta, cedula || null, id]);
     emitSocketEvent('bancos:updated');
 
     const usuario = await getUsuarioFromRequest();
