@@ -62,6 +62,7 @@ export function OrdenCompraForm({ onSubmit, isLoading = false, initialData }: Or
   const [showProveedorModal, setShowProveedorModal] = useState(false);
   const [newProveedor, setNewProveedor] = useState({ nombre: '', rif: '', direccion: '' });
   const [savingProveedor, setSavingProveedor] = useState(false);
+  const [proveedorRecienCreado, setProveedorRecienCreado] = useState<number | null>(null);
 
   const [moneda, setMoneda] = useState<'$' | 'Bs'>('$');
   const [tasaBCV, setTasaBCV] = useState<number>(0);
@@ -119,21 +120,31 @@ export function OrdenCompraForm({ onSubmit, isLoading = false, initialData }: Or
   const productoSeleccionado = productos.find((p: any) => p.id === Number(productoId));
 
   useEffect(() => {
-    // El <select> de proveedor/producto recien tiene opciones una vez que esto
-    // resuelve, asi que el valor precargado en modo edicion se pierde si no se
-    // re-aplica aca.
-    fetch('/api/proveedores').then(r => r.json()).then(d => {
-      if (d.success) {
-        setProveedores(d.proveedores);
-        if (initialData?.proveedorId) setValue('proveedorId', initialData.proveedorId);
-      }
-    });
-    fetch('/api/productos').then(r => r.json()).then(d => {
-      setProductos(Array.isArray(d) ? d : d.productos || []);
-      if (initialData?.productoId) setValue('productoId', initialData.productoId);
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    fetch('/api/proveedores').then(r => r.json()).then(d => { if (d.success) setProveedores(d.proveedores); });
+    fetch('/api/productos').then(r => r.json()).then(d => { setProductos(Array.isArray(d) ? d : d.productos || []); });
   }, []);
+
+  // El <select> de proveedor/producto recien tiene las opciones en el DOM
+  // despues de que React re-renderiza con el resultado del fetch de arriba.
+  // Llamar setValue en el mismo .then() del fetch no alcanza: el <option>
+  // todavia no existe en ese instante y el navegador no puede seleccionarlo.
+  useEffect(() => {
+    if (initialData?.proveedorId && proveedores.length > 0) setValue('proveedorId', initialData.proveedorId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [proveedores]);
+  useEffect(() => {
+    if (initialData?.productoId && productos.length > 0) setValue('productoId', initialData.productoId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productos]);
+  // Mismo motivo: seleccionar el proveedor recien creado desde el modal rapido
+  // solo funciona una vez que su <option> ya esta en el DOM.
+  useEffect(() => {
+    if (proveedorRecienCreado && proveedores.some((p: any) => p.id === proveedorRecienCreado)) {
+      setValue('proveedorId', proveedorRecienCreado);
+      setProveedorRecienCreado(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [proveedores, proveedorRecienCreado]);
 
   const handleFormSubmit = async (data: OrdenCompraFormData) => {
     setError(null); setSuccess(null); setSubmitting(true);
@@ -159,7 +170,7 @@ export function OrdenCompraForm({ onSubmit, isLoading = false, initialData }: Or
         const response = await fetch('/api/proveedores');
         const d = await response.json();
         if (d.success) setProveedores(d.proveedores);
-        if (data.insertId) setValue('proveedorId', data.insertId);
+        if (data.insertId) setProveedorRecienCreado(data.insertId);
         setShowProveedorModal(false);
         setNewProveedor({ nombre: '', rif: '', direccion: '' });
       }

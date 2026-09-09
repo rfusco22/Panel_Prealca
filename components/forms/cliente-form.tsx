@@ -53,15 +53,19 @@ function ClienteForm({ cliente, onClose }: { cliente?: ClienteData | null; onClo
   useEffect(() => {
     fetch("/api/vendedores")
       .then((res) => res.json())
-      .then((result) => {
-        setVendedores(result.vendedores || []);
-        // El <select> recien tiene las opciones de vendedor una vez que esto resuelve,
-        // asi que el valor precargado en modo edicion se pierde si no se re-aplica aca.
-        if (cliente?.vendedor) setValue("vendedor", cliente.vendedor);
-      })
+      .then((result) => setVendedores(result.vendedores || []))
       .catch(() => setVendedores([]));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // El <select> recien tiene las opciones de vendedor una vez que el fetch de
+  // arriba resuelve y React re-renderiza con ellas en el DOM. Llamar setValue
+  // en el mismo .then() del fetch no alcanza: el <option> todavia no existe en
+  // ese instante y el navegador no puede seleccionarlo. Por eso va en un efecto
+  // aparte que depende de `vendedores` (dispara despues de ese render).
+  useEffect(() => {
+    if (cliente?.vendedor && vendedores.length > 0) setValue("vendedor", cliente.vendedor);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vendedores]);
 
   const onSubmit = async (data: any) => {
     setIsLoading(true);
