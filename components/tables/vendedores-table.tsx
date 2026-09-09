@@ -1,34 +1,26 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Pencil, Trash2 } from "lucide-react";
 import { formatearFecha } from '@/lib/fecha';
-export default function VendedoresTable() {
-  const [data, setData] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch('/api/vendedores');
-        if (!response.ok) throw new Error("Fallo al obtener los datos del servidor");
-        
-        const result = await response.json();
-        const arregloDatos = Array.isArray(result) ? result : (result.vendedores || result.data || []);
-        
-        setData(arregloDatos);
-      } catch (err) {
-        console.error("Error cargando vendedores:", err);
-        setError("Ocurrió un error al cargar el directorio de vendedores.");
-        setData([]); 
-      } finally {
-        setIsLoading(false);
-      }
-    };
+interface Vendedor {
+  id: number;
+  nombre: string;
+  cedula: string;
+  telefono?: string;
+  direccion?: string;
+  createdAt?: string;
+}
 
-    fetchData();
-  }, []);
+interface VendedoresTableProps {
+  data: Vendedor[];
+  isLoading: boolean;
+  error?: string;
+  onEdit: (vendedor: Vendedor) => void;
+  onDelete: (id: number) => void;
+}
 
+export default function VendedoresTable({ data, isLoading, error, onEdit, onDelete }: VendedoresTableProps) {
   if (isLoading) {
     return (
       <div className="text-center py-12">
@@ -65,6 +57,7 @@ export default function VendedoresTable() {
             <th className="px-4 py-3 font-semibold text-gray-700">Teléfono</th>
             <th className="px-4 py-3 font-semibold text-gray-700">Dirección</th>
             <th className="px-4 py-3 font-semibold text-gray-700">Fecha de Registro</th>
+            <th className="px-4 py-3 font-semibold text-gray-700 text-right">Acciones</th>
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
@@ -77,6 +70,24 @@ export default function VendedoresTable() {
               <td className="px-4 py-3 text-gray-500 truncate max-w-xs">{vendedor.direccion || 'N/A'}</td>
               <td className="px-4 py-3 whitespace-nowrap text-gray-500">
                 {formatearFecha(vendedor.createdAt)}
+              </td>
+              <td className="px-4 py-3 text-right">
+                <div className="flex items-center justify-end gap-1">
+                  <button
+                    onClick={() => onEdit(vendedor)}
+                    className="text-gray-400 hover:text-blue-600 hover:bg-blue-50 p-2 rounded-lg transition-all"
+                    title="Editar"
+                  >
+                    <Pencil size={16} />
+                  </button>
+                  <button
+                    onClick={() => onDelete(vendedor.id)}
+                    className="text-red-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-all"
+                    title="Eliminar"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </td>
             </tr>
           ))}

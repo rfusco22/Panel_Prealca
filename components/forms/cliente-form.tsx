@@ -4,8 +4,40 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 
-function ClienteForm({ onClose }: { onClose?: () => void }) {
-  const { register, handleSubmit, reset, watch } = useForm();
+interface ClienteData {
+  id: number;
+  nombre: string;
+  rif: string;
+  telefono?: string;
+  direccion?: string;
+  vendedor?: string;
+  esContribuyenteEspecial?: boolean;
+}
+
+/** Separa "V-12345678" o "0412-1234567" en prefijo + resto (el resto puede traer su propio guion, como el digito verificador del RIF). */
+function splitPrefijo(valor?: string): { prefijo: string; numero: string } | null {
+  if (!valor) return null;
+  const idx = valor.indexOf('-');
+  if (idx === -1) return null;
+  return { prefijo: valor.slice(0, idx), numero: valor.slice(idx + 1) };
+}
+
+function ClienteForm({ cliente, onClose }: { cliente?: ClienteData | null; onClose?: () => void }) {
+  const isEditing = !!cliente;
+  const rifParts = splitPrefijo(cliente?.rif);
+  const telefonoParts = splitPrefijo(cliente?.telefono);
+  const { register, handleSubmit, reset, watch, setValue } = useForm({
+    defaultValues: {
+      nombre: cliente?.nombre || "",
+      prefijoRif: rifParts?.prefijo || "V",
+      numeroRif: rifParts?.numero || "",
+      prefijoTelefono: telefonoParts?.prefijo || "0412",
+      numeroTelefono: telefonoParts?.numero || "",
+      vendedor: cliente?.vendedor || "",
+      direccion: cliente?.direccion || "",
+      esContribuyenteEspecial: cliente?.esContribuyenteEspecial || false,
+    },
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [mensaje, setMensaje] = useState({ tipo: "", texto: "" });
   const [vendedores, setVendedores] = useState<any[]>([]);
@@ -21,8 +53,14 @@ function ClienteForm({ onClose }: { onClose?: () => void }) {
   useEffect(() => {
     fetch("/api/vendedores")
       .then((res) => res.json())
-      .then((result) => setVendedores(result.vendedores || []))
+      .then((result) => {
+        setVendedores(result.vendedores || []);
+        // El <select> recien tiene las opciones de vendedor una vez que esto resuelve,
+        // asi que el valor precargado en modo edicion se pierde si no se re-aplica aca.
+        if (cliente?.vendedor) setValue("vendedor", cliente.vendedor);
+      })
       .catch(() => setVendedores([]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const onSubmit = async (data: any) => {
@@ -32,20 +70,20 @@ function ClienteForm({ onClose }: { onClose?: () => void }) {
       const telefono = data.prefijoTelefono && data.numeroTelefono ? `${data.prefijoTelefono}-${data.numeroTelefono}` : data.numeroTelefono || null;
       const rif = data.prefijoRif && data.numeroRif ? `${data.prefijoRif}-${data.numeroRif}` : data.numeroRif || '';
       const response = await fetch("/api/clientes", {
-        method: "POST",
+        method: isEditing ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, telefono, rif }),
+        body: JSON.stringify({ ...(isEditing ? { id: cliente!.id } : {}), ...data, telefono, rif }),
       });
       const result = await response.json();
       if (response.ok) {
-        setMensaje({ tipo: "exito", texto: "Cliente registrado exitosamente en el directorio." });
-        reset();
+        setMensaje({ tipo: "exito", texto: isEditing ? "Cliente actualizado exitosamente." : "Cliente registrado exitosamente en el directorio." });
+        if (!isEditing) reset();
         setTimeout(() => {
           if (onClose) onClose();
           window.location.reload();
         }, 1200);
       } else {
-        setMensaje({ tipo: "error", texto: result.error || "Error al registrar el cliente." });
+        setMensaje({ tipo: "error", texto: result.error || (isEditing ? "Error al actualizar el cliente." : "Error al registrar el cliente.") });
       }
     } catch (error) {
       setMensaje({ tipo: "error", texto: "Error de conexión con el servidor." });
@@ -175,7 +213,7 @@ function ClienteForm({ onClose }: { onClose?: () => void }) {
           disabled={isLoading}
           className="bg-slate-900 hover:bg-slate-800 text-white rounded-xl px-8 py-4 shadow-md transition-all text-sm font-semibold disabled:opacity-50 w-full sm:w-auto"
         >
-          {isLoading ? "Guardando..." : "Guardar Cliente"}
+          {isLoading ? "Guardando..." : isEditing ? "Guardar Cambios" : "Guardar Cliente"}
         </button>
       </div>
     </form>

@@ -1,22 +1,25 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Pencil, Trash2 } from "lucide-react";
 
-function ClientesTable() {
-  const [data, setData] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+interface Cliente {
+  id: number;
+  nombre: string;
+  rif: string;
+  telefono?: string;
+  vendedor?: string;
+  direccion?: string;
+  esContribuyenteEspecial?: boolean;
+}
 
-  useEffect(() => {
-    fetch('/api/clientes')
-      .then(res => res.json())
-      .then(result => setData(result.clientes || []))
-      .catch(err => {
-        console.error("Error al obtener los clientes:", err);
-        setData([]);
-      })
-      .finally(() => setIsLoading(false));
-  }, []);
+interface ClientesTableProps {
+  data: Cliente[];
+  isLoading: boolean;
+  onEdit: (cliente: Cliente) => void;
+  onDelete: (id: number) => void;
+}
 
+function ClientesTable({ data, isLoading, onEdit, onDelete }: ClientesTableProps) {
   if (isLoading) {
     return (
       <div className="p-8 text-center text-slate-500 font-medium">
@@ -24,7 +27,7 @@ function ClientesTable() {
       </div>
     );
   }
-  
+
   if (!data || data.length === 0) {
     return (
       <div className="p-8 text-center text-slate-500 font-medium">
@@ -43,6 +46,7 @@ function ClientesTable() {
             <th className="px-6 py-4">Teléfono</th>
             <th className="px-6 py-4">Vendedor</th>
             <th className="px-6 py-4">Dirección</th>
+            <th className="px-6 py-4 text-right">Acciones</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
@@ -53,6 +57,24 @@ function ClientesTable() {
               <td className="px-6 py-4 text-slate-500">{c.telefono || '-'}</td>
               <td className="px-6 py-4 text-slate-500">{c.vendedor || '-'}</td>
               <td className="px-6 py-4 text-slate-500 max-w-xs truncate">{c.direccion || '-'}</td>
+              <td className="px-6 py-4 text-right">
+                <div className="flex items-center justify-end gap-1">
+                  <button
+                    onClick={() => onEdit(c)}
+                    className="text-slate-400 hover:text-blue-600 hover:bg-blue-50 p-2 rounded-lg transition-all"
+                    title="Editar"
+                  >
+                    <Pencil size={16} />
+                  </button>
+                  <button
+                    onClick={() => onDelete(c.id)}
+                    className="text-red-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-all"
+                    title="Eliminar"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </td>
             </tr>
           ))}
         </tbody>
