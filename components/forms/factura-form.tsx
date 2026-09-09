@@ -26,16 +26,6 @@ function formatBs(value: number) {
   return value.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-/** "Contado - Transferencia" -> { tipoPago: "Contado", metodoPago: "Transferencia" }. El guion separador
- * es el mismo que arma handleSubmit al mandar formaPago. Usado por la pagina de edicion para
- * reconstruir tipoPago/metodoPago a partir de lo que ya quedo guardado en la factura. */
-export function splitFormaPago(formaPago?: string): { tipoPago: string; metodoPago: string } {
-  if (!formaPago) return { tipoPago: '', metodoPago: '' };
-  const idx = formaPago.indexOf(' - ');
-  if (idx === -1) return { tipoPago: formaPago, metodoPago: '' };
-  return { tipoPago: formaPago.slice(0, idx), metodoPago: formaPago.slice(idx + 3) };
-}
-
 export function FacturaForm({ initialData }: FacturaFormProps) {
   const router = useRouter();
   const isEditing = !!initialData;
@@ -130,12 +120,16 @@ export function FacturaForm({ initialData }: FacturaFormProps) {
 
     setError(null); setIsLoading(true);
     try {
-      const formaPago = metodoPago ? `${tipoPago} - ${metodoPago}` : tipoPago;
       const payload = {
         ...(isEditing ? { id: initialData!.id } : {}),
         clienteId: selectedClienteId,
         guiaDespachoId: guiaId || null,
-        formaPago,
+        // La columna forma_pago es un ENUM que solo acepta "Contado"/"Crédito"
+        // (los mismos dos valores del <select> Tipo de Pago): combinarlo con el
+        // metodo de pago ("Contado - Efectivo") truncaba el insert y tiraba
+        // "Data truncated for column 'forma_pago'". El metodo de pago queda solo
+        // en el documento impreso, igual que el banco y el numero de referencia.
+        formaPago: tipoPago,
         comprobanteRetencion: comprobanteRetencion || null,
         subtotal,
         fechaVencimiento: vence || null,

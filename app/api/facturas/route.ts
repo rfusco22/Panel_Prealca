@@ -89,9 +89,9 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ success: true, mensaje: 'Factura creada correctamente', id: result.insertId, formaPago }, { status: 201 });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error POST facturas:', error);
-    return NextResponse.json({ error: 'Error al crear factura', debug: { message: error?.message, code: error?.code, sqlMessage: error?.sqlMessage } }, { status: 500 });
+    return NextResponse.json({ error: 'Error al crear factura' }, { status: 500 });
   }
 }
 

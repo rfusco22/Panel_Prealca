@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { FacturaForm, FacturaInitialData, splitFormaPago } from '@/components/forms/factura-form';
+import { FacturaForm, FacturaInitialData } from '@/components/forms/factura-form';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ChevronLeft, Loader2 } from 'lucide-react';
@@ -25,13 +25,14 @@ export default function EditFacturaPage() {
           return;
         }
         const f = d.factura;
-        const { tipoPago, metodoPago } = splitFormaPago(f.formaPago);
         setInitialData({
           id: f.id,
           clienteId: String(f.clienteId),
           guiaDespachoId: f.guiaDespachoId ? String(f.guiaDespachoId) : undefined,
-          tipoPago,
-          metodoPago,
+          // formaPago guarda solo el tipo de pago (Contado/Credito, ver factura-form.tsx);
+          // el metodo de pago (efectivo/transferencia/...) no se persiste, se re-ingresa al editar.
+          tipoPago: f.formaPago || '',
+          metodoPago: '',
           comprobanteRetencion: f.comprobanteRetencion || '',
           subtotal: Number(f.subtotal) || 0,
           fechaVencimiento: aFechaInput(f.fechaVencimiento),
