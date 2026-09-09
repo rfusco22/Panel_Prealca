@@ -70,10 +70,10 @@ export function OrdenesCompraTable({ data, onDelete }: OrdenesCompraTableProps) 
                 <td className="px-6 py-3 text-sm text-gray-600">{orden.proveedorNombre}</td>
                 <td className="px-6 py-3 text-sm text-gray-600">{orden.productoNombre}</td>
                 <td className="px-6 py-3 text-sm text-gray-900 font-medium">
-                  {orden.cantidadM3.toFixed(2)}
+                  {Number(orden.cantidadM3).toFixed(2)}
                 </td>
                 <td className="px-6 py-3 text-sm text-gray-900 font-medium">
-                  Bs. {orden.total.toLocaleString('es-ES', { minimumFractionDigits: 2 })}
+                  Bs. {Number(orden.total).toLocaleString('es-ES', { minimumFractionDigits: 2 })}
                 </td>
                 <td className="px-6 py-3 text-center">
                   <div className="flex items-center justify-center gap-1">
