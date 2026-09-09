@@ -4,6 +4,24 @@ import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { AlertCircle, CheckCircle2, Plus, X } from "lucide-react";
 
+interface ProveedorData {
+  id: number;
+  nombre: string;
+  rif: string;
+  direccion?: string;
+  clasificacionGasto?: string;
+  esContribuyenteEspecial: boolean;
+  plantas?: { id: number; nombre: string }[];
+  agregados?: { id: number; nombre: string }[];
+}
+
+function parseRif(rif?: string): { tipo: string; numero: string } | null {
+  if (!rif) return null;
+  const m = rif.match(/^([A-Za-z])-?(\d+)-?\d$/);
+  if (!m) return null;
+  return { tipo: m[1].toUpperCase(), numero: m[2] };
+}
+
 function calcularDigitoVerificador(tipo: string, numero: string): string {
   if (!numero || numero.length < 6) return "";
   const pesosJuridico = [4, 3, 2, 7, 6, 5, 4, 3, 2];
@@ -20,19 +38,32 @@ function calcularDigitoVerificador(tipo: string, numero: string): string {
   return String(digito);
 }
 
-function ProveedorForm({ onClose }: { onClose?: () => void }) {
-  const { register, handleSubmit, reset, watch } = useForm();
+function ProveedorForm({ proveedor, onClose }: { proveedor?: ProveedorData | null; onClose?: () => void }) {
+  const isEditing = !!proveedor;
+  const { register, handleSubmit, reset, watch } = useForm({
+    defaultValues: {
+      nombre: proveedor?.nombre || "",
+      direccion: proveedor?.direccion || "",
+      clasificacionGasto: proveedor?.clasificacionGasto || "",
+      esContribuyenteEspecial: proveedor?.esContribuyenteEspecial || false,
+    },
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [mensaje, setMensaje] = useState({ tipo: "", texto: "" });
-  const [plantas, setPlantas] = useState<string[]>([""]);
+  const [plantas, setPlantas] = useState<string[]>(
+    proveedor?.plantas && proveedor.plantas.length > 0 ? proveedor.plantas.map((p) => p.nombre) : [""]
+  );
   const [agregados, setAgregados] = useState<any[]>([]);
-  const [agregadosSeleccionados, setAgregadosSeleccionados] = useState<number[]>([]);
+  const [agregadosSeleccionados, setAgregadosSeleccionados] = useState<number[]>(
+    proveedor?.agregados?.map((a) => a.id) || []
+  );
 
   const clasificacionGasto = watch("clasificacionGasto");
 
+  const rifParts = parseRif(proveedor?.rif);
   const [form, setForm] = useState({
-    rifTipo: "J",
-    rifNumero: "",
+    rifTipo: rifParts?.tipo || "J",
+    rifNumero: rifParts?.numero || "",
   });
 
   const digitoVerificador = useMemo(
@@ -75,28 +106,31 @@ function ProveedorForm({ onClose }: { onClose?: () => void }) {
       }
       const rif = `${form.rifTipo}-${form.rifNumero}-${digitoVerificador}`;
       const payload = {
+        ...(isEditing ? { id: proveedor!.id } : {}),
         ...data,
         rif,
         plantas: plantas.filter((p) => p.trim()),
         agregados: clasificacionGasto === "Produccion" ? agregadosSeleccionados : [],
       };
       const response = await fetch("/api/proveedores", {
-        method: "POST",
+        method: isEditing ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       const result = await response.json();
       if (response.ok && result.success) {
-        setMensaje({ tipo: "exito", texto: "Proveedor registrado exitosamente" });
-        reset();
-        setPlantas([""]);
-        setAgregadosSeleccionados([]);
-        setForm({ rifTipo: "J", rifNumero: "" });
+        setMensaje({ tipo: "exito", texto: isEditing ? "Proveedor actualizado exitosamente" : "Proveedor registrado exitosamente" });
+        if (!isEditing) {
+          reset();
+          setPlantas([""]);
+          setAgregadosSeleccionados([]);
+          setForm({ rifTipo: "J", rifNumero: "" });
+        }
         setTimeout(() => {
           if (onClose) onClose();
         }, 1200);
       } else {
-        setMensaje({ tipo: "error", texto: result.error || "Error al registrar proveedor" });
+        setMensaje({ tipo: "error", texto: result.error || (isEditing ? "Error al actualizar proveedor" : "Error al registrar proveedor") });
       }
     } catch (error) {
       setMensaje({ tipo: "error", texto: "Error de conexion con el servidor" });
@@ -269,7 +303,7 @@ function ProveedorForm({ onClose }: { onClose?: () => void }) {
           disabled={isLoading}
           className="w-full sm:w-auto px-6 py-2.5 bg-slate-900 hover:bg-slate-700 active:scale-[0.98] text-white text-sm font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          {isLoading ? "Guardando..." : "Guardar Proveedor"}
+          {isLoading ? "Guardando..." : isEditing ? "Guardar Cambios" : "Guardar Proveedor"}
         </button>
       </div>
     </form>

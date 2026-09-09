@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSocket } from "@/contexts/SocketContext";
 import ProveedorForm from "@/components/forms/proveedor-form";
-import { Plus, X, Trash2 } from "lucide-react";
+import { Plus, X, Trash2, Pencil } from "lucide-react";
 
 interface Proveedor {
   id: number;
@@ -21,6 +21,7 @@ export default function ProveedoresPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingProveedor, setEditingProveedor] = useState<Proveedor | null>(null);
   const { socket } = useSocket();
 
   useEffect(() => {
@@ -73,8 +74,19 @@ export default function ProveedoresPage() {
     }
   };
 
+  const abrirNuevo = () => {
+    setEditingProveedor(null);
+    setIsModalOpen(true);
+  };
+
+  const abrirEditar = (prov: Proveedor) => {
+    setEditingProveedor(prov);
+    setIsModalOpen(true);
+  };
+
   const cerrarModal = () => {
     setIsModalOpen(false);
+    setEditingProveedor(null);
     fetchProveedores();
   };
 
@@ -86,7 +98,7 @@ export default function ProveedoresPage() {
           <p className="text-slate-500 mt-1 text-sm sm:text-base">Gestiona los proveedores registrados en el sistema.</p>
         </div>
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={abrirNuevo}
           className="bg-slate-900 hover:bg-slate-800 text-white rounded-lg shadow-sm px-5 py-2.5 flex items-center gap-2 transition-all font-medium w-full sm:w-auto justify-center"
         >
           <Plus size={18} />
@@ -148,13 +160,22 @@ export default function ProveedoresPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={() => handleDelete(prov.id)}
-                          className="text-red-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-all"
-                          title="Eliminar"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => abrirEditar(prov)}
+                            className="text-slate-400 hover:text-blue-600 hover:bg-blue-50 p-2 rounded-lg transition-all"
+                            title="Editar"
+                          >
+                            <Pencil size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(prov.id)}
+                            className="text-red-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-all"
+                            title="Eliminar"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -172,12 +193,20 @@ export default function ProveedoresPage() {
                     <h3 className="text-sm font-bold text-slate-900 truncate">{prov.nombre}</h3>
                     <p className="text-xs text-slate-500 font-mono mt-0.5">{prov.rif}</p>
                   </div>
-                  <button
-                    onClick={() => handleDelete(prov.id)}
-                    className="text-red-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-all shrink-0"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      onClick={() => abrirEditar(prov)}
+                      className="text-slate-400 hover:text-blue-600 hover:bg-blue-50 p-2 rounded-lg transition-all"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(prov.id)}
+                      className="text-red-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-all"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -226,15 +255,15 @@ export default function ProveedoresPage() {
           <div className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-2xl max-h-[95vh] sm:max-h-[90vh] flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-200">
             <div className="px-5 sm:px-8 py-5 sm:py-6 border-b border-slate-100 flex items-center justify-between shrink-0">
               <div>
-                <h3 className="text-lg sm:text-xl font-bold text-slate-900">Registrar Nuevo Proveedor</h3>
-                <p className="text-xs sm:text-sm text-slate-500 mt-1">Ingresa los datos del proveedor.</p>
+                <h3 className="text-lg sm:text-xl font-bold text-slate-900">{editingProveedor ? "Editar Proveedor" : "Registrar Nuevo Proveedor"}</h3>
+                <p className="text-xs sm:text-sm text-slate-500 mt-1">{editingProveedor ? "Actualiza los datos del proveedor." : "Ingresa los datos del proveedor."}</p>
               </div>
               <button onClick={cerrarModal} className="text-slate-400 hover:text-slate-700 p-2 rounded-full transition-colors bg-slate-50 hover:bg-slate-100">
                 <X size={20} />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto bg-white">
-              <ProveedorForm onClose={cerrarModal} />
+              <ProveedorForm proveedor={editingProveedor} onClose={cerrarModal} />
             </div>
           </div>
         </div>
