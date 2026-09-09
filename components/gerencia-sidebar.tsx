@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   LayoutDashboard, Users, UserCircle, Package, Truck, Receipt,
   Building2, FileText, ShoppingCart, TrendingUp, TrendingDown,
-  Boxes, HardHat, AlertTriangle, LogOut, Eye, ChevronDown, UsersRound, Shield, ArrowLeftRight, X, BarChart3
+  Boxes, HardHat, AlertTriangle, LogOut, Eye, ChevronDown, UsersRound, Shield, ArrowLeftRight, X, BarChart3, Wrench
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -67,6 +67,7 @@ const groups: MenuGroup[] = [
       { id: "stock", label: "Inventario", icon: Boxes, href: "/gerencia/stock" },
       { id: "pedidos", label: "Pedidos", icon: ShoppingCart, href: "/gerencia/pedidos" },
       { id: "unidades", label: "Unidades", icon: Truck, href: "/gerencia/unidades" },
+      { id: "mantenimiento", label: "Mantenimiento", icon: Wrench, href: "/gerencia/mantenimiento-unidades" },
       { id: "choferes", label: "Choferes", icon: HardHat, href: "/gerencia/choferes" },
       { id: "materia-prima", label: "Materia Prima", icon: Package, href: "/gerencia/materia-prima" },
       { id: "guias", label: "Guías de Despacho", icon: FileText, href: "/gerencia/guia-despacho" },
