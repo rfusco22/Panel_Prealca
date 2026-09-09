@@ -2,53 +2,73 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { FileText, CreditCard, AlertCircle, CheckCircle2, Loader2, Eye, Printer, DollarSign } from 'lucide-react';
+import { FileText, AlertCircle, CheckCircle2, Loader2, Eye, Printer } from 'lucide-react';
 import { calculateIVA, calculateRetention } from '@/lib/calculations';
 import { printDocument, generateFacturaHtml } from '@/lib/document-templates';
 import { formatearFecha } from '@/lib/fecha';
+
+export interface FacturaInitialData {
+  id: number;
+  clienteId: string;
+  guiaDespachoId?: string;
+  tipoPago: string;
+  metodoPago: string;
+  comprobanteRetencion?: string;
+  subtotal: number;
+  fechaVencimiento?: string;
+}
+
 interface FacturaFormProps {
-  initialData?: {
-    clienteId?: string;
-    clienteNombre?: string;
-    items?: Array<{ nombreMaterial: string; cantidad: number; unidadMedida: string; precioUnitario: number; subtotalItem: number }>;
-    total?: number;
-    montoRetencion?: number;
-    montoIva?: number;
-    esContribuyenteEspecial?: boolean;
-  };
+  initialData?: FacturaInitialData | null;
 }
 
 function formatBs(value: number) {
   return value.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+/** "Contado - Transferencia" -> { tipoPago: "Contado", metodoPago: "Transferencia" }. El guion separador
+ * es el mismo que arma handleSubmit al mandar formaPago. Usado por la pagina de edicion para
+ * reconstruir tipoPago/metodoPago a partir de lo que ya quedo guardado en la factura. */
+export function splitFormaPago(formaPago?: string): { tipoPago: string; metodoPago: string } {
+  if (!formaPago) return { tipoPago: '', metodoPago: '' };
+  const idx = formaPago.indexOf(' - ');
+  if (idx === -1) return { tipoPago: formaPago, metodoPago: '' };
+  return { tipoPago: formaPago.slice(0, idx), metodoPago: formaPago.slice(idx + 3) };
+}
+
 export function FacturaForm({ initialData }: FacturaFormProps) {
   const router = useRouter();
+  const isEditing = !!initialData;
+
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [clientes, setClientes] = useState<any[]>([]);
-  const [tipoPago, setTipoPago] = useState<string>('');
-  const [metodoPago, setMetodoPago] = useState<string>('');
+  const [tipoPago, setTipoPago] = useState<string>(initialData?.tipoPago || '');
+  const [metodoPago, setMetodoPago] = useState<string>(initialData?.metodoPago || '');
   const [bancoId, setBancoId] = useState<string>('');
   const [numeroReferencia, setNumeroReferencia] = useState<string>('');
   const [bancos, setBancos] = useState<any[]>([]);
   const [esContribuyenteEspecial, setEsContribuyenteEspecial] = useState(false);
   const [selectedClienteId, setSelectedClienteId] = useState<string>(initialData?.clienteId || '');
   const [isPrinting, setIsPrinting] = useState(false);
-  const [nota, setNota] = useState('');
-  const [vence, setVence] = useState('');
+  const [comprobanteRetencion, setComprobanteRetencion] = useState(initialData?.comprobanteRetencion || '');
+  const [vence, setVence] = useState(initialData?.fechaVencimiento || '');
+  const [guiaId, setGuiaId] = useState(initialData?.guiaDespachoId || '');
   const [guias, setGuias] = useState<any[]>([]);
+  const [subtotal, setSubtotal] = useState<number>(initialData?.subtotal || 0);
 
-  const items = initialData?.items || [];
-  const subtotalGeneral = initialData?.total || 0;
-  const totalIva = items.reduce((sum, item) => sum + calculateIVA(item.subtotalItem), 0);
-  const ivaRetenido = esContribuyenteEspecial ? calculateRetention(subtotalGeneral) : 0;
-  const totalPagar = subtotalGeneral + totalIva - ivaRetenido;
+  const totalIva = calculateIVA(subtotal);
+  // Antes se calculaba sobre el subtotal completo (75% de todo el monto) en vez
+  // de sobre el IVA, lo que retenia muchisimo mas de lo que corresponde: la
+  // retencion de IVA a contribuyentes especiales es un porcentaje del IVA, no
+  // del subtotal.
+  const ivaRetenido = esContribuyenteEspecial ? calculateRetention(totalIva) : 0;
+  const totalPagar = subtotal + totalIva - ivaRetenido;
 
   const cliente = clientes.find((c: any) => String(c.id) === selectedClienteId);
   const vendedor = cliente?.vendedor || '';
+  const guiaSeleccionada = guias.find((g: any) => String(g.id) === String(guiaId));
 
   useEffect(() => {
     fetch('/api/clientes').then(r => r.json()).then(d => {
@@ -69,21 +89,33 @@ export function FacturaForm({ initialData }: FacturaFormProps) {
     }
   }, [selectedClienteId, clientes]);
 
+  // Un solo item sintetico para la vista previa/impresion: la tabla `facturas`
+  // no guarda un desglose de items, solo un monto total. Si hay una guia de
+  // despacho asociada se usa su producto como descripcion; si no, un renglon
+  // generico con el monto cargado a mano.
+  const itemsPreview = [{
+    codigo: '',
+    descripcion: guiaSeleccionada?.productoNombre || 'Concreto / Servicios prestados',
+    cantidad: guiaSeleccionada ? Number(guiaSeleccionada.cantidadM3) : 1,
+    precioUnitario: guiaSeleccionada && Number(guiaSeleccionada.cantidadM3) > 0 ? subtotal / Number(guiaSeleccionada.cantidadM3) : subtotal,
+    subtotalItem: subtotal,
+  }];
+
   const handlePrint = () => {
     setIsPrinting(true);
     printDocument(generateFacturaHtml({
-      facturaNumber: 'NUEVA',
+      facturaNumber: isEditing ? `F-${initialData!.id}` : 'NUEVA',
       fecha: new Date().toISOString(),
       vence: vence || undefined,
-      clienteNombre: cliente?.nombre || initialData?.clienteNombre || '—',
+      clienteNombre: cliente?.nombre || '—',
       clienteRif: cliente?.rif || '—',
       clienteDireccion: cliente?.direccion || '—',
       vendedor,
       formaPago: tipoPago || '—',
-      nota,
-      items: items.map(i => ({ codigo: '', descripcion: i.nombreMaterial, cantidad: i.cantidad, precioUnitario: i.precioUnitario, subtotalItem: i.subtotalItem })),
+      nota: guiaSeleccionada ? `GD-${guiaSeleccionada.id}` : undefined,
+      items: itemsPreview,
       total: totalPagar,
-      subtotalGeneral,
+      subtotalGeneral: subtotal,
       ivaRetenido,
       totalIva,
       esContribuyenteEspecial,
@@ -94,26 +126,32 @@ export function FacturaForm({ initialData }: FacturaFormProps) {
   const handleSubmit = async () => {
     if (!selectedClienteId) { setError('Debe seleccionar un cliente'); return; }
     if (!tipoPago) { setError('Debe seleccionar un tipo de pago'); return; }
+    if (!Number.isFinite(subtotal) || subtotal <= 0) { setError('Ingrese un monto (subtotal) mayor a 0'); return; }
 
     setError(null); setIsLoading(true);
     try {
+      const formaPago = metodoPago ? `${tipoPago} - ${metodoPago}` : tipoPago;
+      const payload = {
+        ...(isEditing ? { id: initialData!.id } : {}),
+        clienteId: selectedClienteId,
+        guiaDespachoId: guiaId || null,
+        formaPago,
+        comprobanteRetencion: comprobanteRetencion || null,
+        subtotal,
+        fechaVencimiento: vence || null,
+      };
       const res = await fetch('/api/facturas', {
-        method: 'POST',
+        method: isEditing ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          clienteId: selectedClienteId,
-          clienteNombre: cliente?.nombre,
-          items, total: totalPagar, tipoPago, metodoPago, bancoId, numeroReferencia,
-          montoRetencion: ivaRetenido, montoIva: totalIva, esContribuyenteEspecial,
-        }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (data.success) {
-        setSuccess('Factura creada exitosamente');
-        setTimeout(() => router.push('/registro/ingresos'), 1500);
-      } else { throw new Error(data.error || 'Error al crear factura'); }
+        setSuccess(isEditing ? 'Factura actualizada exitosamente' : 'Factura creada exitosamente');
+        setTimeout(() => router.push(isEditing ? '/registro/facturas' : '/registro/ingresos'), 1500);
+      } else { throw new Error(data.error || 'Error al guardar la factura'); }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al crear factura');
+      setError(err instanceof Error ? err.message : 'Error al guardar la factura');
     } finally { setIsLoading(false); }
   };
 
@@ -128,8 +166,8 @@ export function FacturaForm({ initialData }: FacturaFormProps) {
           <div className="flex items-center gap-3 pb-3 border-b border-slate-200">
             <div className="p-2.5 bg-purple-50 rounded-xl"><FileText className="w-6 h-6 text-purple-600" /></div>
             <div>
-              <h2 className="text-2xl font-bold text-slate-900">Generar Factura</h2>
-              <p className="text-sm text-slate-500">Configure los datos para generar la factura</p>
+              <h2 className="text-2xl font-bold text-slate-900">{isEditing ? 'Editar Factura' : 'Generar Factura'}</h2>
+              <p className="text-sm text-slate-500">{isEditing ? 'Actualice los datos de la factura' : 'Configure los datos para generar la factura'}</p>
             </div>
           </div>
 
@@ -163,13 +201,22 @@ export function FacturaForm({ initialData }: FacturaFormProps) {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div>
+                <label className={labelCls}>Monto a Facturar (Bs)</label>
+                <input
+                  type="number" step="0.01" min="0" placeholder="0.00"
+                  value={subtotal || ''}
+                  onChange={e => setSubtotal(parseFloat(e.target.value) || 0)}
+                  className={inputCls}
+                />
+              </div>
+              <div>
                 <label className={labelCls}>Fecha de Vencimiento</label>
                 <input type="date" value={vence} onChange={e => setVence(e.target.value)} className={inputCls} />
               </div>
-              <div>
-                <label className={labelCls}>Guía de Despacho</label>
-                <select value={nota} onChange={e => setNota(e.target.value)} className={inputCls}>
-                  <option value="">Seleccionar guía...</option>
+              <div className="sm:col-span-2">
+                <label className={labelCls}>Guía de Despacho (opcional)</label>
+                <select value={guiaId} onChange={e => setGuiaId(e.target.value)} className={inputCls}>
+                  <option value="">Sin guía asociada</option>
                   {guias.map((g: any) => (
                     <option key={g.id} value={g.id}>GD-{g.id} — {g.clienteNombre} — {Number(g.cantidadM3).toFixed(2)} M³</option>
                   ))}
@@ -218,6 +265,12 @@ export function FacturaForm({ initialData }: FacturaFormProps) {
                   </div>
                 </>
               )}
+              {esContribuyenteEspecial && (
+                <div className="sm:col-span-2">
+                  <label className={labelCls}>Comprobante de Retención (opcional)</label>
+                  <input type="text" value={comprobanteRetencion} onChange={e => setComprobanteRetencion(e.target.value)} placeholder="N° de comprobante que envía el cliente" className={inputCls} />
+                </div>
+              )}
             </div>
           </div>
 
@@ -229,14 +282,14 @@ export function FacturaForm({ initialData }: FacturaFormProps) {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="bg-white rounded-xl border border-slate-200 p-4">
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Subtotal</p>
-                <p className="text-lg font-bold text-slate-900">{formatBs(subtotalGeneral)} Bs</p>
+                <p className="text-lg font-bold text-slate-900">{formatBs(subtotal)} Bs</p>
               </div>
               <div className="bg-white rounded-xl border border-slate-200 p-4">
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">IVA 16%</p>
                 <p className="text-lg font-bold text-blue-600">{formatBs(totalIva)} Bs</p>
               </div>
               {esContribuyenteEspecial && <div className="bg-white rounded-xl border border-slate-200 p-4">
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Retención 75%</p>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Retención 75% IVA</p>
                 <p className="text-lg font-bold text-red-600">- {formatBs(ivaRetenido)} Bs</p>
               </div>}
             </div>
@@ -257,14 +310,14 @@ export function FacturaForm({ initialData }: FacturaFormProps) {
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
-            <button type="button" onClick={() => window.history.back()} className="px-5 py-2.5 rounded-lg text-sm font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-all duration-200">Cancelar</button>
+            <button type="button" onClick={() => router.push('/registro/facturas')} className="px-5 py-2.5 rounded-lg text-sm font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-all duration-200">Cancelar</button>
             <button onClick={handlePrint} type="button" disabled={isPrinting} className="px-5 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-100 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2">
               {isPrinting ? <Loader2 size={15} className="animate-spin" /> : <Printer size={15} />}
               {isPrinting ? 'Imprimiendo...' : 'Imprimir'}
             </button>
             <button onClick={handleSubmit} disabled={isLoading} className="px-6 py-2.5 bg-slate-900 hover:bg-slate-700 active:scale-[0.98] text-white text-sm font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2">
               {isLoading ? <Loader2 size={15} className="animate-spin" /> : <FileText size={15} />}
-              {isLoading ? 'Guardando...' : 'Generar Factura'}
+              {isLoading ? 'Guardando...' : isEditing ? 'Guardar Cambios' : 'Generar Factura'}
             </button>
           </div>
         </div>
@@ -295,7 +348,7 @@ export function FacturaForm({ initialData }: FacturaFormProps) {
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-sm font-bold">FACTURA <span className="font-normal text-base">NUEVA</span></p>
+                <p className="text-sm font-bold">FACTURA <span className="font-normal text-base">{isEditing ? `F-${initialData!.id}` : 'NUEVA'}</span></p>
                 <p className="text-xs">Fecha: {formatearFecha(new Date())}</p>
                 {vence && <p className="text-xs">Vence: {formatearFecha(vence + 'T00:00:00')}</p>}
               </div>
@@ -339,16 +392,16 @@ export function FacturaForm({ initialData }: FacturaFormProps) {
                 </tr>
               </thead>
               <tbody>
-                {items.length > 0 ? items.map((item, idx) => (
+                {subtotal > 0 ? itemsPreview.map((item, idx) => (
                   <tr key={idx}>
                     <td className="px-2 py-2 text-xs border-b border-gray-200"></td>
-                    <td className="px-2 py-2 text-xs border-b border-gray-200">{item.nombreMaterial}</td>
+                    <td className="px-2 py-2 text-xs border-b border-gray-200">{item.descripcion}</td>
                     <td className="px-2 py-2 text-xs text-center border-b border-gray-200">{item.cantidad.toLocaleString('es-VE')}</td>
                     <td className="px-2 py-2 text-xs text-right border-b border-gray-200">{formatBs(item.precioUnitario)}</td>
                     <td className="px-2 py-2 text-xs text-right border-b border-gray-200">{formatBs(item.subtotalItem)}</td>
                   </tr>
                 )) : (
-                  <tr><td colSpan={5} className="px-2 py-8 text-center text-xs text-slate-400 border-b border-gray-200">Sin items para mostrar</td></tr>
+                  <tr><td colSpan={5} className="px-2 py-8 text-center text-xs text-slate-400 border-b border-gray-200">Ingrese un monto para ver el detalle</td></tr>
                 )}
               </tbody>
             </table>
@@ -357,7 +410,7 @@ export function FacturaForm({ initialData }: FacturaFormProps) {
             <div className="flex border border-gray-800 text-xs">
               {/* Left: Nota + payment details */}
               <div className="flex-1 p-3 border-r border-gray-800 space-y-1">
-                <p className="font-semibold">GUIA DE DESPACHO: {nota ? `GD-${nota}` : '—'}</p>
+                <p className="font-semibold">GUIA DE DESPACHO: {guiaSeleccionada ? `GD-${guiaSeleccionada.id}` : '—'}</p>
                 <p><strong>TASA OFICIAL (BCV)</strong> —</p>
                 <p><strong>FORMA DE PAGO:</strong> {tipoPago || '—'} {metodoPago && `- ${metodoPago}`}</p>
                 <p><strong>RET. IVA</strong> Bs.{formatBs(ivaRetenido)}</p>
@@ -370,7 +423,7 @@ export function FacturaForm({ initialData }: FacturaFormProps) {
                   <tbody>
                     <tr className="border-b border-gray-300">
                       <td className="py-1 px-3 font-semibold">SUB TOTAL</td>
-                      <td className="py-1 px-3 text-right">{formatBs(subtotalGeneral)}</td>
+                      <td className="py-1 px-3 text-right">{formatBs(subtotal)}</td>
                     </tr>
                     <tr className="border-b border-gray-300">
                       <td className="py-1 px-3 font-semibold">EXCENTO</td>
@@ -378,7 +431,7 @@ export function FacturaForm({ initialData }: FacturaFormProps) {
                     </tr>
                     <tr className="border-b border-gray-300">
                       <td className="py-1 px-3 font-semibold">BASE IMPONIBLE</td>
-                      <td className="py-1 px-3 text-right">{formatBs(subtotalGeneral)}</td>
+                      <td className="py-1 px-3 text-right">{formatBs(subtotal)}</td>
                     </tr>
                     <tr className="border-b border-gray-300">
                       <td className="py-1 px-3 font-semibold">I.V.A. 16%</td>

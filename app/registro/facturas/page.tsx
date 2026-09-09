@@ -33,13 +33,20 @@ export default function FacturasPage() {
     };
 
     socket.on("facturas:created", handleUpdate);
+    socket.on("facturas:updated", handleUpdate);
+    socket.on("facturas:deleted", handleUpdate);
 
     return () => {
       socket.off("facturas:created", handleUpdate);
+      socket.off("facturas:updated", handleUpdate);
+      socket.off("facturas:deleted", handleUpdate);
     };
   }, [socket]);
 
   const handleDelete = async (id: number) => {
+    const res = await fetch(`/api/facturas?id=${id}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Error al eliminar factura');
     setFacturas((prev) => prev.filter((f) => f.id !== id));
   };
 

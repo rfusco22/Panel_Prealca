@@ -32,7 +32,7 @@ export default function GerenciaFacturasPage() {
               <thead className="bg-slate-50/80 text-[10px] uppercase font-extrabold text-slate-500 tracking-widest border-b border-slate-200">
                 <tr>
                   <th className="px-6 py-4">Nº Factura</th>
-                  <th className="px-6 py-4">Tipo</th>
+                  <th className="px-6 py-4">Forma de Pago</th>
                   <th className="px-6 py-4">Cliente</th>
                   <th className="px-6 py-4">Monto</th>
                   <th className="px-6 py-4">IVA</th>
@@ -43,18 +43,18 @@ export default function GerenciaFacturasPage() {
               <tbody className="divide-y divide-slate-100">
                 {data.map((f) => (
                   <tr key={f.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="px-6 py-4 font-semibold text-slate-900">{f.numeroFactura}</td>
-                    <td className="px-6 py-4 text-slate-600">{f.tipoFactura}</td>
-                    <td className="px-6 py-4 text-slate-600">Cliente #{f.clienteId}</td>
-                    <td className="px-6 py-4 font-medium text-slate-900">Bs. {f.montoTotal?.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</td>
-                    <td className="px-6 py-4 text-slate-600">{f.iva ? `Bs. ${f.iva.toLocaleString('es-ES', { minimumFractionDigits: 2 })}` : 'N/A'}</td>
-                    <td className="px-6 py-4 text-slate-600">{formatearFecha(f.fechaEmision)}</td>
+                    <td className="px-6 py-4 font-semibold text-slate-900">F-{f.id}</td>
+                    <td className="px-6 py-4 text-slate-600">{f.formaPago || '—'}</td>
+                    <td className="px-6 py-4 text-slate-600">{f.clienteNombre || `Cliente #${f.clienteId}`}</td>
+                    <td className="px-6 py-4 font-medium text-slate-900">Bs. {Number(f.total || 0).toLocaleString('es-ES', { minimumFractionDigits: 2 })}</td>
+                    <td className="px-6 py-4 text-slate-600">{f.ivaMonto ? `Bs. ${Number(f.ivaMonto).toLocaleString('es-ES', { minimumFractionDigits: 2 })}` : 'N/A'}</td>
+                    <td className="px-6 py-4 text-slate-600">{formatearFecha(f.fecha)}</td>
                     <td className="px-6 py-4">
                       <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        f.estatus === 'Pagada' ? 'bg-green-100 text-green-800' :
-                        f.estatus === 'Pendiente' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>{f.estatus}</span>
+                        f.estado === 'Pagada' ? 'bg-green-100 text-green-800' :
+                        f.estado === 'Anulada' ? 'bg-red-100 text-red-800' :
+                        'bg-yellow-100 text-yellow-800'
+                      }`}>{f.estado || 'Pendiente'}</span>
                     </td>
                   </tr>
                 ))}
