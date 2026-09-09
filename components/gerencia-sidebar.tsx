@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   LayoutDashboard, Users, UserCircle, Package, Truck, Receipt,
   Building2, FileText, ShoppingCart, TrendingUp, TrendingDown,
-  Boxes, HardHat, AlertTriangle, LogOut, Eye, ChevronDown, UsersRound, Shield, ArrowLeftRight, X
+  Boxes, HardHat, AlertTriangle, LogOut, Eye, ChevronDown, UsersRound, Shield, ArrowLeftRight, X, BarChart3
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -28,6 +28,7 @@ interface MenuGroup {
 const topItems: MenuItem[] = [
   { id: "alerta", label: "Alertas", icon: AlertTriangle, href: "/gerencia/alerta" },
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/gerencia" },
+  { id: "reportes", label: "Reportes", icon: BarChart3, href: "/gerencia/reportes" },
   { id: "brecha", label: "Brecha Cambiaria", icon: ArrowLeftRight, href: "/gerencia/brecha-cambiaria" },
   { id: "usuarios", label: "Gestión de Usuarios", icon: UsersRound, href: "/gerencia/users" },
   { id: "auditoria", label: "Auditoría", icon: Shield, href: "/gerencia/audit-log" },

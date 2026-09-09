@@ -3,11 +3,13 @@
 import { useState, useEffect } from 'react';
 import { Users, BarChart3, ArrowLeft, Download, FileText } from 'lucide-react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 function formatBs(v: number) { return 'Bs. ' + v.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 function formatUsd(v: number) { return '$ ' + v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 }); }
 
 export default function ReporteClientesPage() {
+  const backHref = usePathname().replace(/\/clientes\/?$/, '');
   const [clientes, setClientes] = useState<any[]>([]);
   const [detalles, setDetalles] = useState<any[]>([]);
   const [from, setFrom] = useState('');
@@ -53,7 +55,7 @@ export default function ReporteClientesPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link href="/admin/reportes" className="p-2 hover:bg-slate-100 rounded-lg transition"><ArrowLeft size={20} className="text-slate-600" /></Link>
+          <Link href={backHref} className="p-2 hover:bg-slate-100 rounded-lg transition"><ArrowLeft size={20} className="text-slate-600" /></Link>
           <div className="p-2.5 bg-blue-50 rounded-xl"><Users className="w-5 h-5 text-blue-600" /></div>
           <div>
             <h1 className="text-xl font-bold text-slate-900">Reporte de Clientes</h1>

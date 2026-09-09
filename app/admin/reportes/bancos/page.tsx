@@ -3,11 +3,13 @@
 import { useState, useEffect } from 'react';
 import { Building2, ArrowLeft, Download } from 'lucide-react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { formatearFecha } from '@/lib/fecha';
 function formatBs(v: number) { return 'Bs. ' + v.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 function formatUsd(v: number) { return '$ ' + v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 }); }
 
 export default function ReporteBancosPage() {
+  const backHref = usePathname().replace(/\/bancos\/?$/, '');
   const [bancos, setBancos] = useState<any[]>([]);
   const [movIngresos, setMovIngresos] = useState<any[]>([]);
   const [movEgresos, setMovEgresos] = useState<any[]>([]);
@@ -58,7 +60,7 @@ export default function ReporteBancosPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link href="/admin/reportes" className="p-2 hover:bg-slate-100 rounded-lg transition"><ArrowLeft size={20} className="text-slate-600" /></Link>
+          <Link href={backHref} className="p-2 hover:bg-slate-100 rounded-lg transition"><ArrowLeft size={20} className="text-slate-600" /></Link>
           <div className="p-2.5 bg-emerald-50 rounded-xl"><Building2 className="w-5 h-5 text-emerald-600" /></div>
           <div>
             <h1 className="text-xl font-bold text-slate-900">Conciliación Bancaria</h1>
