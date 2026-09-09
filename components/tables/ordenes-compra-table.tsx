@@ -1,8 +1,9 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Trash2 } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import Link from 'next/link';
 import { formatearFecha } from '@/lib/fecha';
 interface OrdenCompra {
   id: number;
@@ -75,16 +76,28 @@ export function OrdenesCompraTable({ data, onDelete }: OrdenesCompraTableProps) 
                   Bs. {orden.total.toLocaleString('es-ES', { minimumFractionDigits: 2 })}
                 </td>
                 <td className="px-6 py-3 text-center">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-red-600 hover:text-red-700"
-                    onClick={() => handleDelete(orden.id)}
-                    disabled={deletingId === orden.id}
-                    title="Eliminar"
-                  >
-                    <Trash2 size={16} />
-                  </Button>
+                  <div className="flex items-center justify-center gap-1">
+                    <Link href={`/registro/ordenes-compra/${orden.id}/edit`}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-gray-500 hover:text-blue-600"
+                        title="Editar"
+                      >
+                        <Pencil size={16} />
+                      </Button>
+                    </Link>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-600 hover:text-red-700"
+                      onClick={() => handleDelete(orden.id)}
+                      disabled={deletingId === orden.id}
+                      title="Eliminar"
+                    >
+                      <Trash2 size={16} />
+                    </Button>
+                  </div>
                 </td>
               </tr>
             ))}

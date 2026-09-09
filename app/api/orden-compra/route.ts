@@ -16,12 +16,23 @@ function calcularTotalesOrdenCompra(cantidadM3: number, precioM3: number, ivaApl
   return { ivaMonto, total: subtotal + ivaMonto };
 }
 
-export async function GET() {
+const SELECT_ORDEN_COMPRA = `SELECT oc.id, oc.tipo, oc.proveedor_id AS proveedorId, pv.nombre AS proveedorNombre, oc.producto_id AS productoId, CONCAT(pd.resistencia, ' - ', pd.pulgada) AS productoNombre, oc.cantidad_m3 AS cantidadM3, oc.precio_m3 AS precioM3, oc.iva_aplicado AS ivaAplicado, oc.iva_monto AS ivaMonto, oc.total, oc.usuario_id AS usuarioId, oc.created_at AS fecha FROM orden_compra oc LEFT JOIN proveedores pv ON oc.proveedor_id = pv.id LEFT JOIN productos pd ON oc.producto_id = pd.id`;
+
+export async function GET(request: Request) {
   const auth = await requireAuth();
   if (auth.response) return auth.response;
 
   try {
-    const ordenes = await query(`SELECT oc.id, oc.tipo, oc.proveedor_id AS proveedorId, pv.nombre AS proveedorNombre, oc.producto_id AS productoId, CONCAT(pd.resistencia, ' - ', pd.pulgada) AS productoNombre, oc.cantidad_m3 AS cantidadM3, oc.precio_m3 AS precioM3, oc.iva_aplicado AS ivaAplicado, oc.iva_monto AS ivaMonto, oc.total, oc.usuario_id AS usuarioId, oc.created_at AS fecha FROM orden_compra oc LEFT JOIN proveedores pv ON oc.proveedor_id = pv.id LEFT JOIN productos pd ON oc.producto_id = pd.id ORDER BY oc.id DESC`);
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (id) {
+      const rows: any = await query(`${SELECT_ORDEN_COMPRA} WHERE oc.id = ?`, [id]);
+      if (rows.length === 0) return NextResponse.json({ error: 'Orden de compra no encontrada' }, { status: 404 });
+      return NextResponse.json({ success: true, orden: rows[0] }, { status: 200 });
+    }
+
+    const ordenes = await query(`${SELECT_ORDEN_COMPRA} ORDER BY oc.id DESC`);
     return NextResponse.json({ success: true, ordenes }, { status: 200 });
   } catch (error) {
     console.error('Error GET orden_compra:', error);
@@ -61,6 +72,49 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Error POST orden_compra:', error);
     return NextResponse.json({ error: 'Error al crear orden de compra' }, { status: 500 });
+  }
+}
+
+export async function PUT(request: Request) {
+  const auth = await requireAuth();
+  if (auth.response) return auth.response;
+
+  try {
+    const data = await request.json();
+    const { id, tipo, proveedorId, productoId, ivaAplicado } = data;
+    if (!id) return NextResponse.json({ error: 'ID es requerido.' }, { status: 400 });
+    const cantidadM3 = parseFloat(data.cantidadM3);
+    const precioM3 = parseFloat(data.precioM3);
+    if (!Number.isFinite(cantidadM3) || cantidadM3 <= 0) {
+      return NextResponse.json({ error: 'cantidadM3 inválida.' }, { status: 400 });
+    }
+    if (!Number.isFinite(precioM3) || precioM3 < 0) {
+      return NextResponse.json({ error: 'precioM3 inválido.' }, { status: 400 });
+    }
+    const { ivaMonto, total } = calcularTotalesOrdenCompra(cantidadM3, precioM3, !!ivaAplicado);
+
+    const anterior: any = await query('SELECT id, tipo, proveedor_id, total FROM orden_compra WHERE id = ?', [id]);
+    const old = anterior.length > 0 ? anterior[0] : null;
+
+    await query(
+      `UPDATE orden_compra SET tipo = ?, proveedor_id = ?, producto_id = ?, cantidad_m3 = ?, precio_m3 = ?, iva_aplicado = ?, iva_monto = ?, total = ? WHERE id = ?`,
+      [tipo, proveedorId, productoId, cantidadM3, precioM3, ivaAplicado ? 1 : 0, ivaMonto, total, id]
+    );
+    emitSocketEvent('orden-compra:updated');
+
+    const usuario = await getUsuarioFromRequest();
+    await registrarLog({
+      ...usuario, accion: 'editar', modulo: 'Órdenes de Compra', entidad_id: id,
+      descripcion: `Editó orden de compra #${id} (${tipo}) - Bs. ${total}`,
+      datos_anteriores: old ? { tipo: old.tipo, proveedor_id: old.proveedor_id, total: old.total } : null,
+      datos_nuevos: { tipo, proveedorId, productoId, cantidadM3, precioM3, total },
+      ip_address: getClientIp(request),
+    });
+
+    return NextResponse.json({ success: true }, { status: 200 });
+  } catch (error) {
+    console.error('Error PUT orden_compra:', error);
+    return NextResponse.json({ error: 'Error al actualizar orden de compra' }, { status: 500 });
   }
 }
 

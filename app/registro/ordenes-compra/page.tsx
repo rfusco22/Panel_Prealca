@@ -33,10 +33,12 @@ export default function OrdenesCompraPage() {
     };
 
     socket.on("orden-compra:created", handleUpdate);
+    socket.on("orden-compra:updated", handleUpdate);
     socket.on("orden-compra:deleted", handleUpdate);
 
     return () => {
       socket.off("orden-compra:created", handleUpdate);
+      socket.off("orden-compra:updated", handleUpdate);
       socket.off("orden-compra:deleted", handleUpdate);
     };
   }, [socket]);
