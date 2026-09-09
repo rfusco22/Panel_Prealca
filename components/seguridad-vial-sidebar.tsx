@@ -1,13 +1,14 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { LayoutDashboard, Users, Truck, Wrench, LogOut, X } from "lucide-react";
+import { LayoutDashboard, Users, Truck, Wrench, AlertTriangle, LogOut, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 
 const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/seguridad-vial" },
+  { id: "alerta", label: "Alertas", icon: AlertTriangle, href: "/seguridad-vial/alerta" },
   { id: "choferes", label: "Choferes", icon: Users, href: "/seguridad-vial/choferes" },
   { id: "unidades", label: "Unidades", icon: Truck, href: "/seguridad-vial/unidades" },
   { id: "mantenimiento", label: "Mantenimiento", icon: Wrench, href: "/seguridad-vial/mantenimiento-unidades" },
