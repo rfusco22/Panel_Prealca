@@ -19,5 +19,4 @@ node_modules
 .DS_Store
 # Artefacto de compilacion de TypeScript
 tsconfig.tsbuildinfo
-.claude/*
-!.claude/skills/
+.claude/
