@@ -15,23 +15,16 @@
 -- que migrar ni ningún valor histórico que adivinar. Más adelante habría que
 -- inventar la moneda de los ingresos ya cargados.
 --
--- Idempotente: se puede correr las veces que haga falta. La app también la
--- crea sola desde ensureColumns() en app/api/ingresos/route.ts.
+-- Este script es una sola sentencia a propósito, sin chequeos contra
+-- information_schema: en el hosting el usuario de MySQL no tiene permiso para
+-- leer esa base (error #1044). No hay relleno de datos que se pueda saltear,
+-- así que si la columna ya existe alcanza con ignorar el error.
+--
+-- Si al correrlo sale "#1060 - Duplicate column name 'moneda'", ya está
+-- aplicada y no hay nada que hacer. La app también la crea sola desde
+-- ensureColumns() en app/api/ingresos/route.ts.
 
-SELECT IFNULL(DATABASE(), '(NINGUNA: entrá a la base antes de correr el script)') AS base_seleccionada;
+ALTER TABLE ingresos ADD COLUMN moneda ENUM('BS','USD') NOT NULL DEFAULT 'BS';
 
-SET @existe_columna = (
-  SELECT COUNT(*) FROM information_schema.COLUMNS
-  WHERE TABLE_SCHEMA = DATABASE()
-    AND TABLE_NAME = 'ingresos'
-    AND COLUMN_NAME = 'moneda'
-);
-SET @sql = IF(@existe_columna = 0,
-  "ALTER TABLE ingresos ADD COLUMN moneda ENUM('BS','USD') NOT NULL DEFAULT 'BS'",
-  'DO 0');
-PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
-
--- Verificación: debería listar la columna con default 'BS'.
-SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT
-FROM information_schema.COLUMNS
-WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'ingresos' AND COLUMN_NAME = 'moneda';
+-- Verificación. SHOW COLUMNS no necesita permisos sobre information_schema.
+SHOW COLUMNS FROM ingresos LIKE 'moneda';
