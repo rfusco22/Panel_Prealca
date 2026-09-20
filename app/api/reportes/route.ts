@@ -137,6 +137,113 @@ export async function GET(request: Request) {
         });
       }
 
+      // Principales clientes del período. Ver issue #3.
+      //
+      // Los M³ salen de guia_despacho, que se une a clientes por FK y es
+      // confiable. La plata sale de ingresos, que NO tiene cliente_id: guarda
+      // el nombre y el RIF como texto. Se agrupa por RIF (más estable que el
+      // nombre) y se cruza contra clientes.rif. Lo que no matchee ningún
+      // cliente se devuelve igual, como fila aparte, para no esconder plata.
+      case 'clientes-top': {
+        const dateFilterGuias = dateFilter.replace(/created_at/g, 'gd.created_at');
+        // ingresos usa createdAt en camelCase, no created_at.
+        const dateFilterIngresos = dateFilter.replace(/created_at/g, 'i.createdAt');
+
+        const porM3: any = await query(
+          `SELECT c.id AS clienteId, c.nombre AS cliente, c.rif, c.vendedor,
+                  COUNT(*) AS guias, SUM(gd.cantidad_m3) AS totalM3
+           FROM guia_despacho gd
+           JOIN clientes c ON gd.cliente_id = c.id
+           WHERE 1=1 ${dateFilterGuias}
+           GROUP BY c.id, c.nombre, c.rif, c.vendedor
+           ORDER BY totalM3 DESC`,
+          params
+        );
+
+        const porPlata: any = await query(
+          `SELECT i.rif, MIN(i.nombreCliente) AS nombreCliente,
+                  COUNT(*) AS operaciones,
+                  SUM(i.precioBs) AS totalBs,
+                  SUM(i.precioDivisa) AS totalDivisa
+           FROM ingresos i
+           WHERE 1=1 ${dateFilterIngresos}
+           GROUP BY i.rif`,
+          params
+        );
+
+        const plataPorRif = new Map<string, any>();
+        porPlata.forEach((r: any) => {
+          plataPorRif.set(String(r.rif || '').trim().toUpperCase(), {
+            operaciones: Number(r.operaciones),
+            totalBs: Number(r.totalBs || 0),
+            totalDivisa: Number(r.totalDivisa || 0),
+            nombreCliente: r.nombreCliente,
+          });
+        });
+
+        const data = porM3.map((r: any) => {
+          const clave = String(r.rif || '').trim().toUpperCase();
+          const plata = plataPorRif.get(clave);
+          if (plata) plataPorRif.delete(clave);
+          return {
+            clienteId: r.clienteId,
+            cliente: r.cliente,
+            rif: r.rif,
+            vendedor: r.vendedor,
+            guias: Number(r.guias),
+            totalM3: Number(r.totalM3 || 0),
+            operaciones: plata?.operaciones || 0,
+            totalBs: plata?.totalBs || 0,
+            totalDivisa: plata?.totalDivisa || 0,
+          };
+        });
+
+        // Ingresos cuyo RIF no coincide con ningún cliente que haya despachado
+        // en el período: se agregan para que los totales de plata cierren.
+        plataPorRif.forEach((plata, rif) => {
+          data.push({
+            clienteId: null,
+            cliente: plata.nombreCliente || 'Cliente sin identificar',
+            rif,
+            vendedor: null,
+            guias: 0,
+            totalM3: 0,
+            operaciones: plata.operaciones,
+            totalBs: plata.totalBs,
+            totalDivisa: plata.totalDivisa,
+          });
+        });
+
+        const totalM3 = data.reduce((s: number, r: any) => s + r.totalM3, 0);
+        const totalBs = data.reduce((s: number, r: any) => s + r.totalBs, 0);
+
+        const conPorcentaje = data.map((r: any) => ({
+          ...r,
+          porcentajeM3: totalM3 > 0 ? (r.totalM3 / totalM3) * 100 : 0,
+          porcentajeBs: totalBs > 0 ? (r.totalBs / totalBs) * 100 : 0,
+        }));
+
+        const topM3 = [...conPorcentaje].sort((a, b) => b.totalM3 - a.totalM3);
+        const m3PorCliente: Record<string, number> = {};
+        topM3.slice(0, 10).forEach((r: any) => { m3PorCliente[r.cliente] = r.totalM3; });
+
+        return NextResponse.json({
+          success: true,
+          data: conPorcentaje,
+          summary: {
+            totalM3,
+            totalBs,
+            clientes: conPorcentaje.filter((r: any) => r.totalM3 > 0).length,
+            // Cuánto del volumen concentran los tres primeros: si es muy alto,
+            // la facturación depende de pocos clientes.
+            concentracionTop3: totalM3 > 0
+              ? (topM3.slice(0, 3).reduce((s: number, r: any) => s + r.totalM3, 0) / totalM3) * 100
+              : 0,
+            m3PorCliente,
+          },
+        });
+      }
+
       // Resumen de metros cúbicos despachados. Ver issue #1.
       //
       // La fuente es guia_despacho y no ingresos.m3 a propósito: acá se mide lo

@@ -16,6 +16,7 @@ import { diasHasta } from '@/lib/fecha';
 const REPORTES = [
   { id: 'm3', label: 'Metros cúbicos despachados' },
   { id: 'resistencia', label: 'Despacho por resistencia' },
+  { id: 'clientes-top', label: 'Principales clientes' },
   { id: 'viajes', label: 'Viajes por trompero' },
 ];
 
@@ -209,6 +210,128 @@ function TablaSimple({ titulo, columnas, filas }: { titulo: string; columnas: st
             ))}
           </tbody>
         </table>
+      </div>
+    </div>
+  );
+}
+
+function PrincipalesClientes({ from, to }: { from: string; to: string }) {
+  const { res, loading } = useReporte('clientes-top', from, to);
+  const [orden, setOrden] = useState<'m3' | 'bs'>('m3');
+  const [topN, setTopN] = useState(10);
+
+  if (loading) return <Cargando />;
+  if (!res) return <div className="bg-white rounded-xl border border-slate-200 p-12 text-center text-slate-400">No se pudo cargar el reporte</div>;
+
+  const { data, summary } = res;
+  const ordenados = [...data].sort((a: any, b: any) =>
+    orden === 'm3' ? b.totalM3 - a.totalM3 : b.totalBs - a.totalBs
+  );
+  const visibles = ordenados.slice(0, topN);
+
+  const fmtBs = (v: number) => v.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  const excelData = {
+    title: 'Principales clientes',
+    columns: ['Cliente', 'RIF', 'Vendedor', 'Guías', 'M³', '% M³', 'Monto Bs', 'Monto $'],
+    data: ordenados.map((r: any) => [
+      r.cliente, r.rif || '—', r.vendedor || '—', r.guias,
+      Number(r.totalM3).toFixed(2), Number(r.porcentajeM3).toFixed(1) + '%',
+      Number(r.totalBs).toFixed(2), Number(r.totalDivisa).toFixed(2),
+    ]),
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="flex items-end gap-3">
+          <div>
+            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Ordenar por</label>
+            <select value={orden} onChange={e => setOrden(e.target.value as 'm3' | 'bs')}
+              className="px-3 py-2 border border-slate-200 rounded-lg text-sm font-medium text-slate-900 focus:outline-none focus:border-slate-800 bg-white">
+              <option value="m3">M³ despachados</option>
+              <option value="bs">Monto en Bs</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Mostrar</label>
+            <select value={topN} onChange={e => setTopN(Number(e.target.value))}
+              className="px-3 py-2 border border-slate-200 rounded-lg text-sm font-medium text-slate-900 focus:outline-none focus:border-slate-800 bg-white">
+              <option value={5}>Top 5</option>
+              <option value={10}>Top 10</option>
+              <option value={9999}>Todos</option>
+            </select>
+          </div>
+        </div>
+        <ExportButtons excelData={excelData} />
+      </div>
+
+      <SummaryCards cards={[
+        { label: 'Total M³', value: Number(summary.totalM3).toFixed(2), icon: <Gauge size={18} className="text-emerald-600" />, color: 'bg-emerald-50' },
+        { label: 'Clientes con despacho', value: summary.clientes, icon: <Users size={18} className="text-blue-600" />, color: 'bg-blue-50' },
+        { label: 'Concentración top 3', value: Number(summary.concentracionTop3).toFixed(1) + '%', icon: <Layers size={18} className="text-amber-600" />, color: 'bg-amber-50' },
+        { label: 'Monto Bs', value: fmtBs(Number(summary.totalBs)), icon: <FileText size={18} className="text-slate-600" />, color: 'bg-slate-50' },
+      ]} />
+
+      {summary.totalBs === 0 && (
+        <div className="flex items-start gap-3 bg-slate-50 border border-slate-200 rounded-xl p-4">
+          <AlertTriangle size={18} className="text-slate-400 shrink-0 mt-0.5" />
+          <p className="text-sm text-slate-600">
+            Las columnas de monto están en cero porque todavía no hay ingresos cargados en el período.
+            El ranking por M³ sí sale de las guías de despacho.
+          </p>
+        </div>
+      )}
+
+      <BarChartCard title={`Top ${Math.min(topN, 10)} por M³`} data={summary.m3PorCliente} />
+
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-slate-100">
+          <h3 className="text-sm font-bold text-slate-900">Ranking de clientes</h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-slate-50">
+                <th className="px-4 py-3 text-left font-semibold text-slate-600">#</th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-600">Cliente</th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-600">Vendedor</th>
+                <th className="px-4 py-3 text-right font-semibold text-slate-600">Guías</th>
+                <th className="px-4 py-3 text-right font-semibold text-slate-600">M³</th>
+                <th className="px-4 py-3 text-right font-semibold text-slate-600">% M³</th>
+                <th className="px-4 py-3 text-right font-semibold text-slate-600">Monto Bs</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visibles.length === 0 ? (
+                <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-400">Sin movimientos en el período seleccionado</td></tr>
+              ) : visibles.map((r: any, i: number) => (
+                <tr key={i} className="border-t border-slate-100 hover:bg-slate-50">
+                  <td className="px-4 py-3 text-slate-400 tabular-nums">{i + 1}</td>
+                  <td className="px-4 py-3 font-medium text-slate-900">
+                    {r.cliente}
+                    {r.clienteId === null && (
+                      <span className="ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">sin despacho</span>
+                    )}
+                    <div className="text-[11px] text-slate-400 font-normal">{r.rif || '—'}</div>
+                  </td>
+                  <td className="px-4 py-3 text-slate-500">{r.vendedor || '—'}</td>
+                  <td className="px-4 py-3 text-right text-slate-700">{r.guias}</td>
+                  <td className="px-4 py-3 text-right font-bold text-slate-900">{Number(r.totalM3).toFixed(2)}</td>
+                  <td className="px-4 py-3 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${Math.min(100, r.porcentajeM3)}%` }} />
+                      </div>
+                      <span className="text-slate-600 tabular-nums w-11 text-right">{Number(r.porcentajeM3).toFixed(1)}%</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-right text-slate-700 tabular-nums">{fmtBs(Number(r.totalBs))}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
@@ -425,6 +548,7 @@ export default function ReportesOperativosPage() {
 
       {reporte === 'm3' && <MetrosCubicos from={from} to={to} />}
       {reporte === 'resistencia' && <PorResistencia from={from} to={to} />}
+      {reporte === 'clientes-top' && <PrincipalesClientes from={from} to={to} />}
       {reporte === 'viajes' && <ViajesPorTrompero from={from} to={to} />}
     </div>
   );
