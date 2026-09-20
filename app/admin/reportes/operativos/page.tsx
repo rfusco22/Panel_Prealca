@@ -10,13 +10,13 @@ import { ExportButtons } from '@/components/reports/ExportButtons';
 import { BarChartCard, PieChartCard } from '@/components/reports/ReportCharts';
 import { diasHasta, formatearFechaCorta } from '@/lib/fecha';
 
-// Los reportes que faltan (clientes, materia prima, comisiones) se suman acá
-// a medida que se implementen, sin crear una página nueva por cada uno.
-// Ver issue #7.
+// Los seis reportes operativos viven en esta misma página, cambiando con el
+// selector, en vez de una ruta por cada uno. Ver issue #7.
 const REPORTES = [
   { id: 'm3', label: 'Metros cúbicos despachados' },
   { id: 'resistencia', label: 'Despacho por resistencia' },
   { id: 'clientes-top', label: 'Principales clientes' },
+  { id: 'materia-prima', label: 'Materia prima comprada' },
   { id: 'comisiones', label: 'Comisiones de vendedores' },
   { id: 'viajes', label: 'Viajes por trompero' },
 ];
@@ -211,6 +211,133 @@ function TablaSimple({ titulo, columnas, filas }: { titulo: string; columnas: st
             ))}
           </tbody>
         </table>
+      </div>
+    </div>
+  );
+}
+
+function MateriaPrima({ from, to }: { from: string; to: string }) {
+  const { res, loading } = useReporte('materia-prima', from, to);
+  const [agregadoSel, setAgregadoSel] = useState<string>('');
+
+  if (loading) return <Cargando />;
+  if (!res) return <div className="bg-white rounded-xl border border-slate-200 p-12 text-center text-slate-400">No se pudo cargar el reporte</div>;
+
+  const { data, porMes, porProveedor, summary } = res;
+  const fmt = (v: number) => v.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  // El material del gráfico: el elegido, o el de más entradas por defecto.
+  const activo = agregadoSel || data[0]?.agregado || '';
+  const mesesDelActivo = porMes.filter((r: any) => r.agregado === activo);
+  const unidadActiva = data.find((r: any) => r.agregado === activo)?.unidad || '';
+  const serieMensual: Record<string, number> = {};
+  [...mesesDelActivo].reverse().forEach((r: any) => { serieMensual[r.mes] = r.cantidad; });
+
+  const excelData = {
+    title: 'Materia prima comprada',
+    columns: ['Material', 'Unidad', 'Entradas', 'Cantidad comprada'],
+    data: data.map((r: any) => [r.agregado, r.unidad, r.entradas, Number(r.cantidad).toFixed(2)]),
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-start justify-between gap-4">
+        <p className="text-xs text-slate-500 max-w-lg">
+          Cada material se mide en su propia unidad, así que no hay un total general de cantidad:
+          sumar kilogramos con litros y bolsas no daría nada útil.
+        </p>
+        <ExportButtons excelData={excelData} />
+      </div>
+
+      <SummaryCards cards={[
+        { label: 'Entradas', value: summary.entradas, icon: <FileText size={18} className="text-blue-600" />, color: 'bg-blue-50' },
+        { label: 'Materiales', value: summary.agregados, icon: <Layers size={18} className="text-purple-600" />, color: 'bg-purple-50' },
+        { label: 'Proveedores', value: summary.proveedores, icon: <Truck size={18} className="text-emerald-600" />, color: 'bg-emerald-50' },
+        { label: 'Carga inicial', value: summary.entradasSaldoInicial, icon: <Layers size={18} className="text-slate-600" />, color: 'bg-slate-50' },
+      ]} />
+
+      <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
+        <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
+        <div className="text-sm text-amber-800">
+          <p className="font-semibold">Falta la mitad de &quot;cuánto se gastó&quot;</p>
+          <p className="mt-1">
+            La tabla de materia prima no guarda ningún costo, y la de egresos, que sí tiene montos,
+            no registra qué material se compró. Para poder responderlo hay que decidir si se le agrega
+            el precio a cada entrada de materia prima al cargarla, o si se estima desde los egresos
+            por clasificación de gasto. Está anotado en el issue #4.
+          </p>
+        </div>
+      </div>
+
+      {summary.entradasSaldoInicial > 0 && (
+        <div className="flex items-start gap-3 bg-slate-50 border border-slate-200 rounded-xl p-4">
+          <AlertTriangle size={18} className="text-slate-400 shrink-0 mt-0.5" />
+          <p className="text-sm text-slate-600">
+            Hay <strong>{summary.entradasSaldoInicial} entrada(s) de carga inicial</strong> en el período,
+            excluidas de las compras porque son inventario preexistente y no una compra del mes.
+          </p>
+        </div>
+      )}
+
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-slate-100">
+          <h3 className="text-sm font-bold text-slate-900">Comprado por material</h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-slate-50">
+                <th className="px-4 py-3 text-left font-semibold text-slate-600">Material</th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-600">Unidad</th>
+                <th className="px-4 py-3 text-right font-semibold text-slate-600">Entradas</th>
+                <th className="px-4 py-3 text-right font-semibold text-slate-600">Cantidad comprada</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.length === 0 ? (
+                <tr><td colSpan={4} className="px-4 py-8 text-center text-slate-400">Sin compras en el período seleccionado</td></tr>
+              ) : data.map((r: any, i: number) => (
+                <tr key={i} className="border-t border-slate-100 hover:bg-slate-50">
+                  <td className="px-4 py-3 font-medium text-slate-900">{r.agregado}</td>
+                  <td className="px-4 py-3 text-slate-500">{r.unidad}</td>
+                  <td className="px-4 py-3 text-right text-slate-700">{r.entradas}</td>
+                  <td className="px-4 py-3 text-right font-bold text-slate-900 tabular-nums">
+                    {fmt(Number(r.cantidad))} <span className="text-[11px] font-normal text-slate-400">{r.unidad}</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {data.length > 0 && (
+        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Evolución mensual de</label>
+              <select value={activo} onChange={e => setAgregadoSel(e.target.value)}
+                className="px-3 py-2 border border-slate-200 rounded-lg text-sm font-medium text-slate-900 focus:outline-none focus:border-slate-800 bg-white">
+                {data.map((r: any) => <option key={r.agregado} value={r.agregado}>{r.agregado}</option>)}
+              </select>
+            </div>
+            <p className="text-xs text-slate-400">Un material a la vez, porque cada uno va en su unidad ({unidadActiva})</p>
+          </div>
+          <BarChartCard title={`${activo} comprado por mes (${unidadActiva})`} data={serieMensual} />
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <TablaSimple
+          titulo="Entradas por mes y material"
+          columnas={['Mes', 'Material', 'Cantidad']}
+          filas={porMes.map((r: any) => [r.mes, r.agregado, `${fmt(Number(r.cantidad))} ${r.unidad}`])}
+        />
+        <TablaSimple
+          titulo="Por proveedor"
+          columnas={['Proveedor', 'Entradas', 'Materiales']}
+          filas={porProveedor.map((r: any) => [r.proveedor, r.entradas, r.agregadosDistintos])}
+        />
       </div>
     </div>
   );
@@ -696,6 +823,7 @@ export default function ReportesOperativosPage() {
       {reporte === 'm3' && <MetrosCubicos from={from} to={to} />}
       {reporte === 'resistencia' && <PorResistencia from={from} to={to} />}
       {reporte === 'clientes-top' && <PrincipalesClientes from={from} to={to} />}
+      {reporte === 'materia-prima' && <MateriaPrima from={from} to={to} />}
       {reporte === 'comisiones' && <ComisionesVendedores from={from} to={to} />}
       {reporte === 'viajes' && <ViajesPorTrompero from={from} to={to} />}
     </div>

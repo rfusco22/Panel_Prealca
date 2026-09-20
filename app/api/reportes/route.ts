@@ -137,6 +137,114 @@ export async function GET(request: Request) {
         });
       }
 
+      // Materia prima comprada en el período. Ver issue #4.
+      //
+      // Esto responde solo la primera mitad del reporte pedido ("cuánto se
+      // compró"). La segunda ("cuánto se gastó") no se puede calcular:
+      // materia_prima no guarda ningún costo -sus columnas son agregado_id,
+      // cantidad, unidad, fecha, proveedor_id, planta_id, chofer_id,
+      // unidad_id, es_saldo_inicial, usuario_id- y egresos, que sí tiene
+      // montos, no dice qué agregado se compró. La página lo aclara en vez de
+      // mostrar un cero que parezca un dato.
+      //
+      // No se devuelve un total general de cantidad a propósito: cada agregado
+      // se mide en su unidad (cemento en kilogramos, aditivos en litros,
+      // fibras en bolsas) y sumarlos daría un número sin sentido.
+      case 'materia-prima': {
+        const dateFilterMp = dateFilter.replace(/created_at/g, 'mp.fecha');
+
+        // Se agrupa por agregado_id (el FK) y no por el nombre: en la tabla de
+        // agregados el cemento está cargado como " CEMENTO", con un espacio
+        // adelante. Agrupando por el id eso no importa, y el nombre se recorta
+        // solo para mostrarlo.
+        //
+        // es_saldo_inicial = 0 excluye las cargas de inventario inicial, que no
+        // son compras del período: sin ese filtro el primer mes mostraría
+        // compras que nunca ocurrieron.
+        const porAgregado: any = await query(
+          `SELECT mp.agregado_id AS agregadoId,
+                  TRIM(a.nombre) AS agregado,
+                  COALESCE(NULLIF(TRIM(mp.unidad), ''), a.unidad_medida, '—') AS unidad,
+                  COUNT(*) AS entradas,
+                  SUM(mp.cantidad) AS cantidad
+           FROM materia_prima mp
+           LEFT JOIN agregados a ON mp.agregado_id = a.id
+           WHERE mp.es_saldo_inicial = 0 ${dateFilterMp}
+           GROUP BY mp.agregado_id, TRIM(a.nombre),
+                    COALESCE(NULLIF(TRIM(mp.unidad), ''), a.unidad_medida, '—')
+           ORDER BY entradas DESC, agregado`,
+          params
+        );
+
+        const porMes: any = await query(
+          `SELECT DATE_FORMAT(mp.fecha, '%Y-%m') AS mes,
+                  TRIM(a.nombre) AS agregado,
+                  COALESCE(NULLIF(TRIM(mp.unidad), ''), a.unidad_medida, '—') AS unidad,
+                  COUNT(*) AS entradas,
+                  SUM(mp.cantidad) AS cantidad
+           FROM materia_prima mp
+           LEFT JOIN agregados a ON mp.agregado_id = a.id
+           WHERE mp.es_saldo_inicial = 0 ${dateFilterMp}
+           GROUP BY DATE_FORMAT(mp.fecha, '%Y-%m'), mp.agregado_id, TRIM(a.nombre),
+                    COALESCE(NULLIF(TRIM(mp.unidad), ''), a.unidad_medida, '—')
+           ORDER BY mes DESC, agregado`,
+          params
+        );
+
+        const porProveedor: any = await query(
+          `SELECT COALESCE(TRIM(p.nombre), 'Sin proveedor') AS proveedor,
+                  COUNT(*) AS entradas,
+                  COUNT(DISTINCT mp.agregado_id) AS agregadosDistintos
+           FROM materia_prima mp
+           LEFT JOIN proveedores p ON mp.proveedor_id = p.id
+           WHERE mp.es_saldo_inicial = 0 ${dateFilterMp}
+           GROUP BY COALESCE(TRIM(p.nombre), 'Sin proveedor')
+           ORDER BY entradas DESC`,
+          params
+        );
+
+        // Las cargas de inventario inicial se cuentan aparte, para que se vea
+        // que existen y no parezca que faltan entradas.
+        const saldoInicial: any = await query(
+          `SELECT COUNT(*) AS entradas
+           FROM materia_prima mp
+           WHERE mp.es_saldo_inicial = 1 ${dateFilterMp}`,
+          params
+        );
+
+        const num = (rows: any[]) => rows.map((r: any) => ({
+          ...r,
+          entradas: Number(r.entradas),
+          cantidad: r.cantidad === undefined ? undefined : Number(r.cantidad || 0),
+        }));
+
+        const agregados = num(porAgregado);
+        const meses = num(porMes);
+
+        return NextResponse.json({
+          success: true,
+          data: agregados,
+          porMes: meses,
+          porProveedor: porProveedor.map((r: any) => ({
+            ...r,
+            entradas: Number(r.entradas),
+            agregadosDistintos: Number(r.agregadosDistintos),
+          })),
+          summary: {
+            entradas: agregados.reduce((s: number, r: any) => s + r.entradas, 0),
+            agregados: agregados.length,
+            proveedores: porProveedor.length,
+            entradasSaldoInicial: Number(saldoInicial[0]?.entradas || 0),
+            // Cantidad comprada por material, cada una en su unidad. Se manda
+            // como lista y no como un mapa de un solo número justamente para
+            // que la vista no las pueda sumar entre sí.
+            cantidadPorAgregado: agregados.map((r: any) => ({
+              agregado: r.agregado, unidad: r.unidad, cantidad: r.cantidad,
+            })),
+          },
+        });
+      }
+
       // Comisiones de vendedores. Ver issue #5.
       //
       // Reglas del negocio, según se definieron:
