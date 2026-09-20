@@ -137,6 +137,156 @@ export async function GET(request: Request) {
         });
       }
 
+      // Resumen de metros cúbicos despachados. Ver issue #1.
+      //
+      // La fuente es guia_despacho y no ingresos.m3 a propósito: acá se mide lo
+      // que salió de planta (el despacho físico), no lo facturado. Los dos
+      // números existen y no siempre coinciden.
+      case 'm3': {
+        const dateFilterGuias = dateFilter.replace(/created_at/g, 'gd.created_at');
+
+        const porMes: any = await query(
+          `SELECT DATE_FORMAT(gd.created_at, '%Y-%m') AS mes,
+                  COUNT(*) AS guias,
+                  SUM(gd.cantidad_m3) AS totalM3
+           FROM guia_despacho gd
+           WHERE 1=1 ${dateFilterGuias}
+           GROUP BY DATE_FORMAT(gd.created_at, '%Y-%m')
+           ORDER BY mes DESC`,
+          params
+        );
+
+        const porTipo: any = await query(
+          `SELECT gd.tipo, COUNT(*) AS guias, SUM(gd.cantidad_m3) AS totalM3
+           FROM guia_despacho gd
+           WHERE 1=1 ${dateFilterGuias}
+           GROUP BY gd.tipo
+           ORDER BY totalM3 DESC`,
+          params
+        );
+
+        // Las guías sin obra cargada se agrupan bajo una etiqueta propia en vez
+        // de quedar afuera: son despachos reales y tienen que sumar al total.
+        const porObra: any = await query(
+          `SELECT COALESCE(NULLIF(TRIM(gd.obra), ''), 'Sin obra') AS obra,
+                  COUNT(*) AS guias,
+                  SUM(gd.cantidad_m3) AS totalM3
+           FROM guia_despacho gd
+           WHERE 1=1 ${dateFilterGuias}
+           GROUP BY COALESCE(NULLIF(TRIM(gd.obra), ''), 'Sin obra')
+           ORDER BY totalM3 DESC`,
+          params
+        );
+
+        const num = (rows: any[]) => rows.map((r: any) => ({
+          ...r,
+          guias: Number(r.guias),
+          totalM3: Number(r.totalM3 || 0),
+        }));
+
+        const meses = num(porMes);
+        const tipos = num(porTipo);
+        const obras = num(porObra);
+
+        const totalM3 = meses.reduce((s: number, r: any) => s + r.totalM3, 0);
+        const totalGuias = meses.reduce((s: number, r: any) => s + r.guias, 0);
+
+        const m3PorMes: Record<string, number> = {};
+        meses.slice().reverse().forEach((r: any) => { m3PorMes[r.mes] = r.totalM3; });
+        const m3PorTipo: Record<string, number> = {};
+        tipos.forEach((r: any) => { m3PorTipo[r.tipo] = r.totalM3; });
+
+        return NextResponse.json({
+          success: true,
+          data: meses,
+          porTipo: tipos,
+          porObra: obras,
+          summary: {
+            totalM3,
+            totalGuias,
+            promedioM3: totalGuias > 0 ? totalM3 / totalGuias : 0,
+            m3PorMes,
+            m3PorTipo,
+          },
+        });
+      }
+
+      // Resumen por resistencia del concreto. Ver issue #2.
+      case 'resistencia': {
+        const dateFilterGuias = dateFilter.replace(/created_at/g, 'gd.created_at');
+
+        // Agrupa por resistencia sola (el listado de productos la muestra junto
+        // a la pulgada, pero acá interesa la mezcla).
+        //
+        // Se agrupa ignorando espacios y mayúsculas porque la tabla de
+        // productos tiene el mismo producto escrito de formas distintas:
+        // "280 kgf/cm² FIBRA" y "280 kgf/cm²FIBRA" (sin espacio) son el mismo
+        // concreto y sin normalizar salían como dos resistencias separadas.
+        //
+        // Lo que NO se toca es la distinción con fibra / sin fibra: "280
+        // kgf/cm²" y "280 kgf/cm² FIBRA" son concretos distintos y tienen que
+        // quedar en filas separadas, cosa que se cumple porque la palabra FIBRA
+        // sigue formando parte del texto que se agrupa.
+        //
+        // La etiqueta sale de MIN(): devuelve una de las formas realmente
+        // cargadas, no un nombre inventado.
+        const normalizada = `UPPER(REPLACE(COALESCE(p.resistencia, 'Sin producto'), ' ', ''))`;
+
+        const porResistencia: any = await query(
+          `SELECT MIN(COALESCE(p.resistencia, 'Sin producto')) AS resistencia,
+                  COUNT(*) AS guias,
+                  SUM(gd.cantidad_m3) AS totalM3
+           FROM guia_despacho gd
+           LEFT JOIN productos p ON gd.producto_id = p.id
+           WHERE 1=1 ${dateFilterGuias}
+           GROUP BY ${normalizada}
+           ORDER BY totalM3 DESC`,
+          params
+        );
+
+        const detalle: any = await query(
+          `SELECT MIN(COALESCE(p.resistencia, 'Sin producto')) AS resistencia,
+                  COALESCE(p.pulgada, '—') AS pulgada,
+                  COUNT(*) AS guias,
+                  SUM(gd.cantidad_m3) AS totalM3
+           FROM guia_despacho gd
+           LEFT JOIN productos p ON gd.producto_id = p.id
+           WHERE 1=1 ${dateFilterGuias}
+           GROUP BY ${normalizada}, COALESCE(p.pulgada, '—')
+           ORDER BY resistencia, pulgada`,
+          params
+        );
+
+        const totalM3 = porResistencia.reduce((s: number, r: any) => s + Number(r.totalM3 || 0), 0);
+        const totalGuias = porResistencia.reduce((s: number, r: any) => s + Number(r.guias), 0);
+
+        const data = porResistencia.map((r: any) => ({
+          resistencia: r.resistencia,
+          guias: Number(r.guias),
+          totalM3: Number(r.totalM3 || 0),
+          porcentaje: totalM3 > 0 ? (Number(r.totalM3 || 0) / totalM3) * 100 : 0,
+        }));
+
+        const m3PorResistencia: Record<string, number> = {};
+        data.forEach((r: any) => { m3PorResistencia[r.resistencia] = r.totalM3; });
+
+        return NextResponse.json({
+          success: true,
+          data,
+          detalle: detalle.map((r: any) => ({
+            ...r,
+            guias: Number(r.guias),
+            totalM3: Number(r.totalM3 || 0),
+          })),
+          summary: {
+            totalM3,
+            totalGuias,
+            resistencias: data.length,
+            m3PorResistencia,
+          },
+        });
+      }
+
       // Viajes por trompero: cada guía de despacho es un viaje. Ver issue #6.
       //
       // Se agrupa por chofer_id (el FK que dejó sql/migracion_chofer_id_guia_despacho.sql)

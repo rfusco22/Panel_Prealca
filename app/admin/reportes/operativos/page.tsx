@@ -1,22 +1,218 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Truck, Gauge, Users, AlertTriangle, ArrowLeft, HardHat } from 'lucide-react';
+import { Truck, Gauge, Users, AlertTriangle, ArrowLeft, HardHat, FileText, Layers } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { DateRangePicker, QuickDateFilters } from '@/components/reports/DateRangePicker';
 import { SummaryCards } from '@/components/reports/SummaryCards';
 import { ExportButtons } from '@/components/reports/ExportButtons';
-import { BarChartCard } from '@/components/reports/ReportCharts';
+import { BarChartCard, PieChartCard } from '@/components/reports/ReportCharts';
 import { diasHasta } from '@/lib/fecha';
 
-// El selector arranca con un solo reporte a propósito: los otros cinco
-// (m³, resistencia, clientes, materia prima, comisiones) se van sumando acá
+// Los reportes que faltan (clientes, materia prima, comisiones) se suman acá
 // a medida que se implementen, sin crear una página nueva por cada uno.
 // Ver issue #7.
 const REPORTES = [
+  { id: 'm3', label: 'Metros cúbicos despachados' },
+  { id: 'resistencia', label: 'Despacho por resistencia' },
   { id: 'viajes', label: 'Viajes por trompero' },
 ];
+
+/** Carga un tipo de reporte del endpoint genérico y expone el estado. */
+function useReporte(type: string, from: string, to: string) {
+  const [res, setRes] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      const params = new URLSearchParams({ type });
+      if (from) params.set('from', from);
+      if (to) params.set('to', to);
+      try {
+        const r = await fetch(`/api/reportes?${params}`);
+        const d = await r.json();
+        setRes(d.success ? d : null);
+      } catch (e) {
+        console.error(e);
+        setRes(null);
+      }
+      setLoading(false);
+    };
+    fetchData();
+  }, [type, from, to]);
+
+  return { res, loading };
+}
+
+function Cargando() {
+  return <div className="bg-white rounded-xl border border-slate-200 p-12 text-center text-slate-400">Cargando reporte...</div>;
+}
+
+function MetrosCubicos({ from, to }: { from: string; to: string }) {
+  const { res, loading } = useReporte('m3', from, to);
+  if (loading) return <Cargando />;
+  if (!res) return <div className="bg-white rounded-xl border border-slate-200 p-12 text-center text-slate-400">No se pudo cargar el reporte</div>;
+
+  const { data: meses, porTipo, porObra, summary } = res;
+
+  const excelData = {
+    title: 'Metros cúbicos despachados',
+    columns: ['Mes', 'Guías', 'M³ Total', 'Promedio M³'],
+    data: meses.map((r: any) => [r.mes, r.guias, Number(r.totalM3).toFixed(2), (r.guias > 0 ? r.totalM3 / r.guias : 0).toFixed(2)]),
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between gap-4">
+        <p className="text-xs text-slate-500">
+          Mide lo despachado según las guías, no lo facturado.
+        </p>
+        <ExportButtons excelData={excelData} />
+      </div>
+
+      <SummaryCards cards={[
+        { label: 'Total M³', value: Number(summary.totalM3).toFixed(2), icon: <Gauge size={18} className="text-emerald-600" />, color: 'bg-emerald-50' },
+        { label: 'Guías', value: summary.totalGuias, icon: <FileText size={18} className="text-blue-600" />, color: 'bg-blue-50' },
+        { label: 'Promedio M³/guía', value: Number(summary.promedioM3).toFixed(2), icon: <Gauge size={18} className="text-slate-600" />, color: 'bg-slate-50' },
+      ]} />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <BarChartCard title="M³ por mes" data={summary.m3PorMes} />
+        <PieChartCard title="M³ por tipo" data={summary.m3PorTipo} />
+      </div>
+
+      <TablaSimple
+        titulo="Por mes"
+        columnas={['Mes', 'Guías', 'M³ Total', 'Prom. M³']}
+        filas={meses.map((r: any) => [r.mes, r.guias, Number(r.totalM3).toFixed(2), (r.guias > 0 ? r.totalM3 / r.guias : 0).toFixed(2)])}
+      />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <TablaSimple
+          titulo="Por tipo"
+          columnas={['Tipo', 'Guías', 'M³ Total']}
+          filas={porTipo.map((r: any) => [r.tipo, r.guias, Number(r.totalM3).toFixed(2)])}
+        />
+        <TablaSimple
+          titulo="Por obra"
+          columnas={['Obra', 'Guías', 'M³ Total']}
+          filas={porObra.map((r: any) => [r.obra, r.guias, Number(r.totalM3).toFixed(2)])}
+        />
+      </div>
+    </div>
+  );
+}
+
+function PorResistencia({ from, to }: { from: string; to: string }) {
+  const { res, loading } = useReporte('resistencia', from, to);
+  if (loading) return <Cargando />;
+  if (!res) return <div className="bg-white rounded-xl border border-slate-200 p-12 text-center text-slate-400">No se pudo cargar el reporte</div>;
+
+  const { data, detalle, summary } = res;
+
+  const excelData = {
+    title: 'Despacho por resistencia',
+    columns: ['Resistencia', 'Guías', 'M³ Total', '% del período'],
+    data: data.map((r: any) => [r.resistencia, r.guias, Number(r.totalM3).toFixed(2), Number(r.porcentaje).toFixed(1) + '%']),
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-end">
+        <ExportButtons excelData={excelData} />
+      </div>
+
+      <SummaryCards cards={[
+        { label: 'Total M³', value: Number(summary.totalM3).toFixed(2), icon: <Gauge size={18} className="text-emerald-600" />, color: 'bg-emerald-50' },
+        { label: 'Guías', value: summary.totalGuias, icon: <FileText size={18} className="text-blue-600" />, color: 'bg-blue-50' },
+        { label: 'Resistencias', value: summary.resistencias, icon: <Layers size={18} className="text-purple-600" />, color: 'bg-purple-50' },
+      ]} />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <BarChartCard title="M³ por resistencia" data={summary.m3PorResistencia} />
+        <PieChartCard title="Participación por resistencia" data={summary.m3PorResistencia} />
+      </div>
+
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-slate-100">
+          <h3 className="text-sm font-bold text-slate-900">Por resistencia</h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-slate-50">
+                <th className="px-4 py-3 text-left font-semibold text-slate-600">Resistencia</th>
+                <th className="px-4 py-3 text-right font-semibold text-slate-600">Guías</th>
+                <th className="px-4 py-3 text-right font-semibold text-slate-600">M³ Total</th>
+                <th className="px-4 py-3 text-right font-semibold text-slate-600">% del período</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.length === 0 ? (
+                <tr><td colSpan={4} className="px-4 py-8 text-center text-slate-400">Sin despachos en el período seleccionado</td></tr>
+              ) : data.map((r: any, i: number) => (
+                <tr key={i} className="border-t border-slate-100 hover:bg-slate-50">
+                  <td className="px-4 py-3 font-medium text-slate-900">{r.resistencia}</td>
+                  <td className="px-4 py-3 text-right text-slate-700">{r.guias}</td>
+                  <td className="px-4 py-3 text-right font-bold text-slate-900">{Number(r.totalM3).toFixed(2)}</td>
+                  <td className="px-4 py-3 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <div className="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-blue-500 rounded-full" style={{ width: `${Math.min(100, r.porcentaje)}%` }} />
+                      </div>
+                      <span className="text-slate-600 tabular-nums w-12 text-right">{Number(r.porcentaje).toFixed(1)}%</span>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <TablaSimple
+        titulo="Detalle por resistencia y pulgada"
+        columnas={['Resistencia', 'Pulgada', 'Guías', 'M³ Total']}
+        filas={detalle.map((r: any) => [r.resistencia, r.pulgada, r.guias, Number(r.totalM3).toFixed(2)])}
+      />
+    </div>
+  );
+}
+
+/** Tabla de solo lectura, para los desgloses que no necesitan nada especial. */
+function TablaSimple({ titulo, columnas, filas }: { titulo: string; columnas: string[]; filas: (string | number)[][] }) {
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="p-4 border-b border-slate-100">
+        <h3 className="text-sm font-bold text-slate-900">{titulo}</h3>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-slate-50">
+              {columnas.map((c, i) => (
+                <th key={i} className={`px-4 py-3 font-semibold text-slate-600 ${i === 0 ? 'text-left' : 'text-right'}`}>{c}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filas.length === 0 ? (
+              <tr><td colSpan={columnas.length} className="px-4 py-8 text-center text-slate-400">Sin datos para el período seleccionado</td></tr>
+            ) : filas.map((fila, i) => (
+              <tr key={i} className="border-t border-slate-100 hover:bg-slate-50">
+                {fila.map((celda, j) => (
+                  <td key={j} className={`px-4 py-3 ${j === 0 ? 'text-left font-medium text-slate-900' : 'text-right text-slate-700'}`}>{celda}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
 
 function ViajesPorTrompero({ from, to }: { from: string; to: string }) {
   const [data, setData] = useState<any[]>([]);
@@ -195,7 +391,7 @@ function ViajesPorTrompero({ from, to }: { from: string; to: string }) {
 
 export default function ReportesOperativosPage() {
   const backHref = usePathname().replace(/\/operativos\/?$/, '');
-  const [reporte, setReporte] = useState('viajes');
+  const [reporte, setReporte] = useState('m3');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
 
@@ -227,6 +423,8 @@ export default function ReportesOperativosPage() {
         <QuickDateFilters onChange={(f, t) => { setFrom(f); setTo(t); }} />
       </div>
 
+      {reporte === 'm3' && <MetrosCubicos from={from} to={to} />}
+      {reporte === 'resistencia' && <PorResistencia from={from} to={to} />}
       {reporte === 'viajes' && <ViajesPorTrompero from={from} to={to} />}
     </div>
   );
