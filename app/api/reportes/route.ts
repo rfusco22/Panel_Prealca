@@ -28,18 +28,20 @@ export async function GET(request: Request) {
 
     switch (type) {
       case 'ingresos': {
-        const rows: any = await query('SELECT * FROM ingresos ORDER BY id DESC');
-        
-        let filteredRows = rows;
-        if (from || to) {
-          filteredRows = rows.filter((r: any) => {
-            const fecha = r.created_at || r.fecha || r.id;
-            if (from && fecha < from) return false;
-            if (to && fecha > to + ' 23:59:59') return false;
-            return true;
-          });
-        }
-        
+        // El filtro va en SQL sobre createdAt, que es como se llama la columna
+        // en esta tabla (camelCase, no created_at).
+        //
+        // Antes se filtraba en JS con `r.created_at || r.fecha || r.id`: como
+        // ninguna de las dos primeras existe, terminaba comparando el id
+        // (un número) contra la fecha (un string). En JS eso da NaN y las dos
+        // comparaciones devuelven false, así que ninguna fila se descartaba:
+        // el reporte ignoraba el período elegido y devolvía todo el histórico.
+        const dateFilterIngresos = dateFilter.replace(/created_at/g, 'createdAt');
+        const filteredRows: any = await query(
+          `SELECT * FROM ingresos WHERE 1=1 ${dateFilterIngresos} ORDER BY id DESC`,
+          params
+        );
+
         const totalBs = filteredRows.reduce((s: number, r: any) => s + Number(r.precioBs || 0), 0);
         const totalDivisa = filteredRows.reduce((s: number, r: any) => s + Number(r.precioDivisa || 0), 0);
         const totalIva = filteredRows.reduce((s: number, r: any) => s + Number(r.montoIva || 0), 0);
@@ -110,20 +112,18 @@ export async function GET(request: Request) {
       }
 
       case 'financiero': {
-        const allIngresos: any = await query('SELECT * FROM ingresos ORDER BY id DESC');
+        // Mismo arreglo que en el caso 'ingresos': el filtro va en SQL contra
+        // createdAt. El filtrado en JS buscaba created_at y fecha, que en esta
+        // tabla no existen, y con `if (!fecha) return true` se quedaba con
+        // todas las filas: el balance salía del histórico completo y no del
+        // período elegido.
+        const dateFilterIngresos = dateFilter.replace(/created_at/g, 'createdAt');
+        const ingresosRows: any = await query(
+          `SELECT * FROM ingresos WHERE 1=1 ${dateFilterIngresos} ORDER BY id DESC`,
+          params
+        );
         const egresosSql = dateFilter ? `SELECT * FROM egresos WHERE 1=1 ${dateFilter.replace(/created_at/g, 'fecha')}` : 'SELECT * FROM egresos ORDER BY id DESC';
         const egresosRows: any = await query(egresosSql, params);
-
-        let ingresosRows = allIngresos;
-        if (from || to) {
-          ingresosRows = allIngresos.filter((r: any) => {
-            const fecha = r.created_at || r.fecha;
-            if (!fecha) return true;
-            if (from && fecha < from) return false;
-            if (to && fecha > to + ' 23:59:59') return false;
-            return true;
-          });
-        }
 
         const totalIngresos = ingresosRows.reduce((s: number, r: any) => s + Number(r.precioBs || 0), 0);
         const totalEgresos = egresosRows.reduce((s: number, r: any) => s + Number(r.montoBs || 0), 0);
