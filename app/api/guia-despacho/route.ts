@@ -15,6 +15,10 @@ async function ensureColumns() {
   try { await query(`CREATE TABLE IF NOT EXISTS guia_numero_secuencia (numero INT AUTO_INCREMENT PRIMARY KEY)`); } catch {}
   try { await query(`CREATE TABLE IF NOT EXISTS guia_numero_secuencia_premezclado (numero INT AUTO_INCREMENT PRIMARY KEY)`); } catch {}
   try { await query(`CREATE TABLE IF NOT EXISTS guia_numero_secuencia_prealca (numero INT AUTO_INCREMENT PRIMARY KEY)`); } catch {}
+  // El chofer pasó de ser un nombre copiado a un FK. Ver
+  // sql/migracion_chofer_id_guia_despacho.sql: ahí está el relleno de las
+  // guías viejas y el porqué la columna chofer (texto) no se borra.
+  try { await query(`ALTER TABLE guia_despacho ADD COLUMN chofer_id INT NULL`); } catch {}
 }
 
 // numero_guia es una numeración aparte del id real, que arranca en 1 para las
@@ -37,7 +41,7 @@ export async function GET() {
 
   try {
     await ensureColumns();
-    const guias = await query(`SELECT gd.id, gd.numero_guia AS numeroGuia, gd.tipo, gd.cliente_id AS clienteId, c.nombre AS clienteNombre, c.rif AS clienteRif, c.direccion AS clienteDireccion, c.telefono AS clienteTelefono, gd.producto_id AS productoId, CONCAT(p.resistencia, ' - ', p.pulgada) AS productoNombre, p.resistencia, p.pulgada, gd.cantidad_m3 AS cantidadM3, gd.precio_m3 AS precioM3, gd.iva_aplicado AS ivaAplicado, gd.iva_monto AS ivaMonto, gd.total, gd.chofer, gd.unidad_id AS unidadId, un.numero_unidad AS numeroUnidad, un.placa, gd.pedido_id AS pedidoId, pe.cantidad_m3 AS pedidoTotalM3, pe.obra AS pedidoObra, gd.obra, gd.usuario_id AS usuarioId, gd.created_at AS fecha FROM guia_despacho gd LEFT JOIN clientes c ON gd.cliente_id = c.id LEFT JOIN productos p ON gd.producto_id = p.id LEFT JOIN unidades un ON gd.unidad_id = un.id LEFT JOIN pedidos pe ON gd.pedido_id = pe.id ORDER BY gd.id DESC`);
+    const guias = await query(`SELECT gd.id, gd.numero_guia AS numeroGuia, gd.tipo, gd.cliente_id AS clienteId, c.nombre AS clienteNombre, c.rif AS clienteRif, c.direccion AS clienteDireccion, c.telefono AS clienteTelefono, gd.producto_id AS productoId, CONCAT(p.resistencia, ' - ', p.pulgada) AS productoNombre, p.resistencia, p.pulgada, gd.cantidad_m3 AS cantidadM3, gd.precio_m3 AS precioM3, gd.iva_aplicado AS ivaAplicado, gd.iva_monto AS ivaMonto, gd.total, gd.chofer_id AS choferId, COALESCE(ch.nombre, gd.chofer) AS choferNombre, gd.chofer, gd.unidad_id AS unidadId, un.numero_unidad AS numeroUnidad, un.placa, gd.pedido_id AS pedidoId, pe.cantidad_m3 AS pedidoTotalM3, pe.obra AS pedidoObra, gd.obra, gd.usuario_id AS usuarioId, gd.created_at AS fecha FROM guia_despacho gd LEFT JOIN clientes c ON gd.cliente_id = c.id LEFT JOIN productos p ON gd.producto_id = p.id LEFT JOIN unidades un ON gd.unidad_id = un.id LEFT JOIN choferes ch ON gd.chofer_id = ch.id LEFT JOIN pedidos pe ON gd.pedido_id = pe.id ORDER BY gd.id DESC`);
     return NextResponse.json({ success: true, guias }, { status: 200 });
   } catch (error) {
     console.error('Error GET guia_despacho:', error);
@@ -51,7 +55,27 @@ export async function POST(request: Request) {
     const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
     if (!session.userId) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     const data = await request.json();
-    const { tipo, clienteId, productoId, cantidadM3, chofer, unidadId, pedidoId, obra } = data;
+    const { tipo, clienteId, productoId, cantidadM3, choferId, chofer, unidadId, pedidoId, obra } = data;
+
+    // El chofer llega como choferId (FK). Se sigue aceptando `chofer` (nombre
+    // suelto) para no romper nada que todavía mande el formato viejo.
+    // El nombre no se toma del request: se resuelve acá contra la tabla, y se
+    // guarda además en la columna de texto como el nombre con el que se emitió
+    // la guía -- si después le corrigen el nombre al chofer, el documento ya
+    // impreso sigue coincidiendo con lo que quedó guardado.
+    let choferIdFinal: number | null = null;
+    let choferNombre: string | null = chofer || null;
+    if (choferId) {
+      const choferRows: any = await query('SELECT id, nombre FROM choferes WHERE id = ?', [choferId]);
+      if (choferRows.length === 0) {
+        return NextResponse.json({ error: 'El chofer seleccionado no existe.' }, { status: 400 });
+      }
+      choferIdFinal = choferRows[0].id;
+      choferNombre = choferRows[0].nombre;
+    }
+    if (!choferNombre) {
+      return NextResponse.json({ error: 'Debe seleccionar un chofer.' }, { status: 400 });
+    }
 
     // Auto-obtener obra del pedido si no se envía
     let obraFinal = obra || null;
@@ -90,7 +114,7 @@ export async function POST(request: Request) {
     }
 
     const numeroGuia = await siguienteNumeroGuia(tipo);
-    const result: any = await query(`INSERT INTO guia_despacho (tipo, cliente_id, producto_id, cantidad_m3, precio_m3, total, chofer, unidad_id, pedido_id, obra, usuario_id, numero_guia) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [tipo, clienteId, productoId, cantidadM3, 0, 0, chofer, unidadId || null, pedidoId || null, obraFinal, session.userId, numeroGuia]);
+    const result: any = await query(`INSERT INTO guia_despacho (tipo, cliente_id, producto_id, cantidad_m3, precio_m3, total, chofer_id, chofer, unidad_id, pedido_id, obra, usuario_id, numero_guia) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [tipo, clienteId, productoId, cantidadM3, 0, 0, choferIdFinal, choferNombre, unidadId || null, pedidoId || null, obraFinal, session.userId, numeroGuia]);
 
     if (pedidoId) {
       const [pedidoRows]: any = await query('SELECT cantidad_m3 FROM pedidos WHERE id = ?', [pedidoId]);
@@ -111,7 +135,7 @@ export async function POST(request: Request) {
     await registrarLog({
       ...usuario, accion: 'crear', modulo: 'Guías de Despacho', entidad_id: result.insertId,
       descripcion: `Creó guía #${result.insertId} (${tipo}) - ${cantidadM3} M3`,
-      datos_nuevos: { tipo, clienteId, productoId, cantidadM3, chofer, pedidoId, obra: obraFinal },
+      datos_nuevos: { tipo, clienteId, productoId, cantidadM3, choferId: choferIdFinal, chofer: choferNombre, pedidoId, obra: obraFinal },
       ip_address: getClientIp(request),
     });
 

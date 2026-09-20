@@ -100,6 +100,8 @@ export default function NewGuiaDespachoPage() {
       const cliente = clientes.find(c => c.id === Number(formData.clienteId));
       const producto = productos.find(p => p.id === Number(formData.productoId));
       const unidad = unidades.find(u => u.id === Number(formData.unidadId));
+      // El form manda choferId; el nombre para el documento se resuelve acá.
+      const chofer = choferes.find(ch => ch.id === Number(formData.choferId));
       const esPrealca = formData.tipo === 'Prealca';
       // numeroGuia arranca en 1 y es independiente del id real de la tabla
       // (ver sql/migracion_numero_guia.sql); las guías creadas antes de esa
@@ -114,7 +116,7 @@ export default function NewGuiaDespachoPage() {
           clienteRif: cliente?.rif || '',
           clienteDireccion: cliente?.direccion || '',
           clienteTelefono: cliente?.telefono || '',
-          chofer: formData.chofer || '',
+          chofer: chofer?.nombre || '',
           placa: unidad?.placa || '',
           items: producto ? [{
             resistencia: producto.resistencia || '',
@@ -129,7 +131,7 @@ export default function NewGuiaDespachoPage() {
           clienteNombre: cliente?.nombre || '',
           clienteRif: cliente?.rif || '',
           clienteDireccion: cliente?.direccion || '',
-          chofer: formData.chofer || '',
+          chofer: chofer?.nombre || '',
           placa: unidad?.placa || '',
           vanM3: Number(formData.cantidadM3),
           deM3: 0,

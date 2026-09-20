@@ -11,7 +11,7 @@ const guiaSchema = z.object({
   clienteId: z.coerce.number().min(1, 'Debe seleccionar un cliente'),
   productoId: z.coerce.number().min(1, 'Debe seleccionar un producto'),
   cantidadM3: z.coerce.number().min(0.01, 'Cantidad mínima 0.01 m³'),
-  chofer: z.string().min(3, 'Nombre del chofer requerido'),
+  choferId: z.coerce.number().min(1, 'Debe seleccionar un chofer'),
   unidadId: z.coerce.number().optional(),
   pedidoId: z.coerce.number().optional(),
   obra: z.string().optional(),
@@ -89,7 +89,10 @@ export function GuiaDespachoForm({
   const clienteSeleccionado = clientes.find(c => c.id === Number(clienteId));
   const productoSeleccionado = productos.find(p => p.id === Number(productoId));
   const unidadSeleccionada = unidades.find(u => u.id === Number(watch('unidadId')));
-  const chofer = watch('chofer');
+  // El form guarda el id del chofer; el nombre se resuelve acá porque es lo que
+  // va impreso en la guía y en la vista previa.
+  const choferSeleccionado = choferes.find(ch => ch.id === Number(watch('choferId')));
+  const chofer = choferSeleccionado?.nombre || '';
 
   const pedidoSeleccionado = pedidos.find(p => p.id === Number(pedidoId));
   const vanM3 = pedidoSeleccionado ? (Number(pedidoSeleccionado.acumuladoM3) || 0) + (Number(cantidadM3) || 0) : 0;
@@ -332,12 +335,12 @@ export function GuiaDespachoForm({
                 <label className={labelCls}>Chofer / Operario</label>
                 <div className="relative">
                   <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <select {...register('chofer')} className={`${inputCls} pl-10`}>
+                  <select {...register('choferId')} className={`${inputCls} pl-10`}>
                     <option value="">Seleccionar chofer...</option>
-                    {choferes.map(ch => <option key={ch.id} value={ch.nombre}>{ch.nombre}</option>)}
+                    {choferes.map(ch => <option key={ch.id} value={ch.id}>{ch.nombre}</option>)}
                   </select>
                 </div>
-                {errors.chofer && <p className={errorCls}><AlertCircle size={12} />{errors.chofer.message}</p>}
+                {errors.choferId && <p className={errorCls}><AlertCircle size={12} />{errors.choferId.message}</p>}
               </div>
             </div>
           </div>

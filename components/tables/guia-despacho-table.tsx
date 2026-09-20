@@ -21,6 +21,10 @@ interface GuiaDespacho {
   pulgada?: string;
   cantidadM3: number;
   total: number;
+  choferId?: number | null;
+  /** Nombre actual del chofer, resuelto por la API contra la tabla choferes. */
+  choferNombre?: string;
+  /** Nombre con el que se emitió la guía. Se usa al reimprimir, ver buildGuiaHtml. */
   chofer: string;
   placa?: string;
   numeroUnidad?: string;
@@ -32,6 +36,9 @@ interface GuiaDespachoTableProps {
   data: GuiaDespacho[];
 }
 
+// Al reimprimir se usa guia.chofer (el nombre que quedó guardado al emitirla) y
+// no el nombre actual del chofer: una reimpresión tiene que salir igual al
+// documento original, aunque después le hayan corregido el nombre en su ficha.
 function buildGuiaHtml(guia: GuiaDespacho, van: number, de: number): string {
   const item = {
     nombreProducto: guia.productoNombre,
@@ -192,7 +199,7 @@ export function GuiaDespachoTable({ data }: GuiaDespachoTableProps) {
                 <td className="px-6 py-3 text-sm text-gray-900 font-medium">
                   {Number(guia.cantidadM3) ? Number(guia.cantidadM3).toFixed(2) : '-'}
                 </td>
-                <td className="px-6 py-3 text-sm text-gray-600">{guia.chofer || '-'}</td>
+                <td className="px-6 py-3 text-sm text-gray-600">{guia.choferNombre || guia.chofer || '-'}</td>
                 <td className="px-6 py-3 text-center">
                   <div className="flex gap-1 justify-center">
                     <button
