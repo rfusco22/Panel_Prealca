@@ -4,11 +4,19 @@ import { emitSocketEvent } from '@/lib/socket-server';
 import { registrarLog, getUsuarioFromRequest, getClientIp } from '@/lib/audit-log';
 import { requireAuth } from '@/lib/auth-guard';
 
+// La moneda del pago no se guardaba: el formulario la usaba para calcular
+// precioBs/precioDivisa y la descartaba. Sin ese dato no se puede saber en qué
+// moneda pagar la comisión del vendedor. Ver sql/migracion_moneda_ingresos.sql.
+async function ensureColumns() {
+  try { await query(`ALTER TABLE ingresos ADD COLUMN moneda ENUM('BS','USD') NOT NULL DEFAULT 'BS'`); } catch {}
+}
+
 export async function GET() {
   const auth = await requireAuth();
   if (auth.response) return auth.response;
 
   try {
+    await ensureColumns();
     const sql = `SELECT * FROM ingresos ORDER BY id DESC`;
     const resultados = await query(sql);
     return NextResponse.json({ success: true, data: resultados });
@@ -23,8 +31,14 @@ export async function POST(request: Request) {
   if (auth.response) return auth.response;
 
   try {
+    await ensureColumns();
     const body = await request.json();
     const { banco, nombreCliente, rif, vendedor, comision_porcentaje, comision_monto, descripcion, m3, resistencia, tasaCambio, aplicaIva, tipoDocumento, referencia } = body;
+
+    // En qué moneda entró la plata. Importa para la comisión del vendedor,
+    // que se paga en la moneda del pago. Si no llega, se asume bolívares:
+    // es lo que el formulario trae seleccionado por defecto.
+    const moneda = body.moneda === 'USD' ? 'USD' : 'BS';
 
     // precioBs (cuánto entró realmente al banco) y tasaCambio son hechos que
     // trae quien registra el ingreso: no hay forma de que el servidor los
@@ -44,8 +58,8 @@ export async function POST(request: Request) {
     const montoIva = aplicaIva ? precioBs * 0.16 : 0;
     const precioDivisa = (precioBs + montoIva) / tasaCambioNum;
 
-    const sql = `INSERT INTO ingresos (banco, nombreCliente, rif, vendedor, comision_porcentaje, comision_monto, descripcion, m3, resistencia, precioBs, precioDivisa, tasaCambio, aplicaIva, montoIva, tipoDocumento, referencia) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-    const values = [banco, nombreCliente, rif, vendedor, comision_porcentaje || null, comision_monto || null, descripcion || null, m3 ? parseFloat(m3) : null, resistencia || null, precioBs, precioDivisa, tasaCambioNum, aplicaIvaSql, montoIva || null, tipoDocumento, referencia];
+    const sql = `INSERT INTO ingresos (banco, nombreCliente, rif, vendedor, comision_porcentaje, comision_monto, descripcion, m3, resistencia, precioBs, precioDivisa, tasaCambio, aplicaIva, montoIva, tipoDocumento, referencia, moneda) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    const values = [banco, nombreCliente, rif, vendedor, comision_porcentaje || null, comision_monto || null, descripcion || null, m3 ? parseFloat(m3) : null, resistencia || null, precioBs, precioDivisa, tasaCambioNum, aplicaIvaSql, montoIva || null, tipoDocumento, referencia, moneda];
     await query(sql, values);
     emitSocketEvent('ingresos:created');
 

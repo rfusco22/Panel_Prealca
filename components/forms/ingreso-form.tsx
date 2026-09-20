@@ -106,6 +106,9 @@ export function IngresoForm({ onAdd, onClose }: IngresoFormProps) {
         resistencia,
         precioBs: precioBsNum,
         precioDivisa: totalUsd,
+        // La moneda en que se cobro define en que moneda se paga la comision
+        // del vendedor, asi que se manda y se guarda.
+        moneda: monedaEntrada,
         tasaCambio,
         aplicaIva,
         montoIva: ivaBs,

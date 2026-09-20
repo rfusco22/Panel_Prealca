@@ -137,6 +137,107 @@ export async function GET(request: Request) {
         });
       }
 
+      // Comisiones de vendedores. Ver issue #5.
+      //
+      // Reglas del negocio, según se definieron:
+      //   * La comisión se devenga cuando entra la plata, o sea por cada
+      //     ingreso registrado (no por guía despachada ni por factura emitida).
+      //   * Puede ser un monto fijo (comision_monto) o un porcentaje de la
+      //     venta (comision_porcentaje). Son excluyentes: el formulario deja
+      //     cargar uno u otro, y el que no se eligió queda en NULL.
+      //   * Se paga en la moneda en que se cobró: si el ingreso entró en
+      //     bolívares la comisión es en bolívares, y si entró en dólares es en
+      //     dólares. Por eso NO se suman las dos en un solo total: se llevan
+      //     dos columnas separadas y mezclarlas daría un número sin sentido.
+      //
+      // ingresos.moneda es la columna que hace posible esto último; ver
+      // sql/migracion_moneda_ingresos.sql (antes la moneda del pago se
+      // descartaba al guardar).
+      case 'comisiones': {
+        const dateFilterIngresos = dateFilter.replace(/created_at/g, 'i.createdAt');
+
+        // El porcentaje se aplica sobre el monto de la venta en la moneda del
+        // pago: precioBs si se cobró en bolívares, precioDivisa si en dólares.
+        const comisionBs = `CASE WHEN i.moneda = 'BS' THEN
+             COALESCE(i.comision_monto, 0) + (i.precioBs * COALESCE(i.comision_porcentaje, 0) / 100)
+           ELSE 0 END`;
+        const comisionUsd = `CASE WHEN i.moneda = 'USD' THEN
+             COALESCE(i.comision_monto, 0) + (i.precioDivisa * COALESCE(i.comision_porcentaje, 0) / 100)
+           ELSE 0 END`;
+
+        const porVendedor: any = await query(
+          `SELECT i.vendedor,
+                  COUNT(*) AS operaciones,
+                  SUM(${comisionBs}) AS comisionBs,
+                  SUM(${comisionUsd}) AS comisionUsd,
+                  SUM(CASE WHEN i.moneda = 'BS' THEN i.precioBs ELSE 0 END) AS ventaBs,
+                  SUM(CASE WHEN i.moneda = 'USD' THEN i.precioDivisa ELSE 0 END) AS ventaUsd,
+                  SUM(COALESCE(i.m3, 0)) AS totalM3,
+                  SUM(CASE WHEN i.comision_monto IS NOT NULL THEN 1 ELSE 0 END) AS opsMontoFijo,
+                  SUM(CASE WHEN i.comision_porcentaje IS NOT NULL THEN 1 ELSE 0 END) AS opsPorcentaje
+           FROM ingresos i
+           WHERE 1=1 ${dateFilterIngresos}
+           GROUP BY i.vendedor
+           ORDER BY comisionBs DESC, comisionUsd DESC`,
+          params
+        );
+
+        // Detalle operación por operación, para poder auditar de dónde sale el
+        // monto de cada vendedor.
+        const detalle: any = await query(
+          `SELECT i.id, i.vendedor, i.nombreCliente, i.referencia, i.moneda,
+                  i.m3, i.precioBs, i.precioDivisa,
+                  i.comision_porcentaje AS comisionPorcentaje,
+                  i.comision_monto AS comisionMonto,
+                  ${comisionBs} AS comisionBs,
+                  ${comisionUsd} AS comisionUsd,
+                  i.createdAt AS fecha
+           FROM ingresos i
+           WHERE 1=1 ${dateFilterIngresos}
+           ORDER BY i.createdAt DESC, i.id DESC`,
+          params
+        );
+
+        const data = porVendedor.map((r: any) => ({
+          vendedor: r.vendedor,
+          operaciones: Number(r.operaciones),
+          comisionBs: Number(r.comisionBs || 0),
+          comisionUsd: Number(r.comisionUsd || 0),
+          ventaBs: Number(r.ventaBs || 0),
+          ventaUsd: Number(r.ventaUsd || 0),
+          totalM3: Number(r.totalM3 || 0),
+          opsMontoFijo: Number(r.opsMontoFijo || 0),
+          opsPorcentaje: Number(r.opsPorcentaje || 0),
+        }));
+
+        const comisionPorVendedorBs: Record<string, number> = {};
+        data.forEach((r: any) => {
+          if (r.comisionBs > 0) comisionPorVendedorBs[r.vendedor] = r.comisionBs;
+        });
+
+        return NextResponse.json({
+          success: true,
+          data,
+          detalle: detalle.map((r: any) => ({
+            ...r,
+            m3: r.m3 === null ? null : Number(r.m3),
+            precioBs: Number(r.precioBs || 0),
+            precioDivisa: Number(r.precioDivisa || 0),
+            comisionPorcentaje: r.comisionPorcentaje === null ? null : Number(r.comisionPorcentaje),
+            comisionMonto: r.comisionMonto === null ? null : Number(r.comisionMonto),
+            comisionBs: Number(r.comisionBs || 0),
+            comisionUsd: Number(r.comisionUsd || 0),
+          })),
+          summary: {
+            totalComisionBs: data.reduce((s: number, r: any) => s + r.comisionBs, 0),
+            totalComisionUsd: data.reduce((s: number, r: any) => s + r.comisionUsd, 0),
+            vendedores: data.length,
+            operaciones: data.reduce((s: number, r: any) => s + r.operaciones, 0),
+            comisionPorVendedorBs,
+          },
+        });
+      }
+
       // Principales clientes del período. Ver issue #3.
       //
       // Los M³ salen de guia_despacho, que se une a clientes por FK y es

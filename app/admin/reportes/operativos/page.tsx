@@ -1,14 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Truck, Gauge, Users, AlertTriangle, ArrowLeft, HardHat, FileText, Layers } from 'lucide-react';
+import { Truck, Gauge, Users, AlertTriangle, ArrowLeft, HardHat, FileText, Layers, Coins } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { DateRangePicker, QuickDateFilters } from '@/components/reports/DateRangePicker';
 import { SummaryCards } from '@/components/reports/SummaryCards';
 import { ExportButtons } from '@/components/reports/ExportButtons';
 import { BarChartCard, PieChartCard } from '@/components/reports/ReportCharts';
-import { diasHasta } from '@/lib/fecha';
+import { diasHasta, formatearFechaCorta } from '@/lib/fecha';
 
 // Los reportes que faltan (clientes, materia prima, comisiones) se suman acá
 // a medida que se implementen, sin crear una página nueva por cada uno.
@@ -17,6 +17,7 @@ const REPORTES = [
   { id: 'm3', label: 'Metros cúbicos despachados' },
   { id: 'resistencia', label: 'Despacho por resistencia' },
   { id: 'clientes-top', label: 'Principales clientes' },
+  { id: 'comisiones', label: 'Comisiones de vendedores' },
   { id: 'viajes', label: 'Viajes por trompero' },
 ];
 
@@ -211,6 +212,152 @@ function TablaSimple({ titulo, columnas, filas }: { titulo: string; columnas: st
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+function ComisionesVendedores({ from, to }: { from: string; to: string }) {
+  const { res, loading } = useReporte('comisiones', from, to);
+  const [verDetalle, setVerDetalle] = useState(false);
+
+  if (loading) return <Cargando />;
+  if (!res) return <div className="bg-white rounded-xl border border-slate-200 p-12 text-center text-slate-400">No se pudo cargar el reporte</div>;
+
+  const { data, detalle, summary } = res;
+  const fmt = (v: number) => v.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  const excelData = {
+    title: 'Comisiones de vendedores',
+    columns: ['Vendedor', 'Operaciones', 'Venta Bs', 'Comisión Bs', 'Venta $', 'Comisión $', 'M³'],
+    data: data.map((r: any) => [
+      r.vendedor, r.operaciones,
+      Number(r.ventaBs).toFixed(2), Number(r.comisionBs).toFixed(2),
+      Number(r.ventaUsd).toFixed(2), Number(r.comisionUsd).toFixed(2),
+      Number(r.totalM3).toFixed(2),
+    ]),
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-start justify-between gap-4">
+        <p className="text-xs text-slate-500 max-w-lg">
+          La comisión se devenga cuando entra la plata, y se paga en la moneda en que se cobró.
+          Por eso los totales en Bs y en $ van separados: sumarlos daría un número sin sentido.
+        </p>
+        <ExportButtons excelData={excelData} />
+      </div>
+
+      <SummaryCards cards={[
+        { label: 'Comisión total Bs', value: fmt(Number(summary.totalComisionBs)), icon: <Coins size={18} className="text-emerald-600" />, color: 'bg-emerald-50' },
+        { label: 'Comisión total $', value: fmt(Number(summary.totalComisionUsd)), icon: <Coins size={18} className="text-blue-600" />, color: 'bg-blue-50' },
+        { label: 'Vendedores', value: summary.vendedores, icon: <Users size={18} className="text-purple-600" />, color: 'bg-purple-50' },
+        { label: 'Operaciones', value: summary.operaciones, icon: <FileText size={18} className="text-slate-600" />, color: 'bg-slate-50' },
+      ]} />
+
+      {summary.operaciones === 0 && (
+        <div className="flex items-start gap-3 bg-slate-50 border border-slate-200 rounded-xl p-4">
+          <AlertTriangle size={18} className="text-slate-400 shrink-0 mt-0.5" />
+          <p className="text-sm text-slate-600">
+            No hay ingresos cargados en el período, así que no hay comisiones que calcular.
+            Este reporte se llena a medida que se registren los cobros.
+          </p>
+        </div>
+      )}
+
+      {summary.operaciones > 0 && <BarChartCard title="Comisión en Bs por vendedor" data={summary.comisionPorVendedorBs} />}
+
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-slate-100">
+          <h3 className="text-sm font-bold text-slate-900">Por vendedor</h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-slate-50">
+                <th className="px-4 py-3 text-left font-semibold text-slate-600">Vendedor</th>
+                <th className="px-4 py-3 text-right font-semibold text-slate-600">Ops.</th>
+                <th className="px-4 py-3 text-right font-semibold text-slate-600">Venta Bs</th>
+                <th className="px-4 py-3 text-right font-semibold text-slate-600">Comisión Bs</th>
+                <th className="px-4 py-3 text-right font-semibold text-slate-600">Venta $</th>
+                <th className="px-4 py-3 text-right font-semibold text-slate-600">Comisión $</th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-600">Tipo</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.length === 0 ? (
+                <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-400">Sin comisiones en el período seleccionado</td></tr>
+              ) : data.map((r: any, i: number) => (
+                <tr key={i} className="border-t border-slate-100 hover:bg-slate-50">
+                  <td className="px-4 py-3 font-medium text-slate-900">{r.vendedor}</td>
+                  <td className="px-4 py-3 text-right text-slate-500">{r.operaciones}</td>
+                  <td className="px-4 py-3 text-right text-slate-600 tabular-nums">{fmt(Number(r.ventaBs))}</td>
+                  <td className="px-4 py-3 text-right font-bold text-emerald-700 tabular-nums">{fmt(Number(r.comisionBs))}</td>
+                  <td className="px-4 py-3 text-right text-slate-600 tabular-nums">{fmt(Number(r.ventaUsd))}</td>
+                  <td className="px-4 py-3 text-right font-bold text-blue-700 tabular-nums">{fmt(Number(r.comisionUsd))}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-wrap gap-1">
+                      {r.opsPorcentaje > 0 && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{r.opsPorcentaje} por %</span>}
+                      {r.opsMontoFijo > 0 && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{r.opsMontoFijo} monto fijo</span>}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {detalle.length > 0 && (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <button onClick={() => setVerDetalle(v => !v)} className="w-full p-4 border-b border-slate-100 flex items-center justify-between hover:bg-slate-50 transition">
+            <div className="text-left">
+              <h3 className="text-sm font-bold text-slate-900">Detalle por operación</h3>
+              <p className="text-xs text-slate-400 mt-0.5">De dónde sale el monto de cada vendedor</p>
+            </div>
+            <span className="text-xs font-semibold text-blue-600">{verDetalle ? 'Ocultar' : `Ver ${detalle.length}`}</span>
+          </button>
+          {verDetalle && (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-slate-50">
+                    <th className="px-4 py-3 text-left font-semibold text-slate-600">Fecha</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-600">Vendedor</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-600">Cliente</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-600">Ref.</th>
+                    <th className="px-4 py-3 text-center font-semibold text-slate-600">Moneda</th>
+                    <th className="px-4 py-3 text-right font-semibold text-slate-600">Venta</th>
+                    <th className="px-4 py-3 text-right font-semibold text-slate-600">Comisión</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {detalle.map((r: any) => {
+                    const esBs = r.moneda === 'BS';
+                    return (
+                      <tr key={r.id} className="border-t border-slate-100 hover:bg-slate-50">
+                        <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{formatearFechaCorta(r.fecha)}</td>
+                        <td className="px-4 py-3 text-slate-700">{r.vendedor}</td>
+                        <td className="px-4 py-3 text-slate-600">{r.nombreCliente}</td>
+                        <td className="px-4 py-3 text-slate-400 text-xs font-mono">{r.referencia}</td>
+                        <td className="px-4 py-3 text-center">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{esBs ? 'Bs' : '$'}</span>
+                        </td>
+                        <td className="px-4 py-3 text-right text-slate-600 tabular-nums">{fmt(esBs ? r.precioBs : r.precioDivisa)}</td>
+                        <td className="px-4 py-3 text-right font-bold text-slate-900 tabular-nums">
+                          {fmt(esBs ? r.comisionBs : r.comisionUsd)}
+                          <span className="text-[10px] font-normal text-slate-400 ml-1">
+                            {r.comisionPorcentaje !== null ? `(${r.comisionPorcentaje}%)` : '(fijo)'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -549,6 +696,7 @@ export default function ReportesOperativosPage() {
       {reporte === 'm3' && <MetrosCubicos from={from} to={to} />}
       {reporte === 'resistencia' && <PorResistencia from={from} to={to} />}
       {reporte === 'clientes-top' && <PrincipalesClientes from={from} to={to} />}
+      {reporte === 'comisiones' && <ComisionesVendedores from={from} to={to} />}
       {reporte === 'viajes' && <ViajesPorTrompero from={from} to={to} />}
     </div>
   );
