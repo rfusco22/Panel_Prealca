@@ -18,7 +18,23 @@ async function ensureColumns() {
   // El chofer pasó de ser un nombre copiado a un FK. Ver
   // sql/migracion_chofer_id_guia_despacho.sql: ahí está el relleno de las
   // guías viejas y el porqué la columna chofer (texto) no se borra.
-  try { await query(`ALTER TABLE guia_despacho ADD COLUMN chofer_id INT NULL`); } catch {}
+  //
+  // El tipo se lee de choferes.id en vez de asumir INT: MySQL exige que la
+  // columna que referencia y la referenciada tengan exactamente el mismo tipo,
+  // y crear esta como INT a secas contra un choferes.id INT UNSIGNED deja la
+  // foreign key imposible de crear (error #3780).
+  try {
+    const filas: any = await query(
+      `SELECT COLUMN_TYPE AS tipo FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'choferes' AND COLUMN_NAME = 'id'`
+    );
+    const tipo = String(filas?.[0]?.tipo || '');
+    // El valor sale del catálogo de la propia base, no de un request, pero se
+    // valida igual porque termina interpolado en un DDL.
+    if (/^(tinyint|smallint|mediumint|int|bigint)(\(\d+\))?( unsigned)?$/i.test(tipo)) {
+      await query(`ALTER TABLE guia_despacho ADD COLUMN chofer_id ${tipo} NULL`);
+    }
+  } catch {}
 }
 
 // numero_guia es una numeración aparte del id real, que arranca en 1 para las

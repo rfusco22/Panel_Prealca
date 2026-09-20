@@ -24,14 +24,27 @@
 --     único registro de quién manejó. La app lee COALESCE(ch.nombre,
 --     gd.chofer), así que las filas sin chofer_id siguen mostrándose bien.
 --
--- Idempotente y sin orden obligatorio respecto del deploy: los pasos 1, 2 y 5
--- se saltean solos si ya están aplicados. La columna también la crea sola la
--- app desde ensureColumns() en app/api/guia-despacho/route.ts (por eso los
--- chequeos contra information_schema: si se deployó primero, un ALTER pelado
--- fallaría con "Duplicate column name" y varios clientes abortan el script
--- entero, salteándose el relleno del paso 3).
+-- Idempotente y sin orden obligatorio respecto del deploy: cada paso se saltea
+-- solo si ya está aplicado. La columna también la crea sola la app desde
+-- ensureColumns() en app/api/guia-despacho/route.ts (por eso los chequeos
+-- contra information_schema: si se deployó primero, un ALTER pelado fallaría
+-- con "Duplicate column name" y varios clientes abortan el script entero,
+-- salteándose el relleno).
 
--- 1. La columna.
+-- 0. El tipo de choferes.id, que puede ser INT, INT UNSIGNED, BIGINT...
+--    MySQL exige que la columna que referencia tenga EXACTAMENTE el mismo
+--    tipo que la referenciada, o la foreign key del paso 6 falla con
+--    "#3780 ... are incompatible". Por eso no se hardcodea INT: se lee el
+--    tipo real y se usa ese.
+SELECT COLUMN_TYPE INTO @tipo_id_chofer
+FROM information_schema.COLUMNS
+WHERE TABLE_SCHEMA = DATABASE()
+  AND TABLE_NAME = 'choferes'
+  AND COLUMN_NAME = 'id';
+
+SELECT @tipo_id_chofer AS tipo_detectado_de_choferes_id;
+
+-- 1. La columna, con el tipo que corresponde.
 SET @existe_columna = (
   SELECT COUNT(*) FROM information_schema.COLUMNS
   WHERE TABLE_SCHEMA = DATABASE()
@@ -39,11 +52,25 @@ SET @existe_columna = (
     AND COLUMN_NAME = 'chofer_id'
 );
 SET @sql = IF(@existe_columna = 0,
-  'ALTER TABLE guia_despacho ADD COLUMN chofer_id INT NULL',
+  CONCAT('ALTER TABLE guia_despacho ADD COLUMN chofer_id ', @tipo_id_chofer, ' NULL'),
   'DO 0');
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
--- 2. El índice.
+-- 2. Si la columna ya existía con otro tipo, se corrige. Es el caso cuando el
+--    deploy corrió primero: ensureColumns() la crea como INT a secas, y si
+--    choferes.id es INT UNSIGNED hay que ajustarla antes de poder crear la FK.
+SET @tipo_actual = (
+  SELECT COLUMN_TYPE FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'guia_despacho'
+    AND COLUMN_NAME = 'chofer_id'
+);
+SET @sql = IF(@tipo_actual <> @tipo_id_chofer,
+  CONCAT('ALTER TABLE guia_despacho MODIFY COLUMN chofer_id ', @tipo_id_chofer, ' NULL'),
+  'DO 0');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- 3. El índice.
 SET @existe_indice = (
   SELECT COUNT(*) FROM information_schema.STATISTICS
   WHERE TABLE_SCHEMA = DATABASE()
@@ -55,9 +82,9 @@ SET @sql = IF(@existe_indice = 0,
   'DO 0');
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
--- 3. Relleno. Solo toca filas sin chofer_id, y solo cuando el nombre matchea
+-- 4. Relleno. Solo toca filas sin chofer_id, y solo cuando el nombre matchea
 --    UN chofer y nada más: si hubiera dos choferes con el mismo nombre, la
---    fila se deja en NULL a propósito en vez de adivinar (el paso 3 las lista).
+--    fila se deja en NULL a propósito en vez de adivinar (el paso 5 las lista).
 UPDATE guia_despacho gd
 SET gd.chofer_id = (
   SELECT c.id
@@ -74,7 +101,7 @@ WHERE gd.chofer_id IS NULL
     WHERE UPPER(TRIM(c.nombre)) = UPPER(TRIM(gd.chofer))
   ) = 1;
 
--- 4. Diagnóstico: qué quedó sin vincular y por qué. Si devuelve filas, son
+-- 5. Diagnóstico: qué quedó sin vincular y por qué. Si devuelve filas, son
 --    guías cuyo texto no coincide con ningún chofer registrado (o coincide
 --    con más de uno). Siguen funcionando -- se muestran con el nombre de la
 --    columna chofer -- pero no van a aparecer agrupadas en el reporte de
@@ -100,7 +127,7 @@ FROM (
 ) v
 ORDER BY v.guias_afectadas DESC;
 
--- 5. La foreign key. Va al final, después del relleno, porque en este punto
+-- 6. La foreign key. Va al final, después del relleno, porque en este punto
 --    chofer_id solo tiene ids válidos o NULL.
 --    ON DELETE SET NULL a propósito: si se borra un chofer, la guía se
 --    conserva (es un documento emitido) y queda con el nombre en gd.chofer.
