@@ -31,32 +31,14 @@
 -- con "Duplicate column name" y varios clientes abortan el script entero,
 -- salteándose el relleno).
 
--- 0. El tipo de choferes.id, que puede ser INT, INT UNSIGNED, BIGINT...
---    MySQL exige que la columna que referencia tenga EXACTAMENTE el mismo
---    tipo que la referenciada, o la foreign key del paso 6 falla con
---    "#3780 ... are incompatible". Por eso no se hardcodea INT: se lee el
---    tipo real y se usa ese.
-SELECT COLUMN_TYPE INTO @tipo_id_chofer
-FROM information_schema.COLUMNS
-WHERE TABLE_SCHEMA = DATABASE()
-  AND TABLE_NAME = 'choferes'
-  AND COLUMN_NAME = 'id';
+-- El tipo es bigint unsigned porque choferes.id lo es. MySQL exige que la
+-- columna que referencia y la referenciada tengan EXACTAMENTE el mismo tipo,
+-- o la foreign key del paso 6 falla con "#3780 ... are incompatible".
+--
+-- Antes de empezar, para que se vea en qué base está corriendo esto:
+SELECT IFNULL(DATABASE(), '(NINGUNA: entrá a la base antes de correr el script)') AS base_seleccionada;
 
-SELECT
-  IFNULL(DATABASE(), '(ninguna)') AS base_seleccionada,
-  IFNULL(@tipo_id_chofer, 'NO DETECTADO') AS tipo_de_choferes_id;
-
--- Si no se detectó el tipo, el resto del script no puede funcionar: lo más
--- común es haber abierto la consola SQL a nivel servidor sin entrar a la base
--- (ahí DATABASE() es NULL). Se corta acá a propósito, con un error que dice
--- qué hacer, en vez de reventar más abajo con un "#1064 ... near 'NULL'" que
--- no le dice nada a nadie.
-SET @sql = IF(@tipo_id_chofer IS NULL,
-  'SELECT 1 FROM ABRI_LA_BASE_DE_DATOS_ANTES_DE_CORRER_ESTE_SCRIPT',
-  'DO 0');
-PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
-
--- 1. La columna, con el tipo que corresponde.
+-- 1. La columna.
 SET @existe_columna = (
   SELECT COUNT(*) FROM information_schema.COLUMNS
   WHERE TABLE_SCHEMA = DATABASE()
@@ -64,21 +46,21 @@ SET @existe_columna = (
     AND COLUMN_NAME = 'chofer_id'
 );
 SET @sql = IF(@existe_columna = 0,
-  CONCAT('ALTER TABLE guia_despacho ADD COLUMN chofer_id ', @tipo_id_chofer, ' NULL'),
+  'ALTER TABLE guia_despacho ADD COLUMN chofer_id BIGINT UNSIGNED NULL',
   'DO 0');
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
--- 2. Si la columna ya existía con otro tipo, se corrige. Es el caso cuando el
---    deploy corrió primero: ensureColumns() la crea como INT a secas, y si
---    choferes.id es INT UNSIGNED hay que ajustarla antes de poder crear la FK.
+-- 2. Si la columna ya existe pero con otro tipo, se corrige. Es el caso de
+--    quien alcanzó a correr una versión anterior de este script (la creaba
+--    como INT a secas) o de quien deployó antes: ensureColumns() la crea sola.
 SET @tipo_actual = (
   SELECT COLUMN_TYPE FROM information_schema.COLUMNS
   WHERE TABLE_SCHEMA = DATABASE()
     AND TABLE_NAME = 'guia_despacho'
     AND COLUMN_NAME = 'chofer_id'
 );
-SET @sql = IF(@tipo_actual <> @tipo_id_chofer,
-  CONCAT('ALTER TABLE guia_despacho MODIFY COLUMN chofer_id ', @tipo_id_chofer, ' NULL'),
+SET @sql = IF(@tipo_actual <> 'bigint unsigned',
+  'ALTER TABLE guia_despacho MODIFY COLUMN chofer_id BIGINT UNSIGNED NULL',
   'DO 0');
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
