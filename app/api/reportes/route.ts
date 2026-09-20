@@ -137,6 +137,91 @@ export async function GET(request: Request) {
         });
       }
 
+      // Viajes por trompero: cada guía de despacho es un viaje. Ver issue #6.
+      //
+      // Se agrupa por chofer_id (el FK que dejó sql/migracion_chofer_id_guia_despacho.sql)
+      // y no por el nombre en texto, que es lo que hacía imposible este reporte
+      // antes: dos formas de escribir el mismo nombre se contaban como dos choferes.
+      //
+      // Las guías que quedaron sin vincular (chofer_id NULL) igual aparecen,
+      // agrupadas por su texto, para que se note que falta asignarlas en vez de
+      // que desaparezcan del conteo.
+      case 'viajes': {
+        const dateFilterGuias = dateFilter.replace(/created_at/g, 'gd.created_at');
+
+        // El GROUP BY lista todas las columnas no agregadas a propósito:
+        // only_full_group_by (activo por defecto) rechaza la consulta si no.
+        const porChofer: any = await query(
+          `SELECT
+             gd.chofer_id AS choferId,
+             COALESCE(ch.nombre, gd.chofer) AS chofer,
+             ch.cedula,
+             ch.licencia_vencimiento AS licenciaVencimiento,
+             ch.certificado_vencimiento AS certificadoVencimiento,
+             COUNT(*) AS viajes,
+             SUM(gd.cantidad_m3) AS totalM3,
+             COUNT(DISTINCT gd.unidad_id) AS unidadesDistintas
+           FROM guia_despacho gd
+           LEFT JOIN choferes ch ON gd.chofer_id = ch.id
+           WHERE 1=1 ${dateFilterGuias}
+           GROUP BY gd.chofer_id, COALESCE(ch.nombre, gd.chofer), ch.cedula,
+                    ch.licencia_vencimiento, ch.certificado_vencimiento
+           ORDER BY viajes DESC, totalM3 DESC`,
+          params
+        );
+
+        const porUnidad: any = await query(
+          `SELECT
+             gd.unidad_id AS unidadId,
+             un.numero_unidad AS numeroUnidad,
+             un.placa,
+             COUNT(*) AS viajes,
+             SUM(gd.cantidad_m3) AS totalM3
+           FROM guia_despacho gd
+           LEFT JOIN unidades un ON gd.unidad_id = un.id
+           WHERE 1=1 ${dateFilterGuias}
+           GROUP BY gd.unidad_id, un.numero_unidad, un.placa
+           ORDER BY viajes DESC`,
+          params
+        );
+
+        const data = porChofer.map((r: any) => ({
+          ...r,
+          viajes: Number(r.viajes),
+          totalM3: Number(r.totalM3 || 0),
+          unidadesDistintas: Number(r.unidadesDistintas || 0),
+          promedioM3: Number(r.viajes) > 0 ? Number(r.totalM3 || 0) / Number(r.viajes) : 0,
+        }));
+
+        const unidades = porUnidad.map((r: any) => ({
+          ...r,
+          viajes: Number(r.viajes),
+          totalM3: Number(r.totalM3 || 0),
+        }));
+
+        const totalViajes = data.reduce((s: number, r: any) => s + r.viajes, 0);
+        const totalM3 = data.reduce((s: number, r: any) => s + r.totalM3, 0);
+        const sinVincular = data.filter((r: any) => r.choferId === null)
+          .reduce((s: number, r: any) => s + r.viajes, 0);
+
+        const viajesPorChofer: Record<string, number> = {};
+        data.forEach((r: any) => { viajesPorChofer[r.chofer || 'Sin chofer'] = r.viajes; });
+
+        return NextResponse.json({
+          success: true,
+          data,
+          unidades,
+          summary: {
+            totalViajes,
+            totalM3,
+            choferes: data.length,
+            promedioM3: totalViajes > 0 ? totalM3 / totalViajes : 0,
+            sinVincular,
+            viajesPorChofer,
+          },
+        });
+      }
+
       default:
         return NextResponse.json({ error: 'Tipo de reporte inválido' }, { status: 400 });
     }

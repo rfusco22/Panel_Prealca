@@ -110,6 +110,19 @@ const reports = [
     ],
   },
   {
+    title: 'Operativos',
+    subtitle: 'Producción y Despacho',
+    desc: 'Reportes de operación: viajes por trompero, y próximamente m³, resistencia y materia prima',
+    href: 'operativos',
+    icon: Truck,
+    color: 'bg-cyan-50 text-cyan-600',
+    items: [
+      'Viajes y M³ por chofer, con estado de sus documentos',
+      'Viajes por unidad, para cruzar con mantenimiento',
+      'Filtro por período y exportación a Excel',
+    ],
+  },
+  {
     title: 'Monedas',
     subtitle: 'Tasa de Cambio',
     desc: 'Tasa de cambio oficial del BCV: compra, venta y promedio',
