@@ -112,14 +112,14 @@ const reports = [
   {
     title: 'Operativos',
     subtitle: 'Producción y Despacho',
-    desc: 'Reportes de operación: viajes por trompero, y próximamente m³, resistencia y materia prima',
+    desc: 'Seis reportes de operación en un solo selector: m³, resistencia, clientes, materia prima, comisiones y viajes',
     href: 'operativos',
     icon: Truck,
     color: 'bg-cyan-50 text-cyan-600',
     items: [
-      'Viajes y M³ por chofer, con estado de sus documentos',
-      'Viajes por unidad, para cruzar con mantenimiento',
-      'Filtro por período y exportación a Excel',
+      'M³ despachados por mes, tipo y obra, y por resistencia',
+      'Ranking de clientes, materia prima comprada y comisiones',
+      'Viajes y M³ por chofer y por unidad, con estado de documentos',
     ],
   },
   {
