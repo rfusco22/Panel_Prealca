@@ -42,7 +42,19 @@ WHERE TABLE_SCHEMA = DATABASE()
   AND TABLE_NAME = 'choferes'
   AND COLUMN_NAME = 'id';
 
-SELECT @tipo_id_chofer AS tipo_detectado_de_choferes_id;
+SELECT
+  IFNULL(DATABASE(), '(ninguna)') AS base_seleccionada,
+  IFNULL(@tipo_id_chofer, 'NO DETECTADO') AS tipo_de_choferes_id;
+
+-- Si no se detectó el tipo, el resto del script no puede funcionar: lo más
+-- común es haber abierto la consola SQL a nivel servidor sin entrar a la base
+-- (ahí DATABASE() es NULL). Se corta acá a propósito, con un error que dice
+-- qué hacer, en vez de reventar más abajo con un "#1064 ... near 'NULL'" que
+-- no le dice nada a nadie.
+SET @sql = IF(@tipo_id_chofer IS NULL,
+  'SELECT 1 FROM ABRI_LA_BASE_DE_DATOS_ANTES_DE_CORRER_ESTE_SCRIPT',
+  'DO 0');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- 1. La columna, con el tipo que corresponde.
 SET @existe_columna = (
