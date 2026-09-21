@@ -9,6 +9,13 @@ import { requireAuth } from '@/lib/auth-guard';
 // por separado, asi que una factura editada no podia mostrar de nuevo el
 // monto que el usuario habia tipeado. `estado` ya lo usa el modulo de
 // retenciones (WHERE f.estado != 'Anulada') pero esta ruta nunca lo tocaba.
+
+// Restringido a admin, gerencia, registro: este endpoint expone montos facturados, IVA y retenciones.
+//
+// Antes era requireAuth() sin roles, o sea cualquier usuario logueado.
+// Eso dejaba a un dosificador o a Seguridad Vial leerlo escribiendo la
+// URL, aunque no tuvieran el link en su menú. La lista de roles sale de
+// qué páginas lo llaman de verdad, no de suponer quién debería.
 async function ensureColumns() {
   try { await query(`ALTER TABLE facturas ADD COLUMN subtotal DECIMAL(14,2) NULL`); } catch {}
   try { await query(`ALTER TABLE facturas ADD COLUMN iva_monto DECIMAL(14,2) NULL`); } catch {}
@@ -29,7 +36,7 @@ function calcularTotalesFactura(subtotal: number, esContribuyenteEspecial: boole
 }
 
 export async function GET(request: Request) {
-  const auth = await requireAuth();
+  const auth = await requireAuth(['admin', 'gerencia', 'registro']);
   if (auth.response) return auth.response;
 
   try {
@@ -52,7 +59,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const auth = await requireAuth();
+  const auth = await requireAuth(['admin', 'gerencia', 'registro']);
   if (auth.response) return auth.response;
 
   try {
@@ -96,7 +103,7 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
-  const auth = await requireAuth();
+  const auth = await requireAuth(['admin', 'gerencia', 'registro']);
   if (auth.response) return auth.response;
 
   try {
@@ -144,7 +151,7 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const auth = await requireAuth();
+  const auth = await requireAuth(['admin', 'gerencia', 'registro']);
   if (auth.response) return auth.response;
 
   try {

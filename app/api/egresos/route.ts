@@ -4,8 +4,15 @@ import { emitSocketEvent } from '@/lib/socket-server';
 import { registrarLog, getUsuarioFromRequest, getClientIp } from '@/lib/audit-log';
 import { requireAuth } from '@/lib/auth-guard';
 import { hoyLocal } from '@/lib/fecha';
+
+// Restringido a admin, gerencia: este endpoint expone montos pagados y clasificación de cada gasto.
+//
+// Antes era requireAuth() sin roles, o sea cualquier usuario logueado.
+// Eso dejaba a un dosificador o a Seguridad Vial leerlo escribiendo la
+// URL, aunque no tuvieran el link en su menú. La lista de roles sale de
+// qué páginas lo llaman de verdad, no de suponer quién debería.
 export async function GET() {
-  const auth = await requireAuth();
+  const auth = await requireAuth(['admin', 'gerencia']);
   if (auth.response) return auth.response;
 
   try {
@@ -19,7 +26,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const auth = await requireAuth();
+  const auth = await requireAuth(['admin', 'gerencia']);
   if (auth.response) return auth.response;
 
   try {

@@ -10,6 +10,13 @@ import { requireAuth } from '@/lib/auth-guard';
 // total llegaban del cliente sin relación real con cantidadM3 * precioM3, así
 // que cualquier usuario podía mandar, por ejemplo, precioM3: 1000 con
 // total: 0.01 y quedaba guardado tal cual.
+
+// Restringido a admin, gerencia, registro: este endpoint expone precios y totales de compra a proveedores.
+//
+// Antes era requireAuth() sin roles, o sea cualquier usuario logueado.
+// Eso dejaba a un dosificador o a Seguridad Vial leerlo escribiendo la
+// URL, aunque no tuvieran el link en su menú. La lista de roles sale de
+// qué páginas lo llaman de verdad, no de suponer quién debería.
 function calcularTotalesOrdenCompra(cantidadM3: number, precioM3: number, ivaAplicado: boolean) {
   const subtotal = cantidadM3 * precioM3;
   const ivaMonto = ivaAplicado ? subtotal * 0.16 : 0;
@@ -19,7 +26,7 @@ function calcularTotalesOrdenCompra(cantidadM3: number, precioM3: number, ivaApl
 const SELECT_ORDEN_COMPRA = `SELECT oc.id, oc.tipo, oc.proveedor_id AS proveedorId, pv.nombre AS proveedorNombre, oc.producto_id AS productoId, CONCAT(pd.resistencia, ' - ', pd.pulgada) AS productoNombre, oc.cantidad_m3 AS cantidadM3, oc.precio_m3 AS precioM3, oc.iva_aplicado AS ivaAplicado, oc.iva_monto AS ivaMonto, oc.total, oc.usuario_id AS usuarioId, oc.created_at AS fecha FROM orden_compra oc LEFT JOIN proveedores pv ON oc.proveedor_id = pv.id LEFT JOIN productos pd ON oc.producto_id = pd.id`;
 
 export async function GET(request: Request) {
-  const auth = await requireAuth();
+  const auth = await requireAuth(['admin', 'gerencia', 'registro']);
   if (auth.response) return auth.response;
 
   try {
@@ -41,7 +48,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const auth = await requireAuth();
+  const auth = await requireAuth(['admin', 'gerencia', 'registro']);
   if (auth.response) return auth.response;
 
   try {
@@ -76,7 +83,7 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
-  const auth = await requireAuth();
+  const auth = await requireAuth(['admin', 'gerencia', 'registro']);
   if (auth.response) return auth.response;
 
   try {
@@ -119,7 +126,7 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const auth = await requireAuth();
+  const auth = await requireAuth(['admin', 'gerencia', 'registro']);
   if (auth.response) return auth.response;
 
   try {

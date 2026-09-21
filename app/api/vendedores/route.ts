@@ -4,8 +4,15 @@ import { emitSocketEvent } from '@/lib/socket-server';
 import { registrarLog, getUsuarioFromRequest, getClientIp } from '@/lib/audit-log';
 import { requireAuth } from '@/lib/auth-guard';
 
+
+// Restringido a admin, gerencia, registro: este endpoint expone la nómina de vendedores, base del cálculo de comisiones.
+//
+// Antes era requireAuth() sin roles, o sea cualquier usuario logueado.
+// Eso dejaba a un dosificador o a Seguridad Vial leerlo escribiendo la
+// URL, aunque no tuvieran el link en su menú. La lista de roles sale de
+// qué páginas lo llaman de verdad, no de suponer quién debería.
 export async function GET() {
-  const auth = await requireAuth();
+  const auth = await requireAuth(['admin', 'gerencia', 'registro']);
   if (auth.response) return auth.response;
 
   try {
@@ -19,7 +26,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const auth = await requireAuth();
+  const auth = await requireAuth(['admin', 'gerencia', 'registro']);
   if (auth.response) return auth.response;
 
   try {
@@ -49,7 +56,7 @@ export async function POST(req: Request) {
 }
 
 export async function PUT(req: Request) {
-  const auth = await requireAuth();
+  const auth = await requireAuth(['admin', 'gerencia', 'registro']);
   if (auth.response) return auth.response;
 
   try {
@@ -86,7 +93,7 @@ export async function PUT(req: Request) {
 }
 
 export async function DELETE(req: Request) {
-  const auth = await requireAuth();
+  const auth = await requireAuth(['admin', 'gerencia', 'registro']);
   if (auth.response) return auth.response;
 
   try {

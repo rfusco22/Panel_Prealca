@@ -2,10 +2,17 @@ import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { requireAuth } from '@/lib/auth-guard';
 
+
+// Restringido a admin, gerencia: este endpoint expone el estado de cuenta de cada cliente.
+//
+// Antes era requireAuth() sin roles, o sea cualquier usuario logueado.
+// Eso dejaba a un dosificador o a Seguridad Vial leerlo escribiendo la
+// URL, aunque no tuvieran el link en su menú. La lista de roles sale de
+// qué páginas lo llaman de verdad, no de suponer quién debería.
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
-  const auth = await requireAuth();
+  const auth = await requireAuth(['admin', 'gerencia']);
   if (auth.response) return auth.response;
 
   try {

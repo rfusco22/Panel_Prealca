@@ -7,12 +7,19 @@ import { requireAuth } from '@/lib/auth-guard';
 // La moneda del pago no se guardaba: el formulario la usaba para calcular
 // precioBs/precioDivisa y la descartaba. Sin ese dato no se puede saber en qué
 // moneda pagar la comisión del vendedor. Ver sql/migracion_moneda_ingresos.sql.
+
+// Restringido a admin, gerencia: este endpoint expone montos cobrados, comisiones de vendedores y referencias bancarias.
+//
+// Antes era requireAuth() sin roles, o sea cualquier usuario logueado.
+// Eso dejaba a un dosificador o a Seguridad Vial leerlo escribiendo la
+// URL, aunque no tuvieran el link en su menú. La lista de roles sale de
+// qué páginas lo llaman de verdad, no de suponer quién debería.
 async function ensureColumns() {
   try { await query(`ALTER TABLE ingresos ADD COLUMN moneda ENUM('BS','USD') NOT NULL DEFAULT 'BS'`); } catch {}
 }
 
 export async function GET() {
-  const auth = await requireAuth();
+  const auth = await requireAuth(['admin', 'gerencia']);
   if (auth.response) return auth.response;
 
   try {
@@ -27,7 +34,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const auth = await requireAuth();
+  const auth = await requireAuth(['admin', 'gerencia']);
   if (auth.response) return auth.response;
 
   try {
