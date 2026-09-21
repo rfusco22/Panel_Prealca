@@ -2,6 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { AlertCircle, CheckCircle2, TrendingDown, Loader2, Upload, X, Paperclip } from 'lucide-react';
+import { prepararComprobante } from '@/lib/preparar-comprobante';
+
+// Mismo tope que el servidor (lib/comprobantes.ts).
+const MAX_COMPROBANTES = 5;
 import { hoyLocal } from '@/lib/fecha';
 interface EgresoFormProps {
   // Puede devolver una promesa: el formulario la espera y solo muestra el
@@ -92,6 +96,8 @@ export function EgresoForm({ onAdd, onClose }: EgresoFormProps) {
   const [referencia, setReferencia] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [comprobantes, setComprobantes] = useState<{ name: string; url: string }[]>([]);
+  const [errorComprobante, setErrorComprobante] = useState<string | null>(null);
+  const [procesandoComprobante, setProcesandoComprobante] = useState(false);
 
   useEffect(() => {
     const fetchInitial = async () => {
@@ -124,17 +130,30 @@ export function EgresoForm({ onAdd, onClose }: EgresoFormProps) {
 
   useEffect(() => { setSubCategoria(''); setDetalleExtra(''); setCantidadProduccion(''); setPrecioUnitario(''); }, [clasificacion]);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-    Array.from(files).forEach(file => {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        setComprobantes(prev => [...prev, { name: file.name, url: ev.target?.result as string }]);
-      };
-      reader.readAsDataURL(file);
-    });
+  // Las fotos se comprimen antes de agregarlas (ver lib/preparar-comprobante):
+  // el comprobante ahora se guarda en la base, y una foto de celular sin
+  // reducir pesaría 3 a 5 MB. Si un archivo no sirve, se avisa y se sigue con
+  // el resto en vez de fallar recién al guardar.
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files ? Array.from(e.target.files) : [];
     e.target.value = '';
+    if (files.length === 0) return;
+    setErrorComprobante(null);
+    setProcesandoComprobante(true);
+    const errores: string[] = [];
+    for (const file of files) {
+      try {
+        const listo = await prepararComprobante(file);
+        setComprobantes(prev => prev.length >= MAX_COMPROBANTES ? prev : [...prev, listo]);
+      } catch (err: any) {
+        errores.push(err?.message || `No se pudo adjuntar "${file.name}".`);
+      }
+    }
+    if (comprobantes.length + files.length > MAX_COMPROBANTES) {
+      errores.push(`Se pueden adjuntar hasta ${MAX_COMPROBANTES} comprobantes.`);
+    }
+    setErrorComprobante(errores.length ? errores.join(' ') : null);
+    setProcesandoComprobante(false);
   };
 
   const removeComprobante = (idx: number) => {
@@ -352,6 +371,16 @@ export function EgresoForm({ onAdd, onClose }: EgresoFormProps) {
                 <p className="text-[10px] text-slate-400 mt-0.5">Imágenes o PDF</p>
                 <input id="comprobante-egreso" type="file" accept="image/*,.pdf" multiple className="hidden" onChange={handleFileUpload} />
               </div>
+              {procesandoComprobante && (
+                <p className="mt-2 flex items-center gap-1.5 text-[11px] text-slate-500">
+                  <Loader2 size={12} className="animate-spin" /> Preparando comprobante...
+                </p>
+              )}
+              {errorComprobante && (
+                <p className="mt-2 flex items-center gap-1.5 text-[11px] font-semibold text-red-600">
+                  <AlertCircle size={12} className="shrink-0" /> {errorComprobante}
+                </p>
+              )}
               {comprobantes.length > 0 ? (
                 <div className="mt-2 space-y-1">
                   {comprobantes.map((c, i) => (

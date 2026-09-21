@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { formatearFecha } from '@/lib/fecha';
+import { ComprobanteLinks } from '@/components/comprobante-links';
 function EgresosTable() {
   const [data, setData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -63,6 +64,7 @@ function EgresosTable() {
             <th className="px-6 py-4">Banco / Ref.</th>
             <th className="px-6 py-4 text-right">Monto (Bs)</th>
             <th className="px-6 py-4 text-right">Monto ($)</th>
+            <th className="text-center px-6 py-4">Comprobante</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
@@ -88,6 +90,7 @@ function EgresosTable() {
               <td className="px-6 py-4 text-right font-mono font-bold text-emerald-600">
                 $ {Number(egreso.montoDivisa).toLocaleString("en-US", { minimumFractionDigits: 2 })}
               </td>
+              <td className="px-4 py-3 text-center"><ComprobanteLinks comprobantes={egreso.comprobantes} /></td>
             </tr>
           ))}
         </tbody>

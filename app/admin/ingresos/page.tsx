@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { IngresoForm } from '@/components/forms/ingreso-form';
 import { Plus, X, TrendingUp } from 'lucide-react';
 import { formatearFecha } from '@/lib/fecha';
+import { ComprobanteLinks } from '@/components/comprobante-links';
 function formatBs(v: number) { return v.toLocaleString('es-VE', { minimumFractionDigits: 2 }) + ' Bs'; }
 
 export default function IngresosPage() {
@@ -109,11 +110,7 @@ export default function IngresosPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-center">
-                    {ing.comprobantes?.length > 0 ? (
-                      <span className="text-emerald-600 text-xs font-semibold">{ing.comprobantes.length} archivo(s)</span>
-                    ) : (
-                      <span className="text-slate-400 text-xs">—</span>
-                    )}
+                    <ComprobanteLinks comprobantes={ing.comprobantes} />
                   </td>
                 </tr>
               ))}

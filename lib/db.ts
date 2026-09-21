@@ -48,6 +48,32 @@ export async function query(sql: string, params?: any[]) {
   return results;
 }
 
+/**
+ * Corre `fn` dentro de una transacción, con una sola conexión del pool.
+ *
+ * query() usa pool.execute(), que puede tomar una conexión distinta en cada
+ * llamada, así que dos query() seguidas no son atómicas. Esto hace falta cuando
+ * varias escrituras tienen que quedar todas o ninguna: por ejemplo un ingreso
+ * y sus comprobantes, para que no quede un ingreso sin su archivo.
+ *
+ * Ojo: en MySQL un CREATE TABLE o un ALTER TABLE hace commit implícito, así
+ * que los ensureColumns/ensureTabla van ANTES de llamar a esto, no adentro.
+ */
+export async function transaccion<T>(fn: (conn: mysql.PoolConnection) => Promise<T>): Promise<T> {
+  const conn = await obtenerPool().getConnection();
+  try {
+    await conn.beginTransaction();
+    const resultado = await fn(conn);
+    await conn.commit();
+    return resultado;
+  } catch (error) {
+    await conn.rollback();
+    throw error;
+  } finally {
+    conn.release();
+  }
+}
+
 /** Valida que estén las variables de la base. Se llama al arrancar el servidor. */
 export function verificarConfigDb(): void {
   requerido('DB_HOST');

@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { query, transaccion } from '@/lib/db';
+import {
+  ensureTablaComprobantes, prepararComprobantes, guardarComprobantes,
+  metaComprobantes, ComprobanteInvalido,
+} from '@/lib/comprobantes';
 import { emitSocketEvent } from '@/lib/socket-server';
 import { registrarLog, getUsuarioFromRequest, getClientIp } from '@/lib/audit-log';
 import { requireAuth } from '@/lib/auth-guard';
@@ -27,9 +31,14 @@ export async function GET() {
 
   try {
     await ensureColumns();
+    await ensureTablaComprobantes();
     const sql = `SELECT * FROM ingresos ORDER BY id DESC`;
-    const resultados = await query(sql);
-    return NextResponse.json({ success: true, data: resultados });
+    const resultados: any = await query(sql);
+    // Solo los metadatos de los comprobantes (id, nombre, tipo), no el archivo:
+    // la lista se mantiene liviana y el archivo se pide a /api/comprobantes.
+    const meta = await metaComprobantes('ingreso', resultados.map((r: any) => r.id));
+    const data = resultados.map((r: any) => ({ ...r, comprobantes: meta[r.id] || [] }));
+    return NextResponse.json({ success: true, data });
   } catch (error: any) {
     console.error("Error al obtener los ingresos:", error);
     return NextResponse.json({ success: false, error: "Error interno al cargar los datos desde MySQL." }, { status: 500 });
@@ -68,14 +77,25 @@ export async function POST(request: Request) {
     const montoIva = aplicaIva ? precioBs * 0.16 : 0;
     const precioDivisa = (precioBs + montoIva) / tasaCambioNum;
 
+    // Los comprobantes se validan antes de insertar nada: si un archivo no
+    // sirve, se rechaza el alta entera en vez de guardar un ingreso sin prueba.
+    const comprobantes = prepararComprobantes(body.comprobantes);
+    await ensureTablaComprobantes();
+
     const sql = `INSERT INTO ingresos (banco, nombreCliente, rif, vendedor, comision_porcentaje, comision_monto, descripcion, m3, resistencia, precioBs, precioDivisa, tasaCambio, aplicaIva, montoIva, tipoDocumento, referencia, moneda) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
     const values = [banco, nombreCliente, rif, vendedor, comision_porcentaje || null, comision_monto || null, descripcion || null, m3 ? parseFloat(m3) : null, resistencia || null, precioBs, precioDivisa, tasaCambioNum, aplicaIvaSql, montoIva || null, tipoDocumento, referencia, moneda];
-    await query(sql, values);
+    // Ingreso y comprobantes en una sola transacción: o quedan los dos o
+    // ninguno. Antes el comprobante se descartaba siempre.
+    const ingresoId = await transaccion(async (conn) => {
+      const [resultado]: any = await conn.execute(sql, values);
+      await guardarComprobantes(conn, 'ingreso', resultado.insertId, comprobantes);
+      return resultado.insertId as number;
+    });
     emitSocketEvent('ingresos:created');
 
     const usuario = await getUsuarioFromRequest();
     await registrarLog({
-      ...usuario, accion: 'crear', modulo: 'Ingresos', entidad_id: null,
+      ...usuario, accion: 'crear', modulo: 'Ingresos', entidad_id: ingresoId,
       descripcion: `Registró ingreso: ${nombreCliente} - Bs. ${precioBs}`,
       datos_nuevos: { banco, nombreCliente, rif, precioBs, precioDivisa, tipoDocumento, referencia },
       ip_address: getClientIp(request),
@@ -83,6 +103,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, mensaje: "Ingreso guardado exitosamente en la base de datos." });
   } catch (error: any) {
+    if (error instanceof ComprobanteInvalido) {
+      return NextResponse.json({ success: false, error: error.message }, { status: 400 });
+    }
     console.error("Error al insertar en MySQL:", error);
     if (error.code === 'ER_DUP_ENTRY') return NextResponse.json({ success: false, error: "Esta referencia bancaria ya fue registrada anteriormente." }, { status: 400 });
     return NextResponse.json({ success: false, error: "Error interno al guardar en la base de datos." }, { status: 500 });

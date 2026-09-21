@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { EgresoForm } from '@/components/forms/egreso-form';
 import { Plus, X, TrendingDown } from 'lucide-react';
 import { formatearFecha } from '@/lib/fecha';
+import { ComprobanteLinks } from '@/components/comprobante-links';
 
 function formatBs(v: number) { return v.toLocaleString('es-VE', { minimumFractionDigits: 2 }) + ' Bs'; }
 
@@ -106,11 +107,7 @@ export default function EgresosPage() {
                   <td className="px-4 py-3 text-right font-medium text-slate-900">{formatBs(eg.montoBs || 0)}</td>
                   <td className="px-4 py-3 text-right text-emerald-700">${(eg.montoDivisa || 0).toFixed(4)}</td>
                   <td className="px-4 py-3 text-center">
-                    {eg.comprobantes?.length > 0 ? (
-                      <span className="text-emerald-600 text-xs font-semibold">{eg.comprobantes.length} archivo(s)</span>
-                    ) : (
-                      <span className="text-slate-400 text-xs">—</span>
-                    )}
+                    <ComprobanteLinks comprobantes={eg.comprobantes} />
                   </td>
                 </tr>
               ))}

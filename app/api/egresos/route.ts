@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { query, transaccion } from '@/lib/db';
+import {
+  ensureTablaComprobantes, prepararComprobantes, guardarComprobantes,
+  metaComprobantes, ComprobanteInvalido,
+} from '@/lib/comprobantes';
 import { emitSocketEvent } from '@/lib/socket-server';
 import { registrarLog, getUsuarioFromRequest, getClientIp } from '@/lib/audit-log';
 import { requireAuth } from '@/lib/auth-guard';
@@ -19,9 +23,13 @@ export async function GET() {
   if (auth.response) return auth.response;
 
   try {
+    await ensureTablaComprobantes();
     const sql = `SELECT * FROM egresos ORDER BY id DESC`;
-    const resultados = await query(sql);
-    return NextResponse.json({ success: true, egresos: resultados }, { status: 200 });
+    const resultados: any = await query(sql);
+    // Solo metadatos de los comprobantes; el archivo se pide a /api/comprobantes.
+    const meta = await metaComprobantes('egreso', resultados.map((r: any) => r.id));
+    const egresos = resultados.map((r: any) => ({ ...r, comprobantes: meta[r.id] || [] }));
+    return NextResponse.json({ success: true, egresos }, { status: 200 });
   } catch (error) {
     console.error("Error obteniendo egresos:", error);
     return NextResponse.json({ error: 'Error interno al cargar los egresos.' }, { status: 500 });
@@ -61,10 +69,20 @@ export async function POST(req: Request) {
     }
     const montoDivisa = montoBs / tasaCambioNum;
 
+    // Los comprobantes se validan antes de insertar: si un archivo no sirve,
+    // se rechaza el alta entera en vez de guardar un egreso sin su prueba.
+    const comprobantes = prepararComprobantes(data.comprobantes);
+    await ensureTablaComprobantes();
+
     const sql = `INSERT INTO egresos (banco, nombreProveedor, rif, clasificacionGasto, subCategoria, detalleExtra, descripcion, montoBs, montoDivisa, tasaCambio, referencia, fecha) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
     const fechaEgreso = data.fecha ? data.fecha : hoyLocal();
     const valores = [data.banco, data.nombreProveedor, rif, data.clasificacionGasto, data.subCategoria || null, detalleExtra, data.descripcion || null, montoBs, montoDivisa, tasaCambioNum, data.referencia, fechaEgreso];
-    const resultado: any = await query(sql, valores);
+    // Egreso y comprobantes en una sola transacción: o quedan los dos o ninguno.
+    const resultado = await transaccion(async (conn) => {
+      const [r]: any = await conn.execute(sql, valores);
+      await guardarComprobantes(conn, 'egreso', r.insertId, comprobantes);
+      return r;
+    });
     emitSocketEvent('egresos:created');
 
     const usuario = await getUsuarioFromRequest();
@@ -77,6 +95,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, mensaje: 'Egreso registrado correctamente.', insertId: resultado.insertId }, { status: 201 });
   } catch (error: any) {
+    if (error instanceof ComprobanteInvalido) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
     console.error("Error registrando egreso:", error);
     if (error.code === 'ER_DUP_ENTRY') return NextResponse.json({ error: 'La referencia de este egreso ya está registrada.' }, { status: 409 });
     return NextResponse.json({ error: 'Error interno del servidor.' }, { status: 500 });

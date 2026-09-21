@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { formatearFecha } from '@/lib/fecha';
+import { ComprobanteLinks } from '@/components/comprobante-links';
 function IngresosTable() {
   // 1. Inicializar siempre con un arreglo vacío
   const [data, setData] = useState<any[]>([]);
@@ -73,6 +74,7 @@ function IngresosTable() {
             <th className="px-4 py-3 font-semibold text-gray-700">Monto (Bs)</th>
             <th className="px-4 py-3 font-semibold text-gray-700">Monto ($)</th>
             <th className="px-4 py-3 font-semibold text-gray-700">Tasa Aplicada</th>
+            <th className="text-center px-4 py-3 font-semibold text-gray-700">Comprobante</th>
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
@@ -92,6 +94,7 @@ function IngresosTable() {
               <td className="px-4 py-3 font-semibold text-green-700">Bs. {(Number(ingreso.precioBs || 0) + Number(ingreso.montoIva || 0)).toLocaleString('es-VE', { minimumFractionDigits: 2 })}</td>
               <td className="px-4 py-3 text-gray-700">${Number(ingreso.precioDivisa).toLocaleString('es-VE')}</td>
               <td className="px-4 py-3 text-gray-500 text-xs">Bs. {ingreso.tasaCambio}</td>
+              <td className="px-4 py-3 text-center"><ComprobanteLinks comprobantes={ingreso.comprobantes} /></td>
             </tr>
           ))}
         </tbody>
