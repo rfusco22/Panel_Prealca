@@ -16,7 +16,7 @@ const REPORTES = [
   { id: 'm3', label: 'Metros cúbicos despachados' },
   { id: 'resistencia', label: 'Despacho por resistencia' },
   { id: 'clientes-top', label: 'Principales clientes' },
-  { id: 'materia-prima', label: 'Materia prima comprada' },
+  { id: 'materia-prima', label: 'Materia prima: comprado y gastado' },
   { id: 'comisiones', label: 'Comisiones de vendedores' },
   { id: 'viajes', label: 'Viajes por trompero' },
 ];
@@ -224,6 +224,8 @@ function MateriaPrima({ from, to }: { from: string; to: string }) {
   if (!res) return <div className="bg-white rounded-xl border border-slate-200 p-12 text-center text-slate-400">No se pudo cargar el reporte</div>;
 
   const { data, porMes, porProveedor, summary } = res;
+  const gasto = res.gasto || [];
+  const gastoDetalle = res.gastoDetalle || [];
   const fmt = (v: number) => v.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   // El material del gráfico: el elegido, o el de más entradas por defecto.
@@ -233,18 +235,29 @@ function MateriaPrima({ from, to }: { from: string; to: string }) {
   const serieMensual: Record<string, number> = {};
   [...mesesDelActivo].reverse().forEach((r: any) => { serieMensual[r.mes] = r.cantidad; });
 
+  // Lo comprado y lo gastado van en la misma exportación pero como bloques
+  // separados, con las columnas de cada uno: son cantidades en unidades
+  // distintas y montos en bolívares, no se pueden poner en la misma columna.
   const excelData = {
-    title: 'Materia prima comprada',
-    columns: ['Material', 'Unidad', 'Entradas', 'Cantidad comprada'],
-    data: data.map((r: any) => [r.agregado, r.unidad, r.entradas, Number(r.cantidad).toFixed(2)]),
+    title: 'Materia prima: comprado y gastado',
+    columns: ['Concepto', 'Detalle', 'Entradas / Egresos', 'Cantidad o Monto'],
+    data: [
+      ...data.map((r: any) => [
+        'Comprado', `${r.agregado} (${r.unidad})`, r.entradas, `${Number(r.cantidad).toFixed(2)} ${r.unidad}`,
+      ]),
+      ...gasto.map((r: any) => [
+        r.esFlete ? 'Gastado (flete)' : 'Gastado (material)', r.subCategoria, r.egresos, `Bs. ${Number(r.montoBs).toFixed(2)}`,
+      ]),
+    ],
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <p className="text-xs text-slate-500 max-w-lg">
-          Cada material se mide en su propia unidad, así que no hay un total general de cantidad:
-          sumar kilogramos con litros y bolsas no daría nada útil.
+          Lo comprado sale de lo que el dosificador carga en planta, y lo gastado de los egresos
+          de producción. Cada material se mide en su propia unidad, así que no hay un total general
+          de cantidad: sumar kilogramos con litros y bolsas no daría nada útil.
         </p>
         <ExportButtons excelData={excelData} />
       </div>
@@ -256,18 +269,135 @@ function MateriaPrima({ from, to }: { from: string; to: string }) {
         { label: 'Carga inicial', value: summary.entradasSaldoInicial, icon: <Layers size={18} className="text-slate-600" />, color: 'bg-slate-50' },
       ]} />
 
-      <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
-        <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
-        <div className="text-sm text-amber-800">
-          <p className="font-semibold">Falta la mitad de &quot;cuánto se gastó&quot;</p>
-          <p className="mt-1">
-            La tabla de materia prima no guarda ningún costo, y la de egresos, que sí tiene montos,
-            no registra qué material se compró. Para poder responderlo hay que decidir si se le agrega
-            el precio a cada entrada de materia prima al cargarla, o si se estima desde los egresos
-            por clasificación de gasto. Está anotado en el issue #4.
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-slate-100 flex flex-wrap items-baseline justify-between gap-2">
+          <h3 className="text-sm font-bold text-slate-900">Cuánto se gastó</h3>
+          <p className="text-xs text-slate-400">
+            De los egresos de clasificación Producción, que es donde se registra el pago
           </p>
         </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
+          <div className="p-4">
+            <p className="text-[10px] font-bold text-slate-500 uppercase">Material</p>
+            <p className="text-xl font-bold text-slate-900 tabular-nums mt-1">Bs. {fmt(summary.gastoMaterialBs || 0)}</p>
+            <p className="text-xs text-slate-400 tabular-nums">$ {fmt(summary.gastoMaterialUsd || 0)}</p>
+          </div>
+          <div className="p-4">
+            <p className="text-[10px] font-bold text-slate-500 uppercase">Flete</p>
+            <p className="text-xl font-bold text-slate-900 tabular-nums mt-1">Bs. {fmt(summary.gastoFleteBs || 0)}</p>
+            <p className="text-xs text-slate-400 tabular-nums">$ {fmt(summary.gastoFleteUsd || 0)}</p>
+          </div>
+          <div className="p-4 bg-slate-50">
+            <p className="text-[10px] font-bold text-slate-500 uppercase">Total producción</p>
+            <p className="text-xl font-bold text-slate-900 tabular-nums mt-1">Bs. {fmt(summary.gastoTotalBs || 0)}</p>
+            <p className="text-xs text-slate-400 tabular-nums">
+              {summary.egresosProduccion || 0} egreso(s) · $ {fmt(summary.gastoTotalUsd || 0)}
+            </p>
+          </div>
+        </div>
+
+        {gasto.length === 0 ? (
+          <div className="border-t border-slate-100 p-6 text-center">
+            <p className="text-sm text-slate-500">
+              No hay egresos de clasificación <strong>Producción</strong> en el período.
+            </p>
+            <p className="text-xs text-slate-400 mt-1">
+              El gasto se llena a medida que se carguen los pagos de materia prima en Egresos,
+              eligiendo la clasificación Producción y la subcategoría del material.
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto border-t border-slate-100">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-slate-50">
+                  <th className="px-4 py-3 text-left font-semibold text-slate-600">Subcategoría</th>
+                  <th className="px-4 py-3 text-right font-semibold text-slate-600">Egresos</th>
+                  <th className="px-4 py-3 text-right font-semibold text-slate-600">Monto Bs</th>
+                  <th className="px-4 py-3 text-right font-semibold text-slate-600">Monto $</th>
+                </tr>
+              </thead>
+              <tbody>
+                {gasto.map((r: any, i: number) => (
+                  <tr key={i} className="border-t border-slate-100 hover:bg-slate-50">
+                    <td className="px-4 py-3 font-medium text-slate-900">
+                      {r.subCategoria}
+                      {r.esFlete && (
+                        <span className="ml-2 text-[10px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                          transporte
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-right text-slate-700">{r.egresos}</td>
+                    <td className="px-4 py-3 text-right font-bold text-slate-900 tabular-nums">{fmt(r.montoBs)}</td>
+                    <td className="px-4 py-3 text-right text-slate-500 tabular-nums">{fmt(r.montoDivisa)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
+
+      {gasto.length > 0 && (
+        <div className="flex items-start gap-3 bg-slate-50 border border-slate-200 rounded-xl p-4">
+          <AlertTriangle size={18} className="text-slate-400 shrink-0 mt-0.5" />
+          <p className="text-sm text-slate-600">
+            Lo comprado y lo gastado no se dividen entre sí para sacar un costo por unidad:
+            en planta el material se pesa en kilogramos, y el egreso de producción se carga en M³
+            para arena y piedra, en toneladas para cemento, en litros para aditivos y en bolsas
+            para fibra. El precio unitario que se muestra abajo es el que viene cargado en cada egreso.
+          </p>
+        </div>
+      )}
+
+      {gastoDetalle.length > 0 && (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="p-4 border-b border-slate-100">
+            <h3 className="text-sm font-bold text-slate-900">Detalle de pagos de producción</h3>
+            <p className="text-xs text-slate-400 mt-0.5">Para ver si un proveedor cambió el precio</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-slate-50">
+                  <th className="px-4 py-3 text-left font-semibold text-slate-600">Fecha</th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-600">Proveedor</th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-600">Material</th>
+                  <th className="px-4 py-3 text-right font-semibold text-slate-600">Cantidad</th>
+                  <th className="px-4 py-3 text-right font-semibold text-slate-600">Precio unit.</th>
+                  <th className="px-4 py-3 text-right font-semibold text-slate-600">Monto Bs</th>
+                </tr>
+              </thead>
+              <tbody>
+                {gastoDetalle.map((r: any) => (
+                  <tr key={r.id} className="border-t border-slate-100 hover:bg-slate-50">
+                    <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{formatearFechaCorta(r.fecha)}</td>
+                    <td className="px-4 py-3 font-medium text-slate-900">{r.proveedor}</td>
+                    <td className="px-4 py-3 text-slate-700">{r.subCategoria}</td>
+                    <td className="px-4 py-3 text-right text-slate-700 tabular-nums">
+                      {r.cantidad === null ? <span className="text-slate-300">—</span> : fmt(r.cantidad)}
+                    </td>
+                    <td className="px-4 py-3 text-right text-slate-700 tabular-nums">
+                      {r.precioUnitario === null ? <span className="text-slate-300">—</span> : fmt(r.precioUnitario)}
+                    </td>
+                    <td className="px-4 py-3 text-right font-bold text-slate-900 tabular-nums">{fmt(r.montoBs)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {gastoDetalle.some((r: any) => r.precioUnitario === null) && (
+            <div className="border-t border-slate-100 px-4 py-3">
+              <p className="text-xs text-slate-500">
+                Los guiones son egresos cargados sin cantidad ni precio unitario. El monto igual cuenta
+                en el total; lo que no se puede es comparar su precio contra el de otra compra.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       {summary.entradasSaldoInicial > 0 && (
         <div className="flex items-start gap-3 bg-slate-50 border border-slate-200 rounded-xl p-4">

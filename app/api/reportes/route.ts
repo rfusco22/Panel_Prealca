@@ -137,15 +137,22 @@ export async function GET(request: Request) {
         });
       }
 
-      // Materia prima comprada en el período. Ver issue #4.
+      // Materia prima: cuánto se compró y cuánto se gastó. Ver issue #4.
       //
-      // Esto responde solo la primera mitad del reporte pedido ("cuánto se
-      // compró"). La segunda ("cuánto se gastó") no se puede calcular:
-      // materia_prima no guarda ningún costo -sus columnas son agregado_id,
-      // cantidad, unidad, fecha, proveedor_id, planta_id, chofer_id,
-      // unidad_id, es_saldo_inicial, usuario_id- y egresos, que sí tiene
-      // montos, no dice qué agregado se compró. La página lo aclara en vez de
-      // mostrar un cero que parezca un dato.
+      // Las dos mitades salen de tablas distintas a propósito, porque así es
+      // el circuito real: el dosificador carga en materia_prima el material
+      // que entra a planta, ya pagado, y el admin registra la plata que salió
+      // como un egreso de clasificación 'Produccion'. materia_prima no guarda
+      // ningún costo, y no hace falta que lo guarde.
+      //
+      // Por eso el gasto NO se calcula dividiendo montos por cantidades entre
+      // las dos tablas: las unidades no coinciden. El dosificador pesa en
+      // kilogramos y el egreso de producción va en M³ para arena y piedra, en
+      // toneladas para cemento, en litros para aditivos y en bolsas para
+      // fibra. Cruzar esas cifras daría un costo unitario inventado. Cada
+      // mitad se muestra en sus propios términos, y el precio unitario que se
+      // informa es el que viene dentro del egreso, donde cantidad y precio son
+      // consistentes entre sí.
       //
       // No se devuelve un total general de cantidad a propósito: cada agregado
       // se mide en su unidad (cemento en kilogramos, aditivos en litros,
@@ -203,6 +210,84 @@ export async function GET(request: Request) {
           params
         );
 
+        // Cuánto se gastó: sale de los egresos de clasificación 'Produccion',
+        // que es donde el admin registra el pago de la materia prima. La
+        // subcategoría dice qué se compró (Arena, Piedra, Cemento, Aditivo,
+        // Fibra, Flete), y detalleExtra trae un JSON con cantidad, precio
+        // unitario y subtotal cuando quien cargó el egreso los completó.
+        //
+        // El filtro va contra `fecha` (la fecha del pago), no contra createdAt:
+        // un egreso se puede cargar días después de haberse pagado y tiene que
+        // caer en el período en que salió la plata.
+        const dateFilterEg = dateFilter.replace(/created_at/g, 'fecha');
+        const gastoRows: any = await query(
+          `SELECT COALESCE(NULLIF(TRIM(subCategoria), ''), 'Sin subcategoría') AS subCategoria,
+                  COUNT(*) AS egresos,
+                  SUM(montoBs) AS montoBs,
+                  SUM(montoDivisa) AS montoDivisa
+           FROM egresos
+           WHERE clasificacionGasto = 'Produccion' ${dateFilterEg}
+           GROUP BY COALESCE(NULLIF(TRIM(subCategoria), ''), 'Sin subcategoría')
+           ORDER BY montoBs DESC`,
+          params
+        );
+
+        // El detalle sirve para mostrar el precio unitario de cada compra, que
+        // es el dato que permite ver si el proveedor subió el precio. Se lee
+        // detalleExtra en JS porque es un JSON guardado como texto y no todas
+        // las filas lo traen: las que se cargaron sin cantidad ni precio tienen
+        // el detalle en texto libre, o NULL.
+        const gastoDetalleRaw: any = await query(
+          `SELECT id, fecha, nombreProveedor, subCategoria, montoBs, montoDivisa,
+                  tasaCambio, referencia, detalleExtra
+           FROM egresos
+           WHERE clasificacionGasto = 'Produccion' ${dateFilterEg}
+           ORDER BY fecha DESC, id DESC`,
+          params
+        );
+
+        const gastoDetalle = gastoDetalleRaw.map((r: any) => {
+          let cantidad: number | null = null;
+          let precioUnitario: number | null = null;
+          try {
+            const extra = r.detalleExtra ? JSON.parse(r.detalleExtra) : null;
+            if (extra && typeof extra === 'object') {
+              cantidad = Number.isFinite(Number(extra.cantidad)) ? Number(extra.cantidad) : null;
+              precioUnitario = Number.isFinite(Number(extra.precioUnitario)) ? Number(extra.precioUnitario) : null;
+            }
+          } catch {
+            // detalleExtra en texto libre, no JSON: no hay cantidad ni precio.
+          }
+          return {
+            id: r.id,
+            fecha: r.fecha,
+            proveedor: r.nombreProveedor,
+            subCategoria: r.subCategoria || 'Sin subcategoría',
+            montoBs: Number(r.montoBs || 0),
+            montoDivisa: Number(r.montoDivisa || 0),
+            tasaCambio: Number(r.tasaCambio || 0),
+            referencia: r.referencia,
+            cantidad,
+            precioUnitario,
+          };
+        });
+
+        // Flete es transporte, no material: entra en el gasto de producción
+        // pero no es materia prima comprada. Se separa para que el total de
+        // material no quede inflado con el costo de traerlo.
+        const gasto = gastoRows.map((r: any) => ({
+          subCategoria: r.subCategoria,
+          egresos: Number(r.egresos),
+          montoBs: Number(r.montoBs || 0),
+          montoDivisa: Number(r.montoDivisa || 0),
+          esFlete: String(r.subCategoria).toUpperCase() === 'FLETE',
+        }));
+
+        const sumBs = (rows: any[]) => rows.reduce((s: number, r: any) => s + r.montoBs, 0);
+        const sumUsd = (rows: any[]) => rows.reduce((s: number, r: any) => s + r.montoDivisa, 0);
+        const soloMaterial = gasto.filter((r: any) => !r.esFlete);
+        const soloFlete = gasto.filter((r: any) => r.esFlete);
+
         // Las cargas de inventario inicial se cuentan aparte, para que se vea
         // que existen y no parezca que faltan entradas.
         const saldoInicial: any = await query(
@@ -225,6 +310,8 @@ export async function GET(request: Request) {
           success: true,
           data: agregados,
           porMes: meses,
+          gasto,
+          gastoDetalle,
           porProveedor: porProveedor.map((r: any) => ({
             ...r,
             entradas: Number(r.entradas),
@@ -235,6 +322,18 @@ export async function GET(request: Request) {
             agregados: agregados.length,
             proveedores: porProveedor.length,
             entradasSaldoInicial: Number(saldoInicial[0]?.entradas || 0),
+            // Gasto en Bs y en divisa, separados: son la misma plata expresada
+            // a la tasa del día de cada pago, no dos gastos distintos.
+            gastoMaterialBs: sumBs(soloMaterial),
+            gastoMaterialUsd: sumUsd(soloMaterial),
+            gastoFleteBs: sumBs(soloFlete),
+            gastoFleteUsd: sumUsd(soloFlete),
+            gastoTotalBs: sumBs(gasto),
+            gastoTotalUsd: sumUsd(gasto),
+            egresosProduccion: gasto.reduce((s: number, r: any) => s + r.egresos, 0),
+            gastoPorSubcategoriaBs: Object.fromEntries(
+              soloMaterial.map((r: any) => [r.subCategoria, r.montoBs])
+            ),
             // Cantidad comprada por material, cada una en su unidad. Se manda
             // como lista y no como un mapa de un solo número justamente para
             // que la vista no las pueda sumar entre sí.
