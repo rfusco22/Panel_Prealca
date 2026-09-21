@@ -144,7 +144,9 @@ export function GuiaDespachoTable({ data }: GuiaDespachoTableProps) {
 
       const pdf = new jsPDF('l', 'mm', [pdfWidth, pdfHeight]);
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`Guia_Despacho_GD-${guia.id}.pdf`);
+      // El nombre del archivo lleva el mismo número que el documento. Con
+      // guia.id, la guía GD-1 se descargaba como Guia_Despacho_GD-7.pdf.
+      pdf.save(`Guia_Despacho_GD-${guia.numeroGuia ?? guia.id}.pdf`);
     } catch (e) {
       console.error('Error generating PDF:', e);
       alert('Error al generar el PDF');

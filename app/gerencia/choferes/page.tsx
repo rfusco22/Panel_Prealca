@@ -45,7 +45,8 @@ export default function GerenciaChoferesPage() {
                     <td className="px-6 py-4 font-bold text-slate-800">{c.nombre}</td>
                     <td className="px-6 py-4 font-medium text-slate-600">{c.cedula || '-'}</td>
                     <td className="px-6 py-4 text-slate-500">{c.telefono || '-'}</td>
-                    <td className="px-6 py-4 text-slate-500">{c.licencia || '-'}</td>
+                    {/* El número de licencia está en licencia_documento; c.licencia no existe. */}
+                    <td className="px-6 py-4 text-slate-500">{c.licencia_documento || '-'}</td>
                     <td className="px-6 py-4 text-slate-500">{c.licencia_vencimiento ? formatearFecha(c.licencia_vencimiento) : '-'}</td>
                     <td className="px-6 py-4 text-slate-500">{c.certificado_vencimiento ? formatearFecha(c.certificado_vencimiento) : '-'}</td>
                   </tr>

@@ -48,8 +48,11 @@ export default function GerenciaMateriaPrimaPage() {
               <tbody className="divide-y divide-slate-100">
                 {materiaPrima.map((mp: any, i: number) => (
                   <tr key={mp.id || i} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="px-6 py-4 font-bold text-slate-800">{mp.agregadoNombre || mp.nombre || '-'}</td>
-                    <td className="px-6 py-4 font-medium text-slate-600">{mp.cantidad}</td>
+                    {/* /api/materia-prima devuelve agregado_nombre: con agregadoNombre la
+                        columna salía "-" en todas las filas. */}
+                    <td className="px-6 py-4 font-bold text-slate-800">{mp.agregado_nombre || '-'}</td>
+                    {/* cantidad es DECIMAL y llega como string ("38850.00"): se formatea. */}
+                    <td className="px-6 py-4 font-medium text-slate-600 tabular-nums">{Number(mp.cantidad || 0).toLocaleString('es-VE', { maximumFractionDigits: 2 })}</td>
                     <td className="px-6 py-4 text-slate-500">{getUnidad(mp.agregado_id || mp.agregadoId) || mp.unidadMedida || '-'}</td>
                     <td className="px-6 py-4 text-slate-500">{mp.fecha ? formatearFecha(mp.fecha) : '-'}</td>
                   </tr>
