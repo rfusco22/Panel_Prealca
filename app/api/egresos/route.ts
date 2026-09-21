@@ -5,6 +5,9 @@ import { registrarLog, getUsuarioFromRequest, getClientIp } from '@/lib/audit-lo
 import { requireAuth } from '@/lib/auth-guard';
 import { hoyLocal } from '@/lib/fecha';
 
+// Lectura: admin y gerencia. Alta: solo admin, que es donde se registran;
+// gerencia los consulta desde su pagina de solo lectura.
+//
 // Restringido a admin, gerencia: este endpoint expone montos pagados y clasificación de cada gasto.
 //
 // Antes era requireAuth() sin roles, o sea cualquier usuario logueado.
@@ -26,7 +29,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const auth = await requireAuth(['admin', 'gerencia']);
+  const auth = await requireAuth(['admin']);
   if (auth.response) return auth.response;
 
   try {

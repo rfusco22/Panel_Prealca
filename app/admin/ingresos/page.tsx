@@ -15,8 +15,13 @@ export default function IngresosPage() {
       const res = await fetch('/api/ingresos');
       const result = await res.json();
       const lista = Array.isArray(result) ? result : (result.data || result.ingresos || []);
+      // precioBs, montoIva y precioDivisa son DECIMAL: mysql2 los devuelve como
+      // string. Sin convertirlos, el .toFixed() de la columna en $ tiraba
+      // "toFixed is not a function" con el primer ingreso real, y la página se
+      // caía. No se había visto porque la tabla estaba vacía.
       setIngresos(lista.map((ing: any) => ({
         ...ing,
+        precioDivisa: Number(ing.precioDivisa || 0),
         totalBs: Number(ing.precioBs || 0) + Number(ing.montoIva || 0),
       })));
     } catch (err) {
@@ -91,7 +96,7 @@ export default function IngresosPage() {
                 <tr><td colSpan={9} className="px-4 py-12 text-center text-slate-400">No hay ingresos registrados</td></tr>
               ) : ingresos.map((ing) => (
                 <tr key={ing.id} className="border-b border-slate-100 hover:bg-slate-50">
-                  <td className="px-4 py-3 text-slate-700">{formatearFecha(ing.fecha)}</td>
+                  <td className="px-4 py-3 text-slate-700">{formatearFecha(ing.createdAt || ing.fecha)}</td>
                   <td className="px-4 py-3 text-slate-700">{ing.banco}</td>
                   <td className="px-4 py-3 text-slate-700">{ing.nombreCliente}</td>
                   <td className="px-4 py-3 text-slate-700">{ing.vendedor || '—'}</td>

@@ -85,7 +85,11 @@ function IngresosTable() {
               <td className="px-4 py-3 font-medium text-gray-900">{ingreso.banco}</td>
               <td className="px-4 py-3 text-gray-600">{ingreso.referencia}</td>
               <td className="px-4 py-3">{ingreso.nombreCliente}</td>
-              <td className="px-4 py-3 font-semibold text-green-700">Bs. {Number(ingreso.precioBs).toLocaleString('es-VE')}</td>
+              {/* precioBs es sin IVA, pero precioDivisa se calcula sobre
+                  precioBs + montoIva: mostrar precioBs solo dejaba en la misma
+                  fila un monto en Bs y otro en $ que no eran la misma plata.
+                  Se suma el IVA, igual que en la página de ingresos de admin. */}
+              <td className="px-4 py-3 font-semibold text-green-700">Bs. {(Number(ingreso.precioBs || 0) + Number(ingreso.montoIva || 0)).toLocaleString('es-VE', { minimumFractionDigits: 2 })}</td>
               <td className="px-4 py-3 text-gray-700">${Number(ingreso.precioDivisa).toLocaleString('es-VE')}</td>
               <td className="px-4 py-3 text-gray-500 text-xs">Bs. {ingreso.tasaCambio}</td>
             </tr>

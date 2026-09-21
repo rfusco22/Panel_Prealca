@@ -8,6 +8,9 @@ import { requireAuth } from '@/lib/auth-guard';
 // precioBs/precioDivisa y la descartaba. Sin ese dato no se puede saber en qué
 // moneda pagar la comisión del vendedor. Ver sql/migracion_moneda_ingresos.sql.
 
+// Lectura: admin y gerencia. Alta: solo admin, que es donde se registran;
+// gerencia los consulta desde su pagina de solo lectura.
+//
 // Restringido a admin, gerencia: este endpoint expone montos cobrados, comisiones de vendedores y referencias bancarias.
 //
 // Antes era requireAuth() sin roles, o sea cualquier usuario logueado.
@@ -34,7 +37,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const auth = await requireAuth(['admin', 'gerencia']);
+  const auth = await requireAuth(['admin']);
   if (auth.response) return auth.response;
 
   try {
