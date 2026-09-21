@@ -4,8 +4,17 @@ import { emitSocketEvent } from '@/lib/socket-server';
 import { registrarLog, getUsuarioFromRequest, getClientIp } from '@/lib/audit-log';
 import { requireAuth } from '@/lib/auth-guard';
 
+
+// Control de acceso por rol y por metodo: la lectura la necesitan hasta el dosificador (elige el chofer que
+// trajo la materia prima) y gerencia; el alta y la baja son de admin, registro
+// y seguridad-vial, que son los que tienen la ficha del chofer.
+//
+// Antes todos los handlers usaban requireAuth() sin roles, o sea cualquier
+// usuario logueado. En los endpoints con POST/PUT/DELETE eso significaba que
+// se podia crear, editar y borrar escribiendo la URL, sin tener el boton.
+// La lista de roles sale de que paginas llaman al endpoint de verdad.
 export async function GET() {
-  const auth = await requireAuth();
+  const auth = await requireAuth(['admin', 'gerencia', 'registro', 'dosificador', 'seguridad-vial']);
   if (auth.response) return auth.response;
 
   try {
@@ -18,7 +27,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const auth = await requireAuth();
+  const auth = await requireAuth(['admin', 'registro', 'seguridad-vial']);
   if (auth.response) return auth.response;
 
   try {
@@ -45,7 +54,7 @@ export async function POST(req: Request) {
 }
 
 export async function PUT(req: Request) {
-  const auth = await requireAuth();
+  const auth = await requireAuth(['admin', 'registro', 'seguridad-vial']);
   if (auth.response) return auth.response;
 
   try {
@@ -75,7 +84,7 @@ export async function PUT(req: Request) {
 }
 
 export async function DELETE(req: Request) {
-  const auth = await requireAuth();
+  const auth = await requireAuth(['admin', 'registro', 'seguridad-vial']);
   if (auth.response) return auth.response;
 
   try {

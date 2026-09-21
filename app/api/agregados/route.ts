@@ -4,8 +4,16 @@ import { emitSocketEvent } from '@/lib/socket-server';
 import { registrarLog, getUsuarioFromRequest, getClientIp } from '@/lib/audit-log';
 import { requireAuth } from '@/lib/auth-guard';
 
+
+// Control de acceso por rol y por metodo: el catalogo de materiales lo mantiene solo admin: borrar un agregado
+// deja huerfanas las entradas de materia prima que lo referencian.
+//
+// Antes todos los handlers usaban requireAuth() sin roles, o sea cualquier
+// usuario logueado. En los endpoints con POST/PUT/DELETE eso significaba que
+// se podia crear, editar y borrar escribiendo la URL, sin tener el boton.
+// La lista de roles sale de que paginas llaman al endpoint de verdad.
 export async function GET() {
-  const auth = await requireAuth();
+  const auth = await requireAuth(['admin', 'gerencia', 'registro', 'dosificador']);
   if (auth.response) return auth.response;
 
   try {
@@ -18,7 +26,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const auth = await requireAuth();
+  const auth = await requireAuth(['admin']);
   if (auth.response) return auth.response;
 
   try {
@@ -44,7 +52,7 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
-  const auth = await requireAuth();
+  const auth = await requireAuth(['admin']);
   if (auth.response) return auth.response;
 
   try {
@@ -75,7 +83,7 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const auth = await requireAuth();
+  const auth = await requireAuth(['admin']);
   if (auth.response) return auth.response;
 
   try {

@@ -2,8 +2,16 @@ import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { requireAuth } from '@/lib/auth-guard';
 
+
+// Control de acceso por rol y por metodo: lee de la tabla facturas. Solo las paginas de admin la llaman; se
+// suma gerencia porque ve los mismos datos en sus reportes de retenciones.
+//
+// Antes todos los handlers usaban requireAuth() sin roles, o sea cualquier
+// usuario logueado. En los endpoints con POST/PUT/DELETE eso significaba que
+// se podia crear, editar y borrar escribiendo la URL, sin tener el boton.
+// La lista de roles sale de que paginas llaman al endpoint de verdad.
 export async function GET() {
-  const auth = await requireAuth();
+  const auth = await requireAuth(['admin', 'gerencia']);
   if (auth.response) return auth.response;
 
   try {

@@ -7,6 +7,15 @@ import { emitSocketEvent } from '@/lib/socket-server';
 import { registrarLog, getUsuarioFromRequest, getClientIp } from '@/lib/audit-log';
 import { requireAuth } from '@/lib/auth-guard';
 
+
+// Control de acceso por rol y por metodo: expone precio_m3, iva_monto y total por guia, o sea el precio de venta.
+// Seguridad Vial no tiene ninguna pagina que la use y no la necesita: su
+// reporte de viajes sale de /api/reportes?type=viajes, que no trae montos.
+//
+// Antes todos los handlers usaban requireAuth() sin roles, o sea cualquier
+// usuario logueado. En los endpoints con POST/PUT/DELETE eso significaba que
+// se podia crear, editar y borrar escribiendo la URL, sin tener el boton.
+// La lista de roles sale de que paginas llaman al endpoint de verdad.
 async function ensureColumns() {
   try { await query(`ALTER TABLE guia_despacho ADD COLUMN pedido_id INT NULL`); } catch {}
   try { await query(`ALTER TABLE guia_despacho ADD COLUMN obra VARCHAR(255) NULL`); } catch {}
@@ -40,7 +49,7 @@ async function siguienteNumeroGuia(tipo: string): Promise<number> {
 }
 
 export async function GET() {
-  const auth = await requireAuth();
+  const auth = await requireAuth(['admin', 'gerencia', 'registro', 'dosificador']);
   if (auth.response) return auth.response;
 
   try {

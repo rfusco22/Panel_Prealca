@@ -4,6 +4,14 @@ import { emitSocketEvent } from '@/lib/socket-server';
 import { registrarLog, getUsuarioFromRequest, getClientIp } from '@/lib/audit-log';
 import { requireAuth } from '@/lib/auth-guard';
 
+
+// Control de acceso por rol y por metodo: el dosificador carga lo que entra a planta, que es su trabajo. PUT y
+// DELETE ya estaban en admin.
+//
+// Antes todos los handlers usaban requireAuth() sin roles, o sea cualquier
+// usuario logueado. En los endpoints con POST/PUT/DELETE eso significaba que
+// se podia crear, editar y borrar escribiendo la URL, sin tener el boton.
+// La lista de roles sale de que paginas llaman al endpoint de verdad.
 async function ensureColumns() {
   try { await query(`ALTER TABLE materia_prima ADD COLUMN es_saldo_inicial TINYINT(1) DEFAULT 0`); } catch {}
   try { await query(`ALTER TABLE materia_prima ADD COLUMN planta VARCHAR(255) NULL`); } catch {}
@@ -14,7 +22,7 @@ async function ensureColumns() {
 }
 
 export async function GET() {
-  const auth = await requireAuth();
+  const auth = await requireAuth(['admin', 'gerencia', 'dosificador']);
   if (auth.response) return auth.response;
 
   try {
@@ -42,7 +50,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const auth = await requireAuth();
+  const auth = await requireAuth(['admin', 'dosificador']);
   if (auth.response) return auth.response;
 
   try {
