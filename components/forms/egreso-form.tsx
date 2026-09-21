@@ -4,7 +4,10 @@ import { useState, useEffect } from 'react';
 import { AlertCircle, CheckCircle2, TrendingDown, Loader2, Upload, X, Paperclip } from 'lucide-react';
 import { hoyLocal } from '@/lib/fecha';
 interface EgresoFormProps {
-  onAdd: (data: any) => void;
+  // Puede devolver una promesa: el formulario la espera y solo muestra el
+  // éxito si se resolvió. Si falla (referencia duplicada, error del servidor),
+  // se muestra el error en vez de simular que se guardó.
+  onAdd: (data: any) => void | Promise<void>;
   onClose?: () => void;
 }
 
@@ -67,6 +70,8 @@ export function EgresoForm({ onAdd, onClose }: EgresoFormProps) {
   const [cargandoTasa, setCargandoTasa] = useState(true);
   const [errorTasa, setErrorTasa] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [listaProveedores, setListaProveedores] = useState<any[]>([]);
   const [listaBancos, setListaBancos] = useState<any[]>([]);
   const [proveedorId, setProveedorId] = useState('');
@@ -136,29 +141,40 @@ export function EgresoForm({ onAdd, onClose }: EgresoFormProps) {
     setComprobantes(prev => prev.filter((_, i) => i !== idx));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Antes onAdd se llamaba sin esperar y el éxito se mostraba enseguida, así
+  // que un guardado que fallaba se veía igual que uno que funcionaba. Ahora se
+  // espera la respuesta, igual que en el formulario de ingresos.
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!bancoId || !nombreProveedor || !clasificacion || !referencia || comprobantes.length === 0) return;
 
     const rif = `${prefijoRif}-${numeroRif}`;
     const bancoSeleccionado = listaBancos.find((b: any) => b.id === Number(bancoId));
+    setSubmitError(null);
+    setIsSubmitting(true);
 
-    onAdd({
-      banco: bancoSeleccionado?.nombreBanco || '',
-      bancoId: Number(bancoId), fecha, nombreProveedor, rif, clasificacionGasto: clasificacion,
-      subCategoria, detalleExtra, descripcion, montoBs: montoBsNum,
-      montoDivisa: montoUsdNum, tasaCambio, referencia, comprobantes,
-      cantidadProduccion: parseFloat(cantidadProduccion) || null,
-      precioUnitario: parseFloat(precioUnitario) || null,
-    });
+    try {
+      await onAdd({
+        banco: bancoSeleccionado?.nombreBanco || '',
+        bancoId: Number(bancoId), fecha, nombreProveedor, rif, clasificacionGasto: clasificacion,
+        subCategoria, detalleExtra, descripcion, montoBs: montoBsNum,
+        montoDivisa: montoUsdNum, tasaCambio, referencia, comprobantes,
+        cantidadProduccion: parseFloat(cantidadProduccion) || null,
+        precioUnitario: parseFloat(precioUnitario) || null,
+      });
 
-    setShowSuccess(true);
-    setTimeout(() => {
-      setBancoId(''); setFecha(getTodayStr()); setProveedorId(''); setNombreProveedor(''); setNumeroRif('');
-      setClasificacion(''); setSubCategoria(''); setDetalleExtra('');
-      setCantidadProduccion(''); setPrecioUnitario(''); setMontoBs(''); setMontoUsd('');
-      setMonedaEntrada('BS'); setReferencia(''); setDescripcion(''); setComprobantes([]); setShowSuccess(false);
-    }, 1500);
+      setShowSuccess(true);
+      setTimeout(() => {
+        setBancoId(''); setFecha(getTodayStr()); setProveedorId(''); setNombreProveedor(''); setNumeroRif('');
+        setClasificacion(''); setSubCategoria(''); setDetalleExtra('');
+        setCantidadProduccion(''); setPrecioUnitario(''); setMontoBs(''); setMontoUsd('');
+        setMonedaEntrada('BS'); setReferencia(''); setDescripcion(''); setComprobantes([]); setShowSuccess(false);
+      }, 1500);
+    } catch (err: any) {
+      setSubmitError(err?.message || 'Error al guardar el egreso');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const inputCls = "w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 text-sm font-medium text-slate-900 shadow-sm placeholder:text-slate-300 bg-white transition-all";
@@ -356,11 +372,17 @@ export function EgresoForm({ onAdd, onClose }: EgresoFormProps) {
         </div>
       </div>
 
+      {submitError && (
+        <div className="mx-4 sm:mx-6 mb-3 flex items-center gap-2 text-red-600 text-xs font-semibold bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+          <AlertCircle size={14} /> {submitError}
+        </div>
+      )}
       <div className="px-4 sm:px-6 py-4 bg-slate-50 flex flex-col-reverse sm:flex-row sm:items-center justify-end gap-3 border-t border-slate-100 shrink-0">
         <button type="button" onClick={onClose} className="text-slate-500 hover:text-slate-700 hover:bg-slate-200 bg-slate-100 border border-slate-200 rounded-lg px-5 py-2 text-sm font-medium transition-colors w-full sm:w-auto">
           Cancelar
         </button>
-        <button type="submit" disabled={comprobantes.length === 0} className="bg-slate-900 hover:bg-slate-800 text-white rounded-lg px-6 py-2 shadow-md transition-all text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto">
+        <button type="submit" disabled={comprobantes.length === 0 || isSubmitting} className="bg-slate-900 hover:bg-slate-800 text-white rounded-lg px-6 py-2 shadow-md transition-all text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto">
+          {isSubmitting && <Loader2 size={16} className="animate-spin" />}
           Registrar Egreso
         </button>
       </div>

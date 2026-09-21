@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { EgresoForm } from '@/components/forms/egreso-form';
 import { Plus, X, TrendingDown } from 'lucide-react';
+import { formatearFecha } from '@/lib/fecha';
 
 function formatBs(v: number) { return v.toLocaleString('es-VE', { minimumFractionDigits: 2 }) + ' Bs'; }
 
@@ -10,8 +11,46 @@ export default function EgresosPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [egresos, setEgresos] = useState<any[]>([]);
 
-  const handleAdd = (data: any) => {
-    setEgresos(prev => [{ ...data, id: Date.now() }, ...prev]);
+  // Antes esta página nunca leía la base ni guardaba en ella: handleAdd solo
+  // agregaba el egreso al estado local de React. El formulario mostraba el
+  // éxito y la fila aparecía en la lista, pero al refrescar se perdía, y a la
+  // tabla egresos no llegaba nada. El endpoint POST /api/egresos existía y
+  // funcionaba; simplemente nadie lo llamaba.
+  const fetchEgresos = async () => {
+    try {
+      const res = await fetch('/api/egresos');
+      const result = await res.json();
+      const lista = Array.isArray(result) ? result : (result.data || result.egresos || []);
+      // montoBs y montoDivisa son DECIMAL: mysql2 los devuelve como string.
+      setEgresos(lista.map((eg: any) => ({
+        ...eg,
+        montoBs: Number(eg.montoBs || 0),
+        montoDivisa: Number(eg.montoDivisa || 0),
+      })));
+    } catch (err) {
+      console.error('Error cargando egresos:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchEgresos();
+  }, []);
+
+  // Lanza si el servidor rechaza el egreso: el formulario lo espera y muestra
+  // el error (por ejemplo, una referencia ya registrada) en vez del éxito.
+  const handleAdd = async (data: any) => {
+    const res = await fetch('/api/egresos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    const result = await res.json().catch(() => ({}));
+    // El endpoint devuelve { error } sin success cuando falla, así que se mira
+    // el status HTTP y no solo result.success.
+    if (!res.ok || !result.success) {
+      throw new Error(result.error || 'Error al guardar el egreso');
+    }
+    await fetchEgresos();
     setTimeout(() => setIsModalOpen(false), 1500);
   };
 
@@ -59,7 +98,7 @@ export default function EgresosPage() {
                 <tr><td colSpan={8} className="px-4 py-12 text-center text-slate-400">No hay egresos registrados</td></tr>
               ) : egresos.map((eg) => (
                 <tr key={eg.id} className="border-b border-slate-100 hover:bg-slate-50">
-                  <td className="px-4 py-3 text-slate-700">{eg.fecha}</td>
+                  <td className="px-4 py-3 text-slate-700">{formatearFecha(eg.fecha)}</td>
                   <td className="px-4 py-3 text-slate-700">{eg.banco}</td>
                   <td className="px-4 py-3 text-slate-700">{eg.nombreProveedor}</td>
                   <td className="px-4 py-3 text-slate-700">{eg.clasificacionGasto}</td>
