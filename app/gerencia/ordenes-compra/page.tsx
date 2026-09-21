@@ -2,6 +2,16 @@
 
 import { useState, useEffect } from "react";
 import { formatearFecha } from '@/lib/fecha';
+// La página leía o.montoTotal y o.estatus, dos campos que el API no devuelve:
+// el total viene como `total`, y la tabla orden_compra no tiene columna de
+// estado. El total salía "-" siempre, y el estatus caía siempre en el valor
+// por defecto, así que toda orden aparecía como "Pendiente" aunque el sistema
+// no registra ningún estado. Ahora muestra los datos que sí existen.
+function formatBs(v: unknown) {
+  // total, cantidadM3 y precioM3 son DECIMAL: mysql2 los devuelve como string.
+  return Number(v || 0).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 export default function GerenciaOrdenesCompraPage() {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,8 +44,9 @@ export default function GerenciaOrdenesCompraPage() {
                   <th className="px-6 py-4">Nº Orden</th>
                   <th className="px-6 py-4">Proveedor</th>
                   <th className="px-6 py-4">Fecha</th>
-                  <th className="px-6 py-4">Monto Total</th>
-                  <th className="px-6 py-4">Estatus</th>
+                  <th className="px-6 py-4">Producto</th>
+                  <th className="px-6 py-4 text-right">M³</th>
+                  <th className="px-6 py-4 text-right">Monto Total</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -44,14 +55,9 @@ export default function GerenciaOrdenesCompraPage() {
                     <td className="px-6 py-4 font-semibold text-slate-900">#{o.id}</td>
                     <td className="px-6 py-4 text-slate-600">{o.proveedorNombre || o.proveedorId}</td>
                     <td className="px-6 py-4 text-slate-600">{o.fecha ? formatearFecha(o.fecha) : '-'}</td>
-                    <td className="px-6 py-4 font-medium text-slate-900">{o.montoTotal ? `Bs. ${o.montoTotal.toLocaleString('es-ES', { minimumFractionDigits: 2 })}` : '-'}</td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                        o.estatus === 'completada' ? 'bg-green-100 text-green-800' :
-                        o.estatus === 'pendiente' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-slate-100 text-slate-600'
-                      }`}>{o.estatus || 'Pendiente'}</span>
-                    </td>
+                    <td className="px-6 py-4 text-slate-600">{o.productoNombre || '-'}</td>
+                    <td className="px-6 py-4 text-right text-slate-600 tabular-nums">{formatBs(o.cantidadM3)}</td>
+                    <td className="px-6 py-4 text-right font-medium text-slate-900 tabular-nums">Bs. {formatBs(o.total)}</td>
                   </tr>
                 ))}
               </tbody>
