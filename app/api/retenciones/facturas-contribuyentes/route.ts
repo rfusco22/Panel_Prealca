@@ -26,15 +26,21 @@ export async function GET() {
         c.nombre AS cliente_nombre,
         c.rif AS cliente_rif,
         c.es_contribuyente_especial,
-        gd.iva_monto,
+        -- El IVA base de la retención es el de la factura. Antes se traía
+        -- gd.iva_monto, el de la guía, que siempre vale 0 porque las guías se
+        -- crean sin precio: toda retención se habría registrado en Bs 0.
+        f.subtotal,
+        f.iva_monto,
         gd.cantidad_m3,
         gd.precio_m3,
         p.resistencia,
         p.pulgada
       FROM facturas f
       JOIN clientes c ON f.cliente_id = c.id
-      JOIN guia_despacho gd ON f.guia_despacho_id = gd.id
-      JOIN productos p ON gd.producto_id = p.id
+      -- LEFT JOIN: la guía es opcional al facturar. Con JOIN, las facturas sin
+      -- guía asociada no aparecían y no se les podía registrar la retención.
+      LEFT JOIN guia_despacho gd ON f.guia_despacho_id = gd.id
+      LEFT JOIN productos p ON gd.producto_id = p.id
       WHERE c.es_contribuyente_especial = 1
         AND f.estado != 'Anulada'
       ORDER BY f.id DESC

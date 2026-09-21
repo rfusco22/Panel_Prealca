@@ -11,11 +11,14 @@ interface FacturaContribuyente {
   cliente_id: number;
   cliente_nombre: string;
   cliente_rif: string;
-  iva_monto: number;
-  cantidad_m3: number;
-  precio_m3: number;
-  resistencia: string;
-  pulgada: string;
+  // Montos de la factura. Son DECIMAL: llegan como string, por eso se usan con Number().
+  subtotal: number | string | null;
+  iva_monto: number | string | null;
+  // Vienen de la guía, que es opcional: son null si la factura no tiene guía.
+  cantidad_m3: number | null;
+  precio_m3: number | null;
+  resistencia: string | null;
+  pulgada: string | null;
 }
 
 function RetencionForm({ onClose }: { onClose: () => void }) {
@@ -42,7 +45,9 @@ function RetencionForm({ onClose }: { onClose: () => void }) {
     fetchFacturas();
   }, []);
 
-  const ivaCalc = selectedFactura ? (selectedFactura.iva_monto) : 0;
+  // iva_monto es el IVA de la factura (DECIMAL, llega como string). Es solo la
+  // vista previa: el servidor recalcula el monto retenido por su cuenta.
+  const ivaCalc = selectedFactura ? Number(selectedFactura.iva_monto || 0) : 0;
   const montoRetenido = selectedFactura ? (ivaCalc * porcentaje) / 100 : 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -132,17 +137,29 @@ function RetencionForm({ onClose }: { onClose: () => void }) {
                 <span className="text-slate-500 font-medium">RIF:</span>
                 <span className="font-mono font-bold text-slate-900">{selectedFactura.cliente_rif}</span>
               </div>
+              {/* Producto y cantidad salen de la guía, que es opcional: solo se
+                  muestran si la factura tiene una. El "precio unitario" de la guía
+                  se sacó porque siempre vale 0 (las guías se crean sin precio); el
+                  monto real está en la factura, abajo. */}
+              {selectedFactura.resistencia && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500 font-medium">Producto:</span>
+                  <span className="font-bold text-slate-900">{selectedFactura.resistencia} - {selectedFactura.pulgada}</span>
+                </div>
+              )}
+              {selectedFactura.cantidad_m3 != null && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500 font-medium">Cantidad:</span>
+                  <span className="font-bold text-slate-900">{Number(selectedFactura.cantidad_m3).toLocaleString("es-VE")} m³</span>
+                </div>
+              )}
               <div className="flex justify-between text-sm">
-                <span className="text-slate-500 font-medium">Producto:</span>
-                <span className="font-bold text-slate-900">{selectedFactura.resistencia} - {selectedFactura.pulgada}</span>
+                <span className="text-slate-500 font-medium">Subtotal:</span>
+                <span className="font-bold text-slate-900">Bs. {Number(selectedFactura.subtotal || 0).toLocaleString("es-VE", { minimumFractionDigits: 2 })}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-slate-500 font-medium">Cantidad:</span>
-                <span className="font-bold text-slate-900">{Number(selectedFactura.cantidad_m3).toLocaleString("es-VE")} m³</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-500 font-medium">Precio unitario:</span>
-                <span className="font-bold text-slate-900">Bs. {Number(selectedFactura.precio_m3).toLocaleString("es-VE", { minimumFractionDigits: 2 })}</span>
+                <span className="text-slate-500 font-medium">IVA (base de la retención):</span>
+                <span className="font-bold text-slate-900">Bs. {Number(selectedFactura.iva_monto || 0).toLocaleString("es-VE", { minimumFractionDigits: 2 })}</span>
               </div>
               <div className="flex justify-between text-sm border-t border-slate-200 pt-2 mt-2">
                 <span className="text-slate-500 font-bold">Total Factura:</span>

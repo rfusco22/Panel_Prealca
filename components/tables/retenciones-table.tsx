@@ -19,7 +19,10 @@ function RetencionesTable() {
         if (!res.ok) return;
         const data = await res.json();
         const arr = Array.isArray(data) ? data : (data.clientes || data.data || []);
-        setClientes(arr.filter((c: any) => c.es_contribuyente_especial === 1));
+        // /api/clientes devuelve esContribuyenteEspecial: filtrando por
+        // es_contribuyente_especial la lista salía siempre vacía y no se podía
+        // registrar ninguna retención.
+        setClientes(arr.filter((c: any) => !!c.esContribuyenteEspecial));
       } catch {}
     };
     fetchClientes();

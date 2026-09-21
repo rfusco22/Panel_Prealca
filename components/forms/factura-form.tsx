@@ -75,7 +75,13 @@ export function FacturaForm({ initialData }: FacturaFormProps) {
   useEffect(() => {
     if (selectedClienteId) {
       const c = clientes.find((cl: any) => String(cl.id) === selectedClienteId);
-      if (c) setEsContribuyenteEspecial(!!c.es_contribuyente_especial);
+      // /api/clientes devuelve esContribuyenteEspecial. Con el nombre de la
+      // columna (es_contribuyente_especial) el flag quedaba siempre en false:
+      // la pantalla no calculaba la retención, mostraba un total que no era el
+      // que se guardaba, escondía el campo del comprobante de retención y la
+      // factura impresa salía sin retención. El servidor sí la guardaba bien,
+      // porque busca el dato en la base por su cuenta.
+      if (c) setEsContribuyenteEspecial(!!c.esContribuyenteEspecial);
     }
   }, [selectedClienteId, clientes]);
 

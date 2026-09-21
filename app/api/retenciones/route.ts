@@ -39,32 +39,34 @@ export async function POST(req: Request) {
   try {
     const data = await req.json();
 
-    const montoRetenido = parseFloat(data.monto_retenido);
     const porcentajeRetencion = data.porcentaje_retencion !== undefined ? parseFloat(data.porcentaje_retencion) : 75;
-    if (!Number.isFinite(montoRetenido) || montoRetenido < 0) {
-      return NextResponse.json({ error: 'monto_retenido inválido.' }, { status: 400 });
-    }
     if (!Number.isFinite(porcentajeRetencion) || porcentajeRetencion < 0 || porcentajeRetencion > 100) {
       return NextResponse.json({ error: 'porcentaje_retencion inválido.' }, { status: 400 });
     }
 
-    // La factura no guarda el desglose de IVA (facturas solo tiene un total),
-    // así que no hay de dónde recalcular monto_retenido desde cero. Lo que sí
-    // se puede exigir sin inventar una fórmula: nunca se puede retener más de
-    // lo que suma la factura completa.
-    const facturas: any = await query('SELECT total FROM facturas WHERE id = ?', [data.factura_id]);
+    // El monto retenido se calcula acá, sobre el IVA de la factura, y no se toma
+    // el que manda la pantalla. Antes no había de dónde recalcularlo porque la
+    // factura no guardaba el IVA, pero ahora sí (facturas.iva_monto). Y la
+    // pantalla calculaba sobre el IVA de la guía, que siempre vale 0: sin esto
+    // cada retención habría quedado registrada en Bs 0.
+    //
+    // El cliente también sale de la factura: si la pantalla mandara otro, la
+    // retención quedaría a nombre de alguien que no es el dueño de la factura.
+    const facturas: any = await query('SELECT cliente_id, iva_monto FROM facturas WHERE id = ?', [data.factura_id]);
     if (facturas.length === 0) {
       return NextResponse.json({ error: 'La factura no existe.' }, { status: 400 });
     }
-    if (montoRetenido > Number(facturas[0].total)) {
-      return NextResponse.json({ error: 'monto_retenido no puede superar el total de la factura.' }, { status: 400 });
+    if (facturas[0].iva_monto == null) {
+      return NextResponse.json({ error: 'La factura no tiene el IVA registrado; no se puede calcular la retención.' }, { status: 400 });
     }
+    const montoRetenido = Math.round(Number(facturas[0].iva_monto) * porcentajeRetencion) / 100;
+    const clienteId = facturas[0].cliente_id;
 
     const sql = `INSERT INTO retenciones_impuestos (cliente_id, factura_id, monto_retenido, porcentaje_retencion, fecha, usuario_id) VALUES (?, ?, ?, ?, NOW(), ?)`;
     // usuario_id sale de la sesión, no del cuerpo del request: antes el
     // cliente podia mandar cualquier usuario_id (o dejar que cayera en el 1
     // por defecto) y la auditoria quedaba atribuida a otra persona.
-    const valores = [data.cliente_id, data.factura_id, montoRetenido, porcentajeRetencion, auth.session.userId];
+    const valores = [clienteId, data.factura_id, montoRetenido, porcentajeRetencion, auth.session.userId];
     const resultado: any = await query(sql, valores);
     emitSocketEvent('retenciones:created');
 
@@ -72,7 +74,7 @@ export async function POST(req: Request) {
     await registrarLog({
       ...usuario, accion: 'crear', modulo: 'Retenciones', entidad_id: resultado.insertId,
       descripcion: `Registró retención de Bs. ${montoRetenido} (Factura #${data.factura_id})`,
-      datos_nuevos: { cliente_id: data.cliente_id, factura_id: data.factura_id, monto_retenido: montoRetenido, porcentaje_retencion: porcentajeRetencion },
+      datos_nuevos: { cliente_id: clienteId, factura_id: data.factura_id, monto_retenido: montoRetenido, porcentaje_retencion: porcentajeRetencion },
       ip_address: getClientIp(req),
     });
 
