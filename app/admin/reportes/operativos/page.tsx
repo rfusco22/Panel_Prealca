@@ -741,7 +741,7 @@ function PrincipalesClientes({ from, to }: { from: string; to: string }) {
   );
 }
 
-function ViajesPorTrompero({ from, to }: { from: string; to: string }) {
+export function ViajesPorTrompero({ from, to }: { from: string; to: string }) {
   const [data, setData] = useState<any[]>([]);
   const [unidades, setUnidades] = useState<any[]>([]);
   const [summary, setSummary] = useState<any>(null);

@@ -1,6 +1,26 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { requireAuth } from '@/lib/auth-guard';
+import { requireAuth, type Rol } from '@/lib/auth-guard';
+
+// Qué rol puede pedir cada reporte.
+//
+// Antes esto era `requireAuth()` sin roles para todos los tipos, así que
+// cualquier usuario logueado podía pedir por API el reporte de comisiones o el
+// financiero aunque no tuviera el link en su menú: bastaba con escribir la URL
+// /api/reportes?type=comisiones. Esconder el link no es un permiso.
+//
+// 'viajes' es el único que sale de admin/gerencia: Seguridad Vial necesita ver
+// cuántos viajes hizo cada chofer, porque es su trabajo cruzar eso con el
+// vencimiento de licencias y certificados médicos. Ese reporte no tiene ningún
+// dato de plata -ni del chofer, que no cobra por viaje en el sistema, ni de
+// nadie- y por eso puede verlo sin abrirle el resto.
+const ROLES_POR_REPORTE: Record<string, readonly Rol[]> = {
+  viajes: ['admin', 'gerencia', 'seguridad-vial'],
+};
+
+// El resto de los reportes toca plata: ingresos, egresos, comisiones de
+// vendedores, montos por cliente, gasto en materia prima, retenciones.
+const ROLES_POR_DEFECTO: readonly Rol[] = ['admin', 'gerencia'];
 
 export async function GET(request: Request) {
   const auth = await requireAuth();
@@ -9,6 +29,11 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type') || 'ingresos';
+
+    const rolesPermitidos = ROLES_POR_REPORTE[type] || ROLES_POR_DEFECTO;
+    if (!rolesPermitidos.includes(auth.session.role)) {
+      return NextResponse.json({ success: false, error: 'Acceso denegado' }, { status: 403 });
+    }
     const from = searchParams.get('from');
     const to = searchParams.get('to');
 
