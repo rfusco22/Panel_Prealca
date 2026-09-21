@@ -1,6 +1,13 @@
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth-guard';
 
+
+// Restringido a admin, gerencia, seguridad-vial: brecha entre tasas. La usa la pagina de mantenimiento de unidades
+// de Seguridad Vial para expresar costos, y el contenido de brecha de admin.
+//
+// Antes era requireAuth() sin roles: cualquier usuario logueado lo podia
+// leer escribiendo la URL. No expone montos -por eso quedo para el final-
+// pero no hay motivo para dejarlo abierto a roles que no lo usan.
 interface Tasa {
   moneda: string;
   nombre: string;
@@ -85,7 +92,7 @@ async function fetchUSDTVES(): Promise<Tasa | null> {
 }
 
 export async function GET() {
-  const auth = await requireAuth();
+  const auth = await requireAuth(['admin', 'gerencia', 'seguridad-vial']);
   if (auth.response) return auth.response;
 
   try {

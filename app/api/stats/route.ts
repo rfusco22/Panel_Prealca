@@ -2,8 +2,16 @@ import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { requireAuth } from '@/lib/auth-guard';
 
+
+// Restringido a admin, gerencia, registro: contadores del dashboard. Son COUNT(*) sin montos, asi que el riesgo
+// es bajo; se limita igual porque no hay razon para que un rol vea el tamaño
+// de tablas que no usa.
+//
+// Antes era requireAuth() sin roles: cualquier usuario logueado lo podia
+// leer escribiendo la URL. No expone montos -por eso quedo para el final-
+// pero no hay motivo para dejarlo abierto a roles que no lo usan.
 export async function GET() {
-  const auth = await requireAuth();
+  const auth = await requireAuth(['admin', 'gerencia', 'registro']);
   if (auth.response) return auth.response;
 
   try {

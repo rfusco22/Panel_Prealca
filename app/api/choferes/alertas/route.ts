@@ -2,8 +2,15 @@ import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { requireAuth } from '@/lib/auth-guard';
 
+
+// Restringido a admin, registro, seguridad-vial: vencimientos de licencia y certificado medico de los choferes.
+// Gerencia no entra porque tiene su propio endpoint, /api/gerencia/alertas.
+//
+// Antes era requireAuth() sin roles: cualquier usuario logueado lo podia
+// leer escribiendo la URL. No expone montos -por eso quedo para el final-
+// pero no hay motivo para dejarlo abierto a roles que no lo usan.
 export async function GET() {
-  const auth = await requireAuth();
+  const auth = await requireAuth(['admin', 'registro', 'seguridad-vial']);
   if (auth.response) return auth.response;
 
   try {

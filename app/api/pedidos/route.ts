@@ -7,13 +7,20 @@ import { emitSocketEvent } from '@/lib/socket-server';
 import { registrarLog, getUsuarioFromRequest, getClientIp } from '@/lib/audit-log';
 import { requireAuth } from '@/lib/auth-guard';
 
+
+// Restringido a admin, gerencia: pedidos de clientes. No trae precios, pero si que le vende la
+// empresa a quien y cuanto.
+//
+// Antes era requireAuth() sin roles: cualquier usuario logueado lo podia
+// leer escribiendo la URL. No expone montos -por eso quedo para el final-
+// pero no hay motivo para dejarlo abierto a roles que no lo usan.
 async function ensureTable() {
   await query(`CREATE TABLE IF NOT EXISTS pedidos (id INT AUTO_INCREMENT PRIMARY KEY, cliente_id INT NOT NULL, producto_id INT NOT NULL, cantidad_m3 DECIMAL(10,2) NOT NULL, estado ENUM('pendiente','en_proceso','completado','cancelado') DEFAULT 'pendiente', notas TEXT, obra VARCHAR(255), usuario_id INT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP)`);
   try { await query(`ALTER TABLE pedidos ADD COLUMN obra VARCHAR(255) NULL AFTER notas`); } catch {}
 }
 
 export async function GET() {
-  const auth = await requireAuth();
+  const auth = await requireAuth(['admin', 'gerencia']);
   if (auth.response) return auth.response;
 
   try {

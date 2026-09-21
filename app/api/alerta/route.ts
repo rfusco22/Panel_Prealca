@@ -2,8 +2,16 @@ import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { requireAuth } from '@/lib/auth-guard';
 
+
+// Restringido a admin, dosificador: alertas de la planta del dosificador.
+// Solo su pagina la llama; se agrega admin porque es el rol de soporte y
+// dejarlo afuera complicaria diagnosticar un problema del dosificador.
+//
+// Antes era requireAuth() sin roles: cualquier usuario logueado lo podia
+// leer escribiendo la URL. No expone montos -por eso quedo para el final-
+// pero no hay motivo para dejarlo abierto a roles que no lo usan.
 export async function GET() {
-  const auth = await requireAuth();
+  const auth = await requireAuth(['admin', 'dosificador']);
   if (auth.response) return auth.response;
 
   try {

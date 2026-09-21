@@ -2,8 +2,16 @@ import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { requireAuth } from '@/lib/auth-guard';
 
+
+// Restringido a admin, seguridad-vial: vencimientos de poliza y ROT de la flota.
+// Solo la pagina de alertas de Seguridad Vial la llama; se agrega admin por
+// el mismo criterio de soporte que en /api/alerta.
+//
+// Antes era requireAuth() sin roles: cualquier usuario logueado lo podia
+// leer escribiendo la URL. No expone montos -por eso quedo para el final-
+// pero no hay motivo para dejarlo abierto a roles que no lo usan.
 export async function GET() {
-  const auth = await requireAuth();
+  const auth = await requireAuth(['admin', 'seguridad-vial']);
   if (auth.response) return auth.response;
 
   try {
