@@ -1,11 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
-  Building2, Package, Truck, Receipt, PieChart,
-  TrendingUp, TrendingDown, Wallet, Users, FileText, ShoppingCart, UserCircle, Eye, Boxes, HardHat
+  ArrowUpRight, ShieldCheck, Users, Package, UserCircle, FileText, ShoppingCart, Building2,
+  Scale, Truck, Route, AlertCircle, CalendarDays,
 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { GERENCIA_MENU } from "@/components/gerencia-menu";
+import { hoyLocal } from "@/lib/fecha";
 
 interface Stats {
   clientes: number;
@@ -16,142 +19,174 @@ interface Stats {
   bancos: number;
 }
 
+interface Operacion {
+  porCobrar: number;
+  clientesConDeuda: number;
+  viajesDespacho: number;
+  m3Despacho: number;
+  viajesMP: number;
+  cantidadMP: number;
+}
+
+const DIAS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+
+const num = (v: number, dec = 0) => Number(v || 0).toLocaleString("es-VE", { minimumFractionDigits: dec, maximumFractionDigits: dec });
+
+function saludo() {
+  const h = new Date().getHours();
+  return h < 12 ? "Buenos días" : h < 19 ? "Buenas tardes" : "Buenas noches";
+}
+
+function fechaLarga() {
+  const [y, m, d] = hoyLocal().split("-").map(Number);
+  const f = new Date(y, m - 1, d);
+  const t = `${DIAS[f.getDay()]}, ${d} de ${MESES[m - 1]} de ${y}`;
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
 export default function GerenciaPage() {
+  const { session } = useAuth();
   const [stats, setStats] = useState<Stats | null>(null);
+  const [op, setOp] = useState<Operacion | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/stats")
-      .then((r) => r.json())
-      .then((d) => { if (d.success) setStats(d.stats); })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    const hoy = hoyLocal();
+    Promise.all([
+      fetch("/api/stats").then((r) => r.json()).catch(() => null),
+      fetch("/api/estado-cuenta").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+      fetch(`/api/historico-viajes?periodo=diario&from=${hoy}&to=${hoy}`).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+    ]).then(([s, ec, hv]) => {
+      if (s?.success) setStats(s.stats);
+      const clientes: any[] = ec?.clientes || [];
+      setOp({
+        porCobrar: clientes.reduce((acc, c) => acc + Math.max(Number(c.saldo || 0), 0), 0),
+        clientesConDeuda: clientes.filter((c) => Number(c.saldo || 0) > 0.01).length,
+        viajesDespacho: hv?.totales?.viajesDespacho || 0,
+        m3Despacho: hv?.totales?.m3Despacho || 0,
+        viajesMP: hv?.totales?.viajesMP || 0,
+        cantidadMP: hv?.totales?.cantidadMP || 0,
+      });
+    }).finally(() => setLoading(false));
   }, []);
 
-  const total = stats ? stats.clientes + stats.proveedores + stats.vendedores + stats.facturas + stats.ordenes + stats.bancos : 0;
+  const nombre = (session?.user.nombre || "").split(" ")[0];
 
-  const cards = [
-    { label: "Clientes Activos", value: stats?.clientes ?? 0, icon: Users, color: "text-emerald-600", bg: "bg-emerald-50", barColor: "bg-emerald-500", percent: total > 0 ? Math.round(((stats?.clientes ?? 0) / total) * 100) : 0, subtitle: "Directorio completo" },
-    { label: "Proveedores", value: stats?.proveedores ?? 0, icon: Package, color: "text-blue-600", bg: "bg-blue-50", barColor: "bg-blue-500", percent: total > 0 ? Math.round(((stats?.proveedores ?? 0) / total) * 100) : 0, subtitle: "Registros activos" },
-    { label: "Vendedores", value: stats?.vendedores ?? 0, icon: UserCircle, color: "text-amber-600", bg: "bg-amber-50", barColor: "bg-amber-500", percent: total > 0 ? Math.round(((stats?.vendedores ?? 0) / total) * 100) : 0, subtitle: "Equipo de ventas" },
-    { label: "Facturas Emitidas", value: stats?.facturas ?? 0, icon: FileText, color: "text-red-600", bg: "bg-red-50", barColor: "bg-red-500", percent: total > 0 ? Math.round(((stats?.facturas ?? 0) / total) * 100) : 0, subtitle: "Documentos contables" },
-    { label: "Órdenes de Compra", value: stats?.ordenes ?? 0, icon: ShoppingCart, color: "text-teal-600", bg: "bg-teal-50", barColor: "bg-teal-500", percent: total > 0 ? Math.round(((stats?.ordenes ?? 0) / total) * 100) : 0, subtitle: "Órdenes registradas" },
-    { label: "Cuentas Bancarias", value: stats?.bancos ?? 0, icon: Building2, color: "text-purple-600", bg: "bg-purple-50", barColor: "bg-purple-500", percent: total > 0 ? Math.round(((stats?.bancos ?? 0) / total) * 100) : 0, subtitle: "Cuentas activas" },
+  const kpisOperacion = [
+    { label: "Por cobrar", valor: `Bs. ${num(op?.porCobrar || 0, 2)}`, detalle: `${op?.clientesConDeuda || 0} clientes con saldo pendiente`, icon: Scale, tono: "text-rose-600 bg-rose-50", href: "/gerencia/estado-cuenta" },
+    { label: "Despachos hoy", valor: `${num(op?.viajesDespacho || 0)}`, detalle: `${num(op?.m3Despacho || 0, 2)} M³ despachados`, icon: Truck, tono: "text-sky-600 bg-sky-50", href: "/gerencia/historico-viajes" },
+    { label: "Viajes de materia prima hoy", valor: `${num(op?.viajesMP || 0)}`, detalle: `${num(op?.cantidadMP || 0, 2)} recibidos`, icon: Route, tono: "text-orange-600 bg-orange-50", href: "/gerencia/viajes-materia-prima" },
+    { label: "Alertas", valor: "Revisar", detalle: "Vencimientos de choferes, unidades y stock", icon: AlertCircle, tono: "text-amber-600 bg-amber-50", href: "/gerencia/alerta" },
   ];
 
-  const modules = [
-    { title: "Clientes", desc: "Ver directorio de clientes", href: "/gerencia/clientes", icon: Users, color: "text-emerald-600", bg: "bg-emerald-50" },
-    { title: "Proveedores", desc: "Ver proveedores registrados", href: "/gerencia/proveedores", icon: Package, color: "text-blue-600", bg: "bg-blue-50" },
-    { title: "Vendedores", desc: "Ver equipo de ventas", href: "/gerencia/vendedores", icon: UserCircle, color: "text-amber-600", bg: "bg-amber-50" },
-    { title: "Bancos", desc: "Ver cuentas bancarias", href: "/gerencia/bancos", icon: Building2, color: "text-purple-600", bg: "bg-purple-50" },
-    { title: "Facturas", desc: "Ver facturas emitidas", href: "/gerencia/facturas", icon: FileText, color: "text-red-600", bg: "bg-red-50" },
-    { title: "Órdenes de Compra", desc: "Ver órdenes de compra", href: "/gerencia/ordenes-compra", icon: ShoppingCart, color: "text-teal-600", bg: "bg-teal-50" },
-    { title: "Productos", desc: "Ver catálogo de productos", href: "/gerencia/productos", icon: Package, color: "text-emerald-600", bg: "bg-emerald-50" },
-    { title: "Inventario", desc: "Ver inventario por producto", href: "/gerencia/stock", icon: Boxes, color: "text-indigo-600", bg: "bg-indigo-50" },
-    { title: "Unidades", desc: "Ver unidades de transporte", href: "/gerencia/unidades", icon: Truck, color: "text-purple-600", bg: "bg-purple-50" },
-    { title: "Ingresos", desc: "Ver historial de ingresos", href: "/gerencia/ingresos", icon: TrendingUp, color: "text-indigo-600", bg: "bg-indigo-50" },
-    { title: "Egresos", desc: "Ver historial de egresos", href: "/gerencia/egresos", icon: Wallet, color: "text-orange-600", bg: "bg-orange-50" },
-    { title: "Retenciones", desc: "Ver retenciones", href: "/gerencia/retenciones", icon: Receipt, color: "text-amber-600", bg: "bg-amber-50" },
-    { title: "Choferes", desc: "Ver choferes registrados", href: "/gerencia/choferes", icon: HardHat, color: "text-slate-600", bg: "bg-slate-100" },
-    { title: "Materia Prima", desc: "Ver materia prima", href: "/gerencia/materia-prima", icon: Package, color: "text-blue-600", bg: "bg-blue-50" },
-    { title: "Guías de Despacho", desc: "Ver guías de despacho", href: "/gerencia/guia-despacho", icon: FileText, color: "text-teal-600", bg: "bg-teal-50" },
-    { title: "Pedidos", desc: "Ver pedidos", href: "/gerencia/pedidos", icon: ShoppingCart, color: "text-emerald-600", bg: "bg-emerald-50" },
+  const kpisRegistro = [
+    { label: "Clientes", valor: stats?.clientes, icon: Users, href: "/gerencia/clientes" },
+    { label: "Proveedores", valor: stats?.proveedores, icon: Package, href: "/gerencia/proveedores" },
+    { label: "Vendedores", valor: stats?.vendedores, icon: UserCircle, href: "/gerencia/vendedores" },
+    { label: "Facturas", valor: stats?.facturas, icon: FileText, href: "/gerencia/facturas" },
+    { label: "Órdenes de compra", valor: stats?.ordenes, icon: ShoppingCart, href: "/gerencia/ordenes-compra" },
+    { label: "Cuentas bancarias", valor: stats?.bancos, icon: Building2, href: "/gerencia/bancos" },
   ];
+
+  const secciones = GERENCIA_MENU.map((s) => ({ ...s, items: s.items.filter((i) => i.id !== "dashboard") }))
+    .filter((s) => s.items.length > 0);
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 ease-in-out p-4 md:p-8">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Panel de Gerencia</h1>
-          <p className="text-slate-500 mt-1">Vista general del sistema con acceso total de administración.</p>
+    <div className="space-y-8 animate-in fade-in duration-500">
+      {/* Encabezado */}
+      <section className="relative overflow-hidden rounded-3xl bg-[#0B1020] px-6 py-7 md:px-8 md:py-8 text-white">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(80%_120%_at_100%_0%,rgba(139,92,246,0.35),transparent_60%),radial-gradient(60%_80%_at_0%_100%,rgba(217,70,239,0.15),transparent_60%)]" />
+        <div className="relative flex flex-col md:flex-row md:items-end justify-between gap-5">
+          <div>
+            <p className="flex items-center gap-1.5 text-xs font-medium text-violet-200/80">
+              <CalendarDays size={13} /> {fechaLarga()}
+            </p>
+            <h1 className="mt-2 text-2xl md:text-3xl font-bold tracking-tight">
+              {saludo()}{nombre ? `, ${nombre}` : ""}
+            </h1>
+            <p className="mt-1.5 text-sm text-slate-300 max-w-xl">
+              Panel de Gerencia con acceso total: podés consultar, crear, editar y eliminar en todos los módulos.
+            </p>
+          </div>
+          <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-violet-100 ring-1 ring-inset ring-white/15 backdrop-blur">
+            <ShieldCheck size={14} /> Acceso total
+          </span>
         </div>
-        <div className="flex items-center gap-2 text-xs font-medium text-violet-500 bg-violet-50 border border-violet-200 rounded-lg px-3 py-2">
-          <Eye size={14} />
-          Acceso Total
-        </div>
-      </div>
+      </section>
 
-      {/* RESUMEN GENERAL */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Resumen General</h2>
-          <span className="text-xs font-semibold text-slate-400">{total} registros</span>
-        </div>
-        <div className="flex h-3 rounded-full overflow-hidden bg-slate-100 gap-1">
-          {cards.map((c, i) => (
-            <div key={i} className={`${c.barColor} rounded-full transition-all duration-700`} style={{ width: `${c.percent}%` }} title={`${c.label}: ${c.value}`} />
-          ))}
-        </div>
-        <div className="flex flex-wrap gap-4 mt-4">
-          {cards.map((c, i) => (
-            <div key={i} className="flex items-center gap-2 text-xs text-slate-500">
-              <div className={`w-2.5 h-2.5 rounded-full ${c.barColor}`} />
-              {c.label}: {c.value}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* STAT CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {loading ? (
-          Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm animate-pulse">
-              <div className="flex items-center gap-3 mb-4"><div className="w-10 h-10 bg-slate-100 rounded-xl" /><div className="h-3 w-24 bg-slate-100 rounded" /></div>
-              <div className="h-8 w-16 bg-slate-100 rounded mb-3" />
-              <div className="h-2 w-full bg-slate-100 rounded-full" />
-            </div>
-          ))
-        ) : (
-          cards.map((stat, i) => (
-            <div key={i} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 group">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className={`p-2.5 rounded-xl ${stat.bg} group-hover:scale-110 transition-transform duration-300`}>
-                    <stat.icon className={`w-5 h-5 ${stat.color}`} />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{stat.label}</p>
-                    <p className="text-[10px] text-slate-300 mt-0.5">{stat.subtitle}</p>
-                  </div>
-                </div>
+      {/* Operación */}
+      <section>
+        <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Operación</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          {kpisOperacion.map((k) => (
+            <Link key={k.label} href={k.href}
+              className="group relative rounded-2xl bg-white p-5 ring-1 ring-slate-200/70 shadow-sm hover:shadow-md hover:ring-slate-300 transition-all">
+              <div className="flex items-start justify-between">
+                <span className={`h-10 w-10 rounded-xl flex items-center justify-center ${k.tono}`}><k.icon size={19} /></span>
+                <ArrowUpRight size={16} className="text-slate-300 group-hover:text-slate-600 transition-colors" />
               </div>
-              <h3 className="text-3xl font-black text-slate-900 mb-3">{stat.value}</h3>
-              <div className="space-y-1.5">
-                <div className="flex justify-between text-[10px] font-semibold text-slate-400">
-                  <span>Del total</span>
-                  <span>{stat.percent}%</span>
-                </div>
-                <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                  <div className={`h-full ${stat.barColor} rounded-full transition-all duration-700`} style={{ width: `${stat.percent}%` }} />
-                </div>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-
-      {/* MODULES GRID */}
-      <div>
-        <h2 className="text-xl font-semibold text-slate-900 mb-4">Tablas Disponibles (Solo Lectura)</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {modules.map((mod, i) => (
-            <Link href={mod.href} key={i}>
-              <div className="group bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer h-full relative overflow-hidden">
-                <div className={`absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10 transition-transform group-hover:scale-150 duration-500 ${mod.bg}`} />
-                <div className={`p-3 rounded-xl ${mod.bg} ${mod.color} group-hover:scale-110 transition-transform duration-300 w-fit mb-3`}>
-                  <mod.icon className="w-5 h-5" />
-                </div>
-                <h3 className="text-sm font-semibold text-slate-900 mb-1">{mod.title}</h3>
-                <p className="text-slate-400 text-xs mb-3">{mod.desc}</p>
-                <div className="flex items-center text-xs font-medium text-violet-500 group-hover:text-violet-700 transition-colors">
-                  <Eye className="w-3 h-3 mr-1" /> Ver tabla
-                </div>
-              </div>
+              <p className="mt-4 text-[13px] font-medium text-slate-500">{k.label}</p>
+              {loading ? (
+                <div className="mt-1.5 h-7 w-28 rounded bg-slate-100 animate-pulse" />
+              ) : (
+                <p className="mt-0.5 text-2xl font-bold tracking-tight text-slate-900">{k.valor}</p>
+              )}
+              <p className="mt-1 text-xs text-slate-400">{k.detalle}</p>
             </Link>
           ))}
         </div>
-      </div>
+      </section>
+
+      {/* Registros */}
+      <section>
+        <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Registros</h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-px rounded-2xl bg-slate-200/70 ring-1 ring-slate-200/70 shadow-sm overflow-hidden">
+          {kpisRegistro.map((k) => (
+            <Link key={k.label} href={k.href} className="group bg-white p-4 hover:bg-slate-50 transition-colors">
+              <div className="flex items-center gap-2 text-slate-400 group-hover:text-violet-600 transition-colors">
+                <k.icon size={15} />
+                <span className="text-xs font-medium">{k.label}</span>
+              </div>
+              {loading ? (
+                <div className="mt-2 h-6 w-12 rounded bg-slate-100 animate-pulse" />
+              ) : (
+                <p className="mt-1.5 text-xl font-bold text-slate-900 tabular-nums">{num(k.valor ?? 0)}</p>
+              )}
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* Accesos por sección */}
+      <section className="space-y-6">
+        <h2 className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Módulos</h2>
+        {secciones.map((s) => (
+          <div key={s.id}>
+            <div className="mb-3 flex items-center gap-2">
+              <span className={`h-7 w-7 rounded-lg flex items-center justify-center ${s.tono.fondo} ${s.tono.texto}`}><s.icon size={15} /></span>
+              <h3 className="text-sm font-semibold text-slate-800">{s.label}</h3>
+              <span className="text-xs text-slate-400">· {s.items.length}</span>
+              <div className="ml-2 h-px flex-1 bg-slate-200/70" />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+              {s.items.map((m) => (
+                <Link key={m.id} href={m.href}
+                  className="group flex items-center gap-3 rounded-xl bg-white p-3.5 ring-1 ring-slate-200/70 hover:ring-violet-300 hover:shadow-md hover:-translate-y-0.5 transition-all">
+                  <span className={`h-10 w-10 shrink-0 rounded-lg flex items-center justify-center ${s.tono.fondo} ${s.tono.texto}`}>
+                    <m.icon size={18} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-slate-800 truncate">{m.label}</p>
+                    <p className="text-xs text-slate-400 truncate">{m.descripcion}</p>
+                  </div>
+                  <ArrowUpRight size={15} className="shrink-0 text-slate-300 group-hover:text-violet-500 transition-colors" />
+                </Link>
+              ))}
+            </div>
+          </div>
+        ))}
+      </section>
     </div>
   );
 }
