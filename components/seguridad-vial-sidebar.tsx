@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { LayoutDashboard, Users, Truck, Wrench, AlertTriangle, LogOut, X, Route } from "lucide-react";
+import { LayoutDashboard, Users, Truck, Wrench, AlertTriangle, LogOut, X, Route, History } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
@@ -13,6 +13,7 @@ const menuItems = [
   { id: "unidades", label: "Unidades", icon: Truck, href: "/seguridad-vial/unidades" },
   { id: "mantenimiento", label: "Mantenimiento", icon: Wrench, href: "/seguridad-vial/mantenimiento-unidades" },
   { id: "viajes", label: "Viajes por Trompero", icon: Route, href: "/seguridad-vial/reportes/viajes" },
+  { id: "historico-viajes", label: "Histórico de Viajes", icon: History, href: "/seguridad-vial/historico-viajes" },
 ];
 
 export function SeguridadVialSidebar({

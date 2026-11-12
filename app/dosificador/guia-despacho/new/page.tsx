@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { GuiaDespachoForm } from '@/components/forms/guia-despacho-form';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -10,6 +10,8 @@ import { printDocument, generateGuiaDespachoHtml, generatePrealcaHtml } from '@/
 
 export default function NewGuiaDespachoPage() {
   const router = useRouter();
+  // La reexportan /admin y /gerencia: se vuelve al listado del panel actual.
+  const listadoHref = usePathname().replace(/\/new\/?$/, '');
   const [clientes, setClientes] = useState<Array<{ id: number; nombre: string; rif?: string; direccion?: string; telefono?: string }>>([]);
   // Refleja lo que devuelve GET /api/productos: id, resistencia, pulgada, unidad.
   // No trae "nombre", por eso es opcional y se arma a partir de los otros campos.
@@ -148,7 +150,7 @@ export default function NewGuiaDespachoPage() {
         }));
       }
 
-      router.push('/dosificador/guia-despacho');
+      router.push(listadoHref);
     } catch (err) {
       throw err;
     } finally {
@@ -159,7 +161,7 @@ export default function NewGuiaDespachoPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2">
-        <Link href="/dosificador/guia-despacho">
+        <Link href={listadoHref}>
           <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">
             <ChevronLeft size={20} />
           </Button>

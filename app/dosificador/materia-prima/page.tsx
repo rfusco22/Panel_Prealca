@@ -10,7 +10,7 @@ export default function MateriaPrimaPage() {
   const { session } = useAuth();
   // Esta misma página la sirve /admin/materia-prima, que la reexporta. Editar y
   // eliminar son solo para admin, igual que en el API.
-  const puedeGestionar = session?.user.role === 'admin';
+  const puedeGestionar = session?.user.role === 'admin' || session?.user.role === 'gerencia';
 
   const [agregados, setAgregados] = useState<any[]>([]);
   const [proveedores, setProveedores] = useState<any[]>([]);

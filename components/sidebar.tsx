@@ -6,7 +6,7 @@ import {
   Building2, Package, Truck, Receipt, Settings, PieChart, LogOut,
   LayoutDashboard, Users, TrendingUp, TrendingDown, Boxes, ShoppingCart,
   ArrowLeftRight, AlertTriangle, HardHat, UserCircle, FileText, ChevronDown,
-  Wrench, X
+  Wrench, X, BookOpen, Route, History
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -67,6 +67,7 @@ const menuGroups: MenuGroup[] = [
     items: [
       { id: "pedidos", label: "Pedidos", icon: ShoppingCart, href: "/admin/pedidos" },
       { id: "clientes", label: "Clientes", icon: Users, href: "/admin/clientes" },
+      { id: "estado-cuenta", label: "Estado de Cuenta", icon: BookOpen, href: "/admin/estado-cuenta" },
       { id: "vendedores", label: "Vendedores", icon: UserCircle, href: "/admin/vendedores" },
     ],
   },
@@ -76,6 +77,8 @@ const menuGroups: MenuGroup[] = [
     icon: Truck,
     items: [
       { id: "guias", label: "Guías de Despacho", icon: FileText, href: "/admin/guia-despacho" },
+      { id: "viajes-mp", label: "Viajes Materia Prima", icon: Route, href: "/admin/viajes-materia-prima" },
+      { id: "historico-viajes", label: "Histórico de Viajes", icon: History, href: "/admin/historico-viajes" },
       { id: "choferes", label: "Choferes", icon: HardHat, href: "/admin/choferes" },
       { id: "unidades", label: "Unidades", icon: Truck, href: "/admin/unidades" },
       { id: "mantenimiento", label: "Mantenimiento", icon: Wrench, href: "/admin/mantenimiento-unidades" },
@@ -131,7 +134,7 @@ export function Sidebar({
     items.some((item) => pathname.startsWith(item.href) && (pathname === item.href || item.href !== "/admin"));
 
   const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
+    await fetch("/api/auth/signout", { method: "POST" });
     router.push("/auth/login");
   };
 

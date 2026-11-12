@@ -29,7 +29,7 @@ export default function DocumentadorLayout({
     );
   }
 
-  if (!session || (session.user.role !== 'dosificador' && session.user.role !== 'admin')) {
+  if (!session || (session.user.role !== 'dosificador' && session.user.role !== 'admin' && session.user.role !== 'gerencia')) {
     if (!loading) {
       router.push('/auth/login');
     }

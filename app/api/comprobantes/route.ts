@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { requireAuth, type Rol } from '@/lib/auth-guard';
+import { requireAuth, rolPermitido, type Rol } from '@/lib/auth-guard';
 import { ensureTablaComprobantes } from '@/lib/comprobantes';
 
 // Devuelve el archivo de un comprobante para verlo en el navegador.
@@ -33,7 +33,7 @@ export async function GET(request: Request) {
     const c = filas[0];
     // Mismo 404 exista o no el comprobante cuando el rol no puede verlo, para
     // no revelar qué ids existen.
-    if (!c || !(ROLES_POR_TIPO[c.tipo] || []).includes(auth.session.role)) {
+    if (!c || !rolPermitido(auth.session.role, ROLES_POR_TIPO[c.tipo] || [])) {
       return NextResponse.json({ error: 'Comprobante no encontrado' }, { status: 404 });
     }
 

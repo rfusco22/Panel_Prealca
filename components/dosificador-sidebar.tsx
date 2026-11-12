@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { AlertTriangle, LayoutDashboard, Package, FileText, LogOut, Boxes, X } from "lucide-react";
+import { AlertTriangle, LayoutDashboard, Package, FileText, LogOut, Boxes, X, Route, History } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
@@ -12,6 +12,8 @@ const menuItems = [
   { id: "materia-prima", label: "Materia Prima", icon: Package, href: "/dosificador/materia-prima" },
   { id: "stock", label: "Inventario por Producto", icon: Boxes, href: "/dosificador/stock" },
   { id: "guias", label: "Guías de Despacho", icon: FileText, href: "/dosificador/guia-despacho" },
+  { id: "viajes-mp", label: "Viajes Materia Prima", icon: Route, href: "/dosificador/viajes-materia-prima" },
+  { id: "historico-viajes", label: "Histórico de Viajes", icon: History, href: "/dosificador/historico-viajes" },
 ];
 
 export function DosificadorSidebar({

@@ -9,6 +9,7 @@ import { Server } from 'socket.io';
 import { unsealData } from 'iron-session';
 import { sessionOptions, SessionData, leerSessionSecret } from './lib/session';
 import { verificarConfigDb } from './lib/db';
+import { guardarMensaje, marcarDirectosLeidos, marcarGeneralLeido } from './lib/chat';
 
 // Las validaciones viven acá, al arrancar, y no al importar cada módulo: el
 // build de Next evalúa todas las rutas y no tiene por qué conocer las
@@ -118,6 +119,63 @@ io.on('connection', (socket) => {
   onlineUserIds.add(userId);
   lastSeenMap.delete(userId);
   emitirPresencia();
+
+  // ── Chat ──
+  // Cada usuario tiene su sala: así un mensaje directo llega a todas sus
+  // pestañas abiertas y a nadie más. El remitente sale siempre de la sesión
+  // (socket.data.userId), nunca de lo que mande el cliente.
+  socket.join(`user:${userId}`);
+
+  // Límite simple contra spam: hasta 20 mensajes cada 10 segundos por socket.
+  let ventanaInicio = Date.now();
+  let enviadosEnVentana = 0;
+
+  socket.on('chat:send', async (payload: any, ack?: (r: any) => void) => {
+    const responder = typeof ack === 'function' ? ack : () => {};
+    try {
+      const ahora = Date.now();
+      if (ahora - ventanaInicio > 10_000) { ventanaInicio = ahora; enviadosEnVentana = 0; }
+      if (++enviadosEnVentana > 20) return responder({ ok: false, error: 'Estás enviando mensajes muy rápido.' });
+
+      const to = payload?.to === null || payload?.to === undefined || payload?.to === 'general'
+        ? null
+        : Number(payload.to);
+      const r = await guardarMensaje(userId, to, payload?.contenido);
+      if ('error' in r) return responder({ ok: false, error: r.error });
+
+      const mensaje = { ...r.mensaje, tempId: payload?.tempId ?? null };
+      if (to === null) io.emit('chat:message', mensaje);
+      else io.to(`user:${to}`).to(`user:${userId}`).emit('chat:message', mensaje);
+      responder({ ok: true, mensaje });
+    } catch (err) {
+      console.error('chat:send error:', err);
+      responder({ ok: false, error: 'No se pudo enviar el mensaje.' });
+    }
+  });
+
+  socket.on('chat:typing', (payload: any) => {
+    const typing = !!payload?.typing;
+    const to = payload?.to === null || payload?.to === undefined || payload?.to === 'general' ? null : Number(payload.to);
+    if (to === null) socket.broadcast.emit('chat:typing', { from: userId, to: null, typing });
+    else if (Number.isInteger(to) && to > 0) io.to(`user:${to}`).emit('chat:typing', { from: userId, to, typing });
+  });
+
+  socket.on('chat:read', async (payload: any) => {
+    try {
+      const con = payload?.con === null || payload?.con === undefined || payload?.con === 'general' ? null : Number(payload.con);
+      if (con === null) {
+        await marcarGeneralLeido(userId);
+      } else if (Number.isInteger(con) && con > 0) {
+        const n = await marcarDirectosLeidos(userId, con);
+        // Confirmación de lectura para el que los envió (los ✓✓).
+        if (n > 0) io.to(`user:${con}`).emit('chat:read', { by: userId });
+      }
+      // Las otras pestañas del mismo usuario actualizan su contador.
+      io.to(`user:${userId}`).emit('chat:unread-changed', { con });
+    } catch (err) {
+      console.error('chat:read error:', err);
+    }
+  });
 
   socket.on('disconnect', () => {
     connectedSockets.delete(socket.id);

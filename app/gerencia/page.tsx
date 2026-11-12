@@ -63,11 +63,11 @@ export default function GerenciaPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">Panel de Gerencia</h1>
-          <p className="text-slate-500 mt-1">Vista general del sistema en modo solo lectura.</p>
+          <p className="text-slate-500 mt-1">Vista general del sistema con acceso total de administración.</p>
         </div>
         <div className="flex items-center gap-2 text-xs font-medium text-violet-500 bg-violet-50 border border-violet-200 rounded-lg px-3 py-2">
           <Eye size={14} />
-          Solo Consulta
+          Acceso Total
         </div>
       </div>
 

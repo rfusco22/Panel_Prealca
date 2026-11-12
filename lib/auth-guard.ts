@@ -11,6 +11,23 @@ export function esRolValido(role: unknown): role is Rol {
   return typeof role === 'string' && (ROLES_VALIDOS as readonly string[]).includes(role);
 }
 
+/**
+ * Roles con acceso total. Gerencia tiene los mismos permisos que Admin:
+ * puede ver, agregar, editar y eliminar en todas las secciones. Cualquier
+ * endpoint protegido con requireAuth([...]) deja pasar a estos roles aunque no
+ * figuren en la lista.
+ */
+export const ROLES_SUPERUSUARIO: readonly Rol[] = ['admin', 'gerencia'];
+
+export function esSuperusuario(role: unknown): boolean {
+  return typeof role === 'string' && (ROLES_SUPERUSUARIO as readonly string[]).includes(role);
+}
+
+/** true si el rol está en la lista o es superusuario (admin/gerencia). */
+export function rolPermitido(role: Rol, permitidos: readonly Rol[]): boolean {
+  return esSuperusuario(role) || permitidos.includes(role);
+}
+
 export interface Sesion {
   userId: number;
   role: Rol;
@@ -38,7 +55,7 @@ export async function requireAuth(
     };
   }
 
-  if (rolesPermitidos && !rolesPermitidos.includes(session.role)) {
+  if (rolesPermitidos && !rolPermitido(session.role, rolesPermitidos)) {
     return {
       session: null,
       response: NextResponse.json({ error: 'Acceso denegado' }, { status: 403 }),

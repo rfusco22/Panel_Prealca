@@ -19,13 +19,13 @@ export default function RegistroLayout({ children }: { children: React.ReactNode
 
   useEffect(() => {
     if (!loading) {
-      if (!session || (session.user.role !== 'registro' && session.user.role !== 'admin')) {
+      if (!session || (session.user.role !== 'registro' && session.user.role !== 'admin' && session.user.role !== 'gerencia')) {
         router.push('/auth/login');
       }
     }
   }, [session, loading, router]);
 
-  if (loading || !session || (session.user.role !== 'registro' && session.user.role !== 'admin')) {
+  if (loading || !session || (session.user.role !== 'registro' && session.user.role !== 'admin' && session.user.role !== 'gerencia')) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-zinc-50">
         <span className="text-sm font-bold text-zinc-500 animate-pulse">Cargando panel...</span>

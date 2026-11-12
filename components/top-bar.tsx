@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { LogOut, Menu } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { ChatWidget } from "@/components/chat/chat-widget";
 
 interface TopBarProps {
   userRole?: string;
@@ -16,7 +17,7 @@ export function TopBar({ userRole = 'admin', onToggleSidebar }: TopBarProps) {
 
   const handleLogout = async () => {
     // Lógica actual de PREALCA para destruir la sesión
-    await fetch('/api/auth/logout', { method: 'POST' });
+    await fetch('/api/auth/signout', { method: 'POST' });
     router.push("/auth/login");
   };
 
@@ -51,7 +52,9 @@ export function TopBar({ userRole = 'admin', onToggleSidebar }: TopBarProps) {
 
       {/* Lado Derecho */}
       <div className="flex items-center gap-6">
-        
+        {/* Chat interno en tiempo real */}
+        <ChatWidget />
+
         {/* Info de Usuario y Logout */}
         <div className="flex items-center gap-4">
           <div className="text-right hidden sm:block">

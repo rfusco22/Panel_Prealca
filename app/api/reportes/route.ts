@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { requireAuth, type Rol } from '@/lib/auth-guard';
+import { requireAuth, rolPermitido, type Rol } from '@/lib/auth-guard';
 
 // Qué rol puede pedir cada reporte.
 //
@@ -31,7 +31,7 @@ export async function GET(request: Request) {
     const type = searchParams.get('type') || 'ingresos';
 
     const rolesPermitidos = ROLES_POR_REPORTE[type] || ROLES_POR_DEFECTO;
-    if (!rolesPermitidos.includes(auth.session.role)) {
+    if (!rolPermitido(auth.session.role, rolesPermitidos)) {
       return NextResponse.json({ success: false, error: 'Acceso denegado' }, { status: 403 });
     }
     const from = searchParams.get('from');

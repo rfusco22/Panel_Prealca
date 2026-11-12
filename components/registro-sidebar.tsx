@@ -39,7 +39,7 @@ export function RegistroSidebar({
   const bgColor = "bg-blue-500";
 
   const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
+    await fetch('/api/auth/signout', { method: 'POST' });
     router.push("/auth/login");
   };
 

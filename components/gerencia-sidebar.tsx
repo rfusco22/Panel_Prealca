@@ -5,7 +5,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   LayoutDashboard, Users, UserCircle, Package, Truck, Receipt,
   Building2, FileText, ShoppingCart, TrendingUp, TrendingDown,
-  Boxes, HardHat, AlertTriangle, LogOut, Eye, ChevronDown, UsersRound, Shield, ArrowLeftRight, X, BarChart3, Wrench
+  Boxes, HardHat, AlertTriangle, LogOut, Eye, ChevronDown, UsersRound, Shield, ArrowLeftRight, X, BarChart3, Wrench,
+  Settings, BookOpen, Route, History
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -32,6 +33,7 @@ const topItems: MenuItem[] = [
   { id: "brecha", label: "Brecha Cambiaria", icon: ArrowLeftRight, href: "/gerencia/brecha-cambiaria" },
   { id: "usuarios", label: "Gestión de Usuarios", icon: UsersRound, href: "/gerencia/users" },
   { id: "auditoria", label: "Auditoría", icon: Shield, href: "/gerencia/audit-log" },
+  { id: "settings", label: "Configuración", icon: Settings, href: "/gerencia/settings" },
 ];
 
 const groups: MenuGroup[] = [
@@ -41,6 +43,7 @@ const groups: MenuGroup[] = [
     icon: Users,
     items: [
       { id: "clientes", label: "Clientes", icon: Users, href: "/gerencia/clientes" },
+      { id: "estado-cuenta", label: "Estado de Cuenta", icon: BookOpen, href: "/gerencia/estado-cuenta" },
       { id: "proveedores", label: "Proveedores", icon: Package, href: "/gerencia/proveedores" },
       { id: "vendedores", label: "Vendedores", icon: UserCircle, href: "/gerencia/vendedores" },
       { id: "bancos", label: "Bancos", icon: Building2, href: "/gerencia/bancos" },
@@ -70,7 +73,10 @@ const groups: MenuGroup[] = [
       { id: "mantenimiento", label: "Mantenimiento", icon: Wrench, href: "/gerencia/mantenimiento-unidades" },
       { id: "choferes", label: "Choferes", icon: HardHat, href: "/gerencia/choferes" },
       { id: "materia-prima", label: "Materia Prima", icon: Package, href: "/gerencia/materia-prima" },
+      { id: "agregados", label: "Agregados", icon: Boxes, href: "/gerencia/agregados" },
       { id: "guias", label: "Guías de Despacho", icon: FileText, href: "/gerencia/guia-despacho" },
+      { id: "viajes-mp", label: "Viajes Materia Prima", icon: Route, href: "/gerencia/viajes-materia-prima" },
+      { id: "historico-viajes", label: "Histórico de Viajes", icon: History, href: "/gerencia/historico-viajes" },
     ],
   },
 ];
