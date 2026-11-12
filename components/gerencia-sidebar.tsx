@@ -141,7 +141,6 @@ function NavSecciones({
                   {s.label}
                 </span>
                 {!abierta && tieneActivo && <span className="h-1.5 w-1.5 rounded-full bg-violet-400" />}
-                <span className="text-[10px] font-semibold text-slate-500 tabular-nums">{s.items.length}</span>
                 <ChevronDown size={14} className={`text-slate-500 transition-transform duration-200 ${abierta ? "rotate-180" : ""}`} />
               </button>
 
