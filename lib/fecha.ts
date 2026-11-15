@@ -49,6 +49,29 @@ export function aISOLocal(d: Date): string {
   return `${y}-${m}-${dia}`;
 }
 
+/**
+ * Valida la fecha de un registro que ya ocurrió (un egreso pagado, una entrada
+ * de material recibida): tiene que ser hoy o antes, nunca después.
+ *
+ * Devuelve null si está bien, o el motivo para mostrarle al usuario.
+ *
+ * La comparación es de texto contra texto: los dos valores están en formato
+ * ISO 'YYYY-MM-DD', así que el orden alfabético es el cronológico y no
+ * interviene la zona horaria del proceso. "Hoy" es hoy en Venezuela
+ * (ver hoyLocal), no en la zona del contenedor, que corre en UTC: entre las
+ * 20:00 y la medianoche las dos no coinciden, y usar la del contenedor dejaría
+ * cargar el día siguiente durante esas cuatro horas.
+ */
+export function validarFechaNoFutura(valor: unknown): string | null {
+  if (typeof valor !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(valor)) {
+    return 'La fecha no tiene un formato válido (YYYY-MM-DD).';
+  }
+  if (valor > hoyLocal()) {
+    return 'La fecha no puede ser posterior a hoy.';
+  }
+  return null;
+}
+
 /** 'YYYY-MM-DD' desplazado en días respecto de hoy. Negativo = pasado. */
 export function hoyLocalMasDias(dias: number): string {
   // Se parte del día de hoy en la zona del negocio y se corre por componentes,
