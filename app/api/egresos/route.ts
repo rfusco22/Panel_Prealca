@@ -7,7 +7,7 @@ import {
 import { emitSocketEvent } from '@/lib/socket-server';
 import { registrarLog, getUsuarioFromRequest, getClientIp } from '@/lib/audit-log';
 import { requireAuth } from '@/lib/auth-guard';
-import { hoyLocal } from '@/lib/fecha';
+import { hoyLocal, validarFechaNoFutura } from '@/lib/fecha';
 
 // Lectura: admin y gerencia. Alta: solo admin, que es donde se registran;
 // gerencia los consulta desde su pagina de solo lectura.
@@ -74,8 +74,16 @@ export async function POST(req: Request) {
     const comprobantes = prepararComprobantes(data.comprobantes);
     await ensureTablaComprobantes();
 
-    const sql = `INSERT INTO egresos (banco, nombreProveedor, rif, clasificacionGasto, subCategoria, detalleExtra, descripcion, montoBs, montoDivisa, tasaCambio, referencia, fecha) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    // Un egreso es un pago que ya salió del banco: no puede tener fecha
+    // futura. Se valida acá y no solo en el formulario porque el `max` del
+    // input se puede saltear mandando el request directo.
     const fechaEgreso = data.fecha ? data.fecha : hoyLocal();
+    const errorFecha = validarFechaNoFutura(fechaEgreso);
+    if (errorFecha) {
+      return NextResponse.json({ error: errorFecha }, { status: 400 });
+    }
+
+    const sql = `INSERT INTO egresos (banco, nombreProveedor, rif, clasificacionGasto, subCategoria, detalleExtra, descripcion, montoBs, montoDivisa, tasaCambio, referencia, fecha) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
     const valores = [data.banco, data.nombreProveedor, rif, data.clasificacionGasto, data.subCategoria || null, detalleExtra, data.descripcion || null, montoBs, montoDivisa, tasaCambioNum, data.referencia, fechaEgreso];
     // Egreso y comprobantes en una sola transacción: o quedan los dos o ninguno.
     const resultado = await transaccion(async (conn) => {

@@ -24,6 +24,13 @@ async function ensureColumns() {
   try { await query(`CREATE TABLE IF NOT EXISTS guia_numero_secuencia (numero INT AUTO_INCREMENT PRIMARY KEY)`); } catch {}
   try { await query(`CREATE TABLE IF NOT EXISTS guia_numero_secuencia_premezclado (numero INT AUTO_INCREMENT PRIMARY KEY)`); } catch {}
   try { await query(`CREATE TABLE IF NOT EXISTS guia_numero_secuencia_prealca (numero INT AUTO_INCREMENT PRIMARY KEY)`); } catch {}
+  // Garantía a nivel de base: dos guías del mismo tipo no pueden compartir
+  // número. Si quedan duplicados de antes, esto falla y se ignora, igual que el
+  // resto de los ensure; la verificación de siguienteNumeroGuia igual impide
+  // que se creen nuevos. Apenas se resuelvan los duplicados viejos, el índice
+  // se crea solo en el siguiente pedido. Las guías anteriores a esta
+  // numeración tienen numero_guia NULL, y UNIQUE admite varios NULL.
+  try { await query(`CREATE UNIQUE INDEX idx_guia_tipo_numero ON guia_despacho (tipo, numero_guia)`); } catch {}
   // El chofer pasó de ser un nombre copiado a un FK. Ver
   // sql/migracion_chofer_id_guia_despacho.sql: ahí está el relleno de las
   // guías viejas y el porqué la columna chofer (texto) no se borra.
@@ -42,10 +49,47 @@ async function ensureColumns() {
 // Se apoya en el AUTO_INCREMENT de una tabla dedicada en vez de un
 // SELECT MAX()+1 manual: dos guías creadas al mismo tiempo no pueden terminar
 // con el mismo número, porque AUTO_INCREMENT ya resuelve esa concurrencia.
+//
+// El número que entrega siempre es mayor que el de cualquier guía del mismo
+// tipo que ya exista. Hace falta porque los contadores por tipo se crearon
+// arrancando en 1 cuando ya había guías numeradas del 1 al 5 con el contador
+// viejo compartido: quedaron dos Premezclado con el número GD-2, y el contador
+// seguía atrasado, así que iba a repetir también el 3 y el 4.
+//
+// No alcanza con buscar un número libre: eso llenaría los huecos y el
+// correlativo iría para atrás (emitir hoy una GD-2 cuando ya se entregó la
+// GD-5 parece un documento antedatado). Por eso la condición es "mayor que el
+// máximo", no "que no esté usado".
+//
+// Esto no renumera ninguna guía existente: los duplicados ya impresos quedan
+// como están, y lo que se evita es que aparezcan nuevos. Ver
+// sql/migracion_numero_guia_duplicados.sql.
 async function siguienteNumeroGuia(tipo: string): Promise<number> {
   const tabla = tipo === 'Prealca' ? 'guia_numero_secuencia_prealca' : 'guia_numero_secuencia_premezclado';
-  const resultado: any = await query(`INSERT INTO ${tabla} (numero) VALUES (NULL)`);
-  return resultado.insertId;
+
+  // El tope de intentos es por si algo quedara inconsistente de un modo no
+  // previsto: sin él, un error raro dejaría el pedido colgado en un bucle.
+  for (let intento = 0; intento < 20; intento++) {
+    const resultado: any = await query(`INSERT INTO ${tabla} (numero) VALUES (NULL)`);
+    const numero: number = resultado.insertId;
+
+    const fila: any = await query(
+      'SELECT COALESCE(MAX(numero_guia), 0) AS maximo FROM guia_despacho WHERE tipo = ?',
+      [tipo],
+    );
+    const maximo = Math.trunc(Number(fila[0]?.maximo ?? 0));
+    if (numero > maximo) return numero;
+
+    // El contador viene atrasado respecto de las guías que ya existen. Se lo
+    // adelanta de una vez hasta pasar el máximo, en vez de ir de a uno. El
+    // valor va interpolado y no como parámetro porque ALTER TABLE no acepta
+    // placeholders; por eso se fuerza a entero antes de armar la sentencia.
+    const siguiente = maximo + 1;
+    if (!Number.isSafeInteger(siguiente) || siguiente < 1) break;
+    await query(`ALTER TABLE ${tabla} AUTO_INCREMENT = ${siguiente}`);
+  }
+
+  throw new Error(`No se pudo asignar un número de guía libre para el tipo ${tipo}.`);
 }
 
 export async function GET() {

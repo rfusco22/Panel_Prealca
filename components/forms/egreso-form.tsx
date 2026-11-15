@@ -241,7 +241,11 @@ export function EgresoForm({ onAdd, onClose }: EgresoFormProps) {
               </div>
               <div>
                 <label className={labelCls}>Fecha *</label>
-                <input type="date" value={fecha} onChange={e => setFecha(e.target.value)} required className={inputCls} />
+                {/* max impide elegir un día futuro en el calendario. Es solo la
+                    primera barrera: el servidor vuelve a validarlo, porque esto
+                    se puede saltear y porque el modal puede quedar abierto
+                    cruzando la medianoche. */}
+                <input type="date" value={fecha} max={getTodayStr()} onChange={e => setFecha(e.target.value)} required className={inputCls} />
               </div>
             </div>
 
