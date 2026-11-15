@@ -40,6 +40,30 @@ function obtenerPool(): mysql.Pool {
     enableKeepAlive: true,
     keepAliveInitialDelay: 0,
   });
+
+  // El reloj del servidor MySQL del hosting está en UTC: un SELECT NOW() a las
+  // 21:45 de Venezuela devolvía la 01:45 del día siguiente. Como las columnas
+  // created_at de guías, ingresos, auditoría y el resto se llenan con el
+  // CURRENT_TIMESTAMP de la base, todo lo que se registraba entre las 20:00 y
+  // la medianoche quedaba fechado el día siguiente: una guía emitida el lunes
+  // a la noche aparecía como del martes.
+  //
+  // Se fija la zona en cada conexión del pool, así CURRENT_TIMESTAMP devuelve
+  // la hora de Venezuela y no hay que tocar cada INSERT por separado.
+  //
+  // Se usa el offset '-04:00' y no el nombre 'America/Caracas' porque los
+  // nombres de zona requieren que estén cargadas las tablas de zonas horarias
+  // de MySQL, que en este hosting no lo están. El offset fijo es correcto:
+  // Venezuela no tiene horario de verano desde 2016.
+  //
+  // La consulta se encola apenas se crea la conexión, antes de que el pool se
+  // la entregue a nadie, así que ninguna consulta corre con la zona vieja.
+  pool.on('connection', (conexion: any) => {
+    conexion.query("SET time_zone = '-04:00'", (error: unknown) => {
+      if (error) console.error('No se pudo fijar la zona horaria de la conexión:', error);
+    });
+  });
+
   return pool;
 }
 
