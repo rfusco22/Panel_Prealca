@@ -23,9 +23,9 @@
 -- anulación efectiva, o sea la aprobación.
 --
 -- Quién puede aprobar está en la app, no en la base: ROLES_QUE_ANULAN en
--- app/api/guia-despacho/route.ts, hoy solo 'gerencia'. A propósito no se usa
--- requireAuth(['gerencia']), que dejaría pasar también a admin por ser
--- superusuario.
+-- app/api/guia-despacho/route.ts, hoy 'gerencia' y 'admin'. Es una lista
+-- explícita y no requireAuth([...]) porque lo que se decide ahí es justamente
+-- quién NO puede anular: el resto de los roles solo solicita.
 --
 -- Idempotente: se puede correr las veces que haga falta. La app también lo
 -- aplica sola desde ensureColumns().

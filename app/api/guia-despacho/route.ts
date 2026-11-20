@@ -276,13 +276,14 @@ export async function POST(request: Request) {
 // anulado existe y tiene ese número.
 
 /**
- * Quién puede anular y aprobar anulaciones. Es a propósito gerencia sola, y no
- * se usa requireAuth(['gerencia']) para esto: requireAuth deja pasar siempre a
- * admin y gerencia como superusuarios, y acá hace falta lo contrario, que ni
- * admin pueda anular por su cuenta. Si algún día se quiere que admin también
- * apruebe, se agrega 'admin' a esta lista y alcanza.
+ * Quién puede anular y aprobar anulaciones: gerencia y admin.
+ *
+ * Sigue siendo una lista explícita, y no requireAuth(['gerencia', 'admin']),
+ * porque lo que se decide acá es justamente quién NO puede anular: el resto de
+ * los roles solo solicita, por más que mañana se sumen otros superusuarios.
+ * Agregar o sacar un rol de esta lista es todo lo que hace falta.
  */
-const ROLES_QUE_ANULAN: readonly string[] = ['gerencia'];
+const ROLES_QUE_ANULAN: readonly string[] = ['gerencia', 'admin'];
 
 async function recalcularEstadoPedido(pedidoId: number) {
   const [pedidoRows]: any = await query('SELECT cantidad_m3 FROM pedidos WHERE id = ?', [pedidoId]);
@@ -322,7 +323,7 @@ export async function PATCH(request: Request) {
     const decide = operacion !== 'solicitar';
     if (decide && !ROLES_QUE_ANULAN.includes(auth.session.role)) {
       return NextResponse.json(
-        { error: 'Solo Gerencia puede anular una guía. Puede solicitar la anulación y esperar la aprobación.' },
+        { error: 'Solo Gerencia o el administrador pueden anular una guía. Puede solicitar la anulación y esperar la aprobación.' },
         { status: 403 },
       );
     }

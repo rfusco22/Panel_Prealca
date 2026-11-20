@@ -63,7 +63,7 @@ function tienePendiente(guia: GuiaDespacho): boolean {
   return !estaAnulada(guia) && guia.anulacionEstado === 'solicitada';
 }
 
-/** Gerencia rechazó la anulación: la guía sigue vigente. */
+/** Se rechazó la anulación: la guía sigue vigente. */
 function fueRechazada(guia: GuiaDespacho): boolean {
   return !estaAnulada(guia) && guia.anulacionEstado === 'rechazada';
 }
@@ -75,7 +75,7 @@ type ModoAnulacion = 'solicitar' | 'anular' | 'aprobar' | 'rechazar';
 const TEXTOS: Record<ModoAnulacion, { titulo: string; detalle: string; etiqueta: string; boton: string; obligatorio: boolean; color: string }> = {
   solicitar: {
     titulo: 'Solicitar anulación',
-    detalle: 'La guía sigue valiendo y contando en inventario hasta que Gerencia apruebe la anulación. Queda marcada como pendiente con el motivo que escriba acá.',
+    detalle: 'La guía sigue valiendo y contando en inventario hasta que se apruebe la anulación. Queda marcada como pendiente con el motivo que escriba acá.',
     etiqueta: 'Motivo de la anulación',
     boton: 'Enviar solicitud',
     obligatorio: true,
@@ -92,7 +92,7 @@ const TEXTOS: Record<ModoAnulacion, { titulo: string; detalle: string; etiqueta:
   aprobar: {
     titulo: 'Aprobar anulación',
     detalle: 'Al aprobar, la guía se anula: sale del inventario, del pedido y de los reportes, y ya no se puede reimprimir. Los M³ quedan disponibles para rehacer el despacho.',
-    etiqueta: 'Nota de Gerencia (opcional)',
+    etiqueta: 'Nota de quien aprueba (opcional)',
     boton: 'Aprobar y anular',
     obligatorio: false,
     color: 'bg-red-600 hover:bg-red-700',
@@ -178,9 +178,10 @@ export function GuiaDespachoTable({ data, onChange }: GuiaDespachoTableProps) {
   // no por un confirm(): el motivo queda guardado y es lo único que explica
   // después ese número de guía sin despacho.
   const { session } = useAuth();
-  // Solo Gerencia anula y aprueba. El resto (incluido admin) solicita, igual
-  // que en el backend: ver ROLES_QUE_ANULAN en app/api/guia-despacho/route.ts.
-  const esGerencia = session?.user?.role === 'gerencia';
+  // Anulan y aprueban gerencia y admin; el resto solicita. Tiene que coincidir
+  // con ROLES_QUE_ANULAN en app/api/guia-despacho/route.ts, que es quien manda:
+  // acá solo se decide qué botones se muestran.
+  const puedeAnular = session?.user?.role === 'gerencia' || session?.user?.role === 'admin';
   const [guiaEnCuadro, setGuiaEnCuadro] = useState<GuiaDespacho | null>(null);
   const [modo, setModo] = useState<ModoAnulacion>('solicitar');
   const [motivo, setMotivo] = useState('');
@@ -310,7 +311,7 @@ export function GuiaDespachoTable({ data, onChange }: GuiaDespachoTableProps) {
             {pendientes.length === 1
               ? '1 guía con anulación solicitada'
               : `${pendientes.length} guías con anulación solicitada`}
-            {esGerencia ? ' — esperan su aprobación.' : ' — esperando la aprobación de Gerencia.'}
+            {puedeAnular ? ' — esperan su aprobación.' : ' — esperando aprobación.'}
           </span>
         </div>
       )}
@@ -379,7 +380,7 @@ export function GuiaDespachoTable({ data, onChange }: GuiaDespachoTableProps) {
                     <span className="block text-xs text-amber-700 mt-0.5">
                       Pedida por {guia.anulacionSolicitadaPor || 'un usuario'}
                       {guia.motivoAnulacion ? `: ${guia.motivoAnulacion}` : ''}
-                      {!esGerencia && ' — esperando aprobación de Gerencia'}
+                      {!puedeAnular && ' — esperando aprobación'}
                     </span>
                   )}
                   {fueRechazada(guia) && (
@@ -420,9 +421,9 @@ export function GuiaDespachoTable({ data, onChange }: GuiaDespachoTableProps) {
                         <Download size={16} />
                       )}
                     </button>
-                    {/* Gerencia decide; el resto solicita. Una guía ya anulada
-                        no muestra ninguno de los dos. */}
-                    {!estaAnulada(guia) && esGerencia && tienePendiente(guia) && (
+                    {/* Gerencia y admin deciden; el resto solicita. Una guía
+                        ya anulada no muestra ninguno de los dos. */}
+                    {!estaAnulada(guia) && puedeAnular && tienePendiente(guia) && (
                       <>
                         <button
                           onClick={() => abrirCuadro(guia, 'aprobar')}
@@ -440,7 +441,7 @@ export function GuiaDespachoTable({ data, onChange }: GuiaDespachoTableProps) {
                         </button>
                       </>
                     )}
-                    {!estaAnulada(guia) && esGerencia && !tienePendiente(guia) && (
+                    {!estaAnulada(guia) && puedeAnular && !tienePendiente(guia) && (
                       <button
                         onClick={() => abrirCuadro(guia, 'anular')}
                         className="p-2 text-slate-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition"
@@ -449,7 +450,7 @@ export function GuiaDespachoTable({ data, onChange }: GuiaDespachoTableProps) {
                         <Ban size={16} />
                       </button>
                     )}
-                    {!estaAnulada(guia) && !esGerencia && !tienePendiente(guia) && (
+                    {!estaAnulada(guia) && !puedeAnular && !tienePendiente(guia) && (
                       <button
                         onClick={() => abrirCuadro(guia, 'solicitar')}
                         className="p-2 text-slate-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition"
@@ -458,8 +459,8 @@ export function GuiaDespachoTable({ data, onChange }: GuiaDespachoTableProps) {
                         <Ban size={16} />
                       </button>
                     )}
-                    {!estaAnulada(guia) && !esGerencia && tienePendiente(guia) && (
-                      <span className="p-2 text-amber-600" title="Esperando la aprobación de Gerencia">
+                    {!estaAnulada(guia) && !puedeAnular && tienePendiente(guia) && (
+                      <span className="p-2 text-amber-600" title="Esperando aprobación">
                         <Clock size={16} />
                       </span>
                     )}
