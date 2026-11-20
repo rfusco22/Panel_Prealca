@@ -167,3 +167,134 @@
     @apply font-sans;
   }
 }
+
+/* ===========================================================================
+   Superficies con profundidad
+   ---------------------------------------------------------------------------
+   Lenguaje visual compartido por los módulos: tarjetas que se levantan, tablas
+   con relieve y entradas animadas. La "profundidad" se arma con sombras en
+   capas y una inclinación mínima en hover, no con 3D de verdad: esto es un
+   panel que se usa ocho horas por día, y un efecto llamativo cansa a la
+   tercera vez que lo ves. La regla es que el relieve ayude a separar lo que
+   flota (tarjetas, modales) de lo que está al fondo, nunca que distraiga del
+   número que la persona vino a leer.
+
+   Todo lo que se mueve respeta prefers-reduced-motion.
+   =========================================================================== */
+
+:root {
+  --sombra-1: 0 1px 2px rgba(15, 23, 42, 0.04), 0 2px 8px rgba(15, 23, 42, 0.04);
+  --sombra-2: 0 2px 4px rgba(15, 23, 42, 0.05), 0 8px 24px rgba(15, 23, 42, 0.07);
+  --sombra-3: 0 10px 20px rgba(15, 23, 42, 0.08), 0 24px 48px rgba(15, 23, 42, 0.10);
+  --borde-suave: rgba(148, 163, 184, 0.22);
+}
+
+/* Tarjeta base: borde tenue, sombra en capas y un brillo arriba que simula luz
+   cayendo desde el frente. */
+.superficie {
+  position: relative;
+  background: #fff;
+  border: 1px solid var(--borde-suave);
+  border-radius: 1rem;
+  box-shadow: var(--sombra-1);
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease;
+}
+
+.superficie::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.9), transparent);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+/* Se levanta al pasar el mouse. El translate es chico a propósito: alcanza
+   para que la tarjeta se despegue del fondo sin que la grilla "salte". */
+.superficie-levanta:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--sombra-2);
+}
+
+/* Tarjeta de indicador: la inclinación mínima en hover es lo que da la
+   sensación de volumen, junto con el degradado de fondo. */
+.indicador {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+  transform-style: preserve-3d;
+}
+
+.indicador:hover {
+  transform: perspective(900px) translateY(-4px) rotateX(2.5deg);
+  box-shadow: var(--sombra-3);
+}
+
+/* Mancha de color que tiñe apenas la esquina de la tarjeta. El color lo pone
+   cada módulo con --tinte. */
+.indicador::after {
+  content: '';
+  position: absolute;
+  top: -40%;
+  right: -20%;
+  width: 60%;
+  height: 160%;
+  background: radial-gradient(closest-side, var(--tinte, rgba(16, 185, 129, 0.16)), transparent);
+  pointer-events: none;
+}
+
+/* Filas de tabla: el hover corre la fila un pelo y le mete sombra, asi se lee
+   cual esta activa sin pintar todo el renglon de color. */
+.fila-interactiva {
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+
+.fila-interactiva:hover {
+  background-color: #f8fafc;
+  box-shadow: inset 3px 0 0 0 #0f172a;
+}
+
+/* Entrada escalonada: cada elemento aparece un poco después del anterior.
+   El retraso lo pone quien la usa con --retraso. */
+@keyframes aparecer {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+.aparecer {
+  animation: aparecer 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--retraso, 0ms);
+}
+
+/* Encabezado de tabla que queda fijo al hacer scroll dentro de la tarjeta. */
+.encabezado-fijo th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  box-shadow: 0 1px 0 0 var(--borde-suave);
+}
+
+/* Botón de acción dentro de una fila. */
+.accion {
+  transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.accion:hover { transform: translateY(-1px) scale(1.06); }
+.accion:active { transform: translateY(0) scale(0.96); }
+
+@media (prefers-reduced-motion: reduce) {
+  .superficie,
+  .superficie-levanta:hover,
+  .indicador:hover,
+  .fila-interactiva,
+  .fila-interactiva:hover,
+  .accion,
+  .accion:hover,
+  .accion:active {
+    transform: none;
+    transition: none;
+  }
+  .aparecer { animation: none; }
+}
