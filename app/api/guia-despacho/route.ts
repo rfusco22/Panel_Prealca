@@ -40,6 +40,16 @@ async function ensureColumns() {
   try { await query(`ALTER TABLE guia_despacho ADD COLUMN anulada_at DATETIME NULL`); } catch {}
   try { await query(`ALTER TABLE guia_despacho ADD COLUMN anulada_por INT NULL`); } catch {}
   try { await query(`CREATE INDEX idx_gd_anulada ON guia_despacho (anulada)`); } catch {}
+  // Ver sql/migracion_anular_guia_aprobacion.sql. Anular no es una sola
+  // acción: quien emite la guía solicita, y gerencia aprueba o rechaza. La
+  // guía sigue valiendo (y contando en el inventario) hasta que se aprueba.
+  try { await query(`ALTER TABLE guia_despacho ADD COLUMN anulacion_estado VARCHAR(20) NULL`); } catch {}
+  try { await query(`ALTER TABLE guia_despacho ADD COLUMN anulacion_solicitada_por INT NULL`); } catch {}
+  try { await query(`ALTER TABLE guia_despacho ADD COLUMN anulacion_solicitada_at DATETIME NULL`); } catch {}
+  try { await query(`ALTER TABLE guia_despacho ADD COLUMN anulacion_respuesta VARCHAR(255) NULL`); } catch {}
+  try { await query(`ALTER TABLE guia_despacho ADD COLUMN anulacion_respondida_por INT NULL`); } catch {}
+  try { await query(`ALTER TABLE guia_despacho ADD COLUMN anulacion_respondida_at DATETIME NULL`); } catch {}
+  try { await query(`CREATE INDEX idx_gd_anulacion_estado ON guia_despacho (anulacion_estado)`); } catch {}
   // Ver sql/migracion_numero_guia.sql y sql/migracion_numero_guia_por_tipo.sql
   try { await query(`ALTER TABLE guia_despacho ADD COLUMN numero_guia INT NULL`); } catch {}
   try { await query(`CREATE TABLE IF NOT EXISTS guia_numero_secuencia (numero INT AUTO_INCREMENT PRIMARY KEY)`); } catch {}
@@ -119,7 +129,7 @@ export async function GET() {
 
   try {
     await ensureColumns();
-    const guias = await query(`SELECT gd.id, gd.numero_guia AS numeroGuia, gd.tipo, gd.cliente_id AS clienteId, c.nombre AS clienteNombre, c.rif AS clienteRif, c.direccion AS clienteDireccion, c.telefono AS clienteTelefono, gd.producto_id AS productoId, CONCAT(p.resistencia, ' - ', p.pulgada) AS productoNombre, p.resistencia, p.pulgada, gd.cantidad_m3 AS cantidadM3, gd.precio_m3 AS precioM3, gd.iva_aplicado AS ivaAplicado, gd.iva_monto AS ivaMonto, gd.total, gd.chofer_id AS choferId, COALESCE(ch.nombre, gd.chofer) AS choferNombre, gd.chofer, gd.unidad_id AS unidadId, un.numero_unidad AS numeroUnidad, un.placa, gd.pedido_id AS pedidoId, pe.cantidad_m3 AS pedidoTotalM3, pe.obra AS pedidoObra, gd.obra, gd.observaciones, COALESCE(gd.anulada, 0) AS anulada, gd.motivo_anulacion AS motivoAnulacion, gd.anulada_at AS anuladaAt, gd.usuario_id AS usuarioId, COALESCE(gd.fecha, DATE(gd.created_at)) AS fecha, gd.created_at AS creadoEn FROM guia_despacho gd LEFT JOIN clientes c ON gd.cliente_id = c.id LEFT JOIN productos p ON gd.producto_id = p.id LEFT JOIN unidades un ON gd.unidad_id = un.id LEFT JOIN choferes ch ON gd.chofer_id = ch.id LEFT JOIN pedidos pe ON gd.pedido_id = pe.id ORDER BY gd.id DESC`);
+    const guias = await query(`SELECT gd.id, gd.numero_guia AS numeroGuia, gd.tipo, gd.cliente_id AS clienteId, c.nombre AS clienteNombre, c.rif AS clienteRif, c.direccion AS clienteDireccion, c.telefono AS clienteTelefono, gd.producto_id AS productoId, CONCAT(p.resistencia, ' - ', p.pulgada) AS productoNombre, p.resistencia, p.pulgada, gd.cantidad_m3 AS cantidadM3, gd.precio_m3 AS precioM3, gd.iva_aplicado AS ivaAplicado, gd.iva_monto AS ivaMonto, gd.total, gd.chofer_id AS choferId, COALESCE(ch.nombre, gd.chofer) AS choferNombre, gd.chofer, gd.unidad_id AS unidadId, un.numero_unidad AS numeroUnidad, un.placa, gd.pedido_id AS pedidoId, pe.cantidad_m3 AS pedidoTotalM3, pe.obra AS pedidoObra, gd.obra, gd.observaciones, COALESCE(gd.anulada, 0) AS anulada, gd.motivo_anulacion AS motivoAnulacion, gd.anulada_at AS anuladaAt, gd.anulacion_estado AS anulacionEstado, gd.anulacion_solicitada_at AS anulacionSolicitadaAt, usol.nombre AS anulacionSolicitadaPor, gd.anulacion_respuesta AS anulacionRespuesta, gd.anulacion_respondida_at AS anulacionRespondidaAt, uresp.nombre AS anulacionRespondidaPor, gd.usuario_id AS usuarioId, COALESCE(gd.fecha, DATE(gd.created_at)) AS fecha, gd.created_at AS creadoEn FROM guia_despacho gd LEFT JOIN clientes c ON gd.cliente_id = c.id LEFT JOIN productos p ON gd.producto_id = p.id LEFT JOIN unidades un ON gd.unidad_id = un.id LEFT JOIN choferes ch ON gd.chofer_id = ch.id LEFT JOIN pedidos pe ON gd.pedido_id = pe.id LEFT JOIN users usol ON gd.anulacion_solicitada_por = usol.id LEFT JOIN users uresp ON gd.anulacion_respondida_por = uresp.id ORDER BY gd.id DESC`);
     return NextResponse.json({ success: true, guias }, { status: 200 });
   } catch (error) {
     console.error('Error GET guia_despacho:', error);
@@ -239,43 +249,93 @@ export async function POST(request: Request) {
   }
 }
 
-// Anular una guía ya emitida.
+// Anulación de una guía ya emitida: la pide quien la emitió, la decide gerencia.
 //
 // El caso real: el camión se accidentó en el camino, la guía ya está impresa y
 // hay que rehacer el despacho con otro chofer y otra unidad. Borrar la fila
 // también devolvería el inventario (el stock se calcula sumando las guías, no
 // con un contador aparte), pero se lleva puesto el papel: queda un número de
 // guía emitido del que no hay rastro, y la guía nueva igual lleva otro número.
-// Anular deja la guía en la base, marcada y con el motivo, y la saca de todas
-// las sumas: inventario, acumulado del pedido y reportes.
 //
-// No se reusa el número de guía anulada ni se renumeran las demás: el papel
+// El circuito tiene dos pasos a propósito:
+//
+//   solicitar -> la guía SIGUE VIGENTE. Sigue contando en inventario, en el
+//                pedido y en los reportes. Lo único que cambia es que queda
+//                marcada como "anulación solicitada", con el motivo y quién la
+//                pidió. Nada de la planta se mueve sin que gerencia lo vea.
+//   aprobar   -> recién ahí se anula: sale de todas las sumas y el pedido
+//                vuelve a su estado, así esos M³ quedan libres para la guía
+//                nueva.
+//   rechazar  -> la guía queda vigente y la respuesta de gerencia queda
+//                guardada, para que el de planta sepa por qué sigue viva.
+//
+// Gerencia puede anular directo, sin pasar por la solicitud: es la misma
+// decisión tomada por la misma persona.
+//
+// No se reusa el número de la guía anulada ni se renumeran las demás: el papel
 // anulado existe y tiene ese número.
+
+/**
+ * Quién puede anular y aprobar anulaciones. Es a propósito gerencia sola, y no
+ * se usa requireAuth(['gerencia']) para esto: requireAuth deja pasar siempre a
+ * admin y gerencia como superusuarios, y acá hace falta lo contrario, que ni
+ * admin pueda anular por su cuenta. Si algún día se quiere que admin también
+ * apruebe, se agrega 'admin' a esta lista y alcanza.
+ */
+const ROLES_QUE_ANULAN: readonly string[] = ['gerencia'];
+
+async function recalcularEstadoPedido(pedidoId: number) {
+  const [pedidoRows]: any = await query('SELECT cantidad_m3 FROM pedidos WHERE id = ?', [pedidoId]);
+  const pedidoTotal = Number(pedidoRows?.cantidad_m3 || 0);
+  const [sumRows]: any = await query(
+    'SELECT COALESCE(SUM(cantidad_m3), 0) AS totalGuias FROM guia_despacho WHERE pedido_id = ? AND COALESCE(anulada, 0) = 0',
+    [pedidoId],
+  );
+  const totalGuias = Number(sumRows?.totalGuias || 0);
+  const estado = totalGuias >= pedidoTotal && pedidoTotal > 0
+    ? 'completado'
+    : totalGuias > 0 ? 'en_proceso' : 'pendiente';
+  await query('UPDATE pedidos SET estado = ? WHERE id = ?', [estado, pedidoId]);
+  emitSocketEvent('pedidos:updated');
+}
+
 export async function PATCH(request: Request) {
-  // requireAuth deja pasar siempre a admin y gerencia (son superusuarios),
-  // así que esta lista es "además, el dosificador", que es quien emite las
-  // guías en planta y el que se entera del accidente.
-  const auth = await requireAuth(['dosificador']);
+  // Solicitar lo puede hacer quien emite las guías; aprobar, rechazar y anular
+  // se chequean aparte más abajo, contra ROLES_QUE_ANULAN.
+  const auth = await requireAuth(['dosificador', 'registro']);
   if (auth.response) return auth.response;
 
   try {
     await ensureColumns();
-    const { id, motivo } = await request.json();
+    const { id, motivo, accion } = await request.json();
 
     const idGuia = Number(id);
     if (!Number.isInteger(idGuia) || idGuia <= 0) {
       return NextResponse.json({ error: 'Guía inválida.' }, { status: 400 });
     }
 
-    // El motivo es obligatorio: una guía anulada sin explicación no sirve para
-    // reconstruir después qué pasó con ese número.
-    const motivoLimpio = typeof motivo === 'string' ? motivo.trim() : '';
-    if (motivoLimpio.length < 3) {
+    const operacion = typeof accion === 'string' ? accion : 'solicitar';
+    if (!['solicitar', 'aprobar', 'rechazar', 'anular'].includes(operacion)) {
+      return NextResponse.json({ error: 'Acción inválida.' }, { status: 400 });
+    }
+
+    const decide = operacion !== 'solicitar';
+    if (decide && !ROLES_QUE_ANULAN.includes(auth.session.role)) {
+      return NextResponse.json(
+        { error: 'Solo Gerencia puede anular una guía. Puede solicitar la anulación y esperar la aprobación.' },
+        { status: 403 },
+      );
+    }
+
+    // El texto es obligatorio salvo al rechazar, donde es la nota de gerencia
+    // y puede ir vacía. Una guía anulada sin motivo no explica después nada.
+    const texto = typeof motivo === 'string' ? motivo.trim() : '';
+    if (operacion !== 'rechazar' && texto.length < 3) {
       return NextResponse.json({ error: 'Debe indicar el motivo de la anulación.' }, { status: 400 });
     }
 
     const filas: any = await query(
-      'SELECT id, tipo, numero_guia AS numeroGuia, cantidad_m3 AS cantidadM3, pedido_id AS pedidoId, COALESCE(anulada, 0) AS anulada FROM guia_despacho WHERE id = ?',
+      'SELECT id, tipo, numero_guia AS numeroGuia, cantidad_m3 AS cantidadM3, pedido_id AS pedidoId, COALESCE(anulada, 0) AS anulada, anulacion_estado AS anulacionEstado, motivo_anulacion AS motivoAnulacion FROM guia_despacho WHERE id = ?',
       [idGuia],
     );
     if (filas.length === 0) {
@@ -286,45 +346,102 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'La guía ya está anulada.' }, { status: 400 });
     }
 
+    const etiqueta = `GD-${guia.numeroGuia ?? guia.id} (${guia.tipo}) - ${guia.cantidadM3} M3`;
+    const usuario = await getUsuarioFromRequest();
+    const ip = getClientIp(request);
+
+    if (operacion === 'solicitar') {
+      if (guia.anulacionEstado === 'solicitada') {
+        return NextResponse.json({ error: 'Ya hay una anulación pendiente de aprobación para esta guía.' }, { status: 400 });
+      }
+      await query(
+        `UPDATE guia_despacho
+         SET anulacion_estado = 'solicitada', motivo_anulacion = ?, anulacion_solicitada_por = ?,
+             anulacion_solicitada_at = NOW(), anulacion_respuesta = NULL,
+             anulacion_respondida_por = NULL, anulacion_respondida_at = NULL
+         WHERE id = ?`,
+        [texto.slice(0, 255), auth.session.userId, idGuia],
+      );
+      emitSocketEvent('guia-despacho:anulacion-solicitada');
+      await registrarLog({
+        ...usuario, accion: 'editar', modulo: 'Guías de Despacho', entidad_id: idGuia,
+        descripcion: `Solicitó anular la guía ${etiqueta} - motivo: ${texto}`,
+        datos_nuevos: { anulacionEstado: 'solicitada', motivo: texto },
+        ip_address: ip,
+      });
+      return NextResponse.json({ success: true, id: idGuia, anulacionEstado: 'solicitada' }, { status: 200 });
+    }
+
+    if (operacion === 'rechazar') {
+      if (guia.anulacionEstado !== 'solicitada') {
+        return NextResponse.json({ error: 'Esta guía no tiene una anulación pendiente.' }, { status: 400 });
+      }
+      await query(
+        `UPDATE guia_despacho
+         SET anulacion_estado = 'rechazada', anulacion_respuesta = ?,
+             anulacion_respondida_por = ?, anulacion_respondida_at = NOW()
+         WHERE id = ?`,
+        [texto ? texto.slice(0, 255) : null, auth.session.userId, idGuia],
+      );
+      emitSocketEvent('guia-despacho:anulacion-solicitada');
+      await registrarLog({
+        ...usuario, accion: 'editar', modulo: 'Guías de Despacho', entidad_id: idGuia,
+        descripcion: `Rechazó la anulación de la guía ${etiqueta}${texto ? ` - ${texto}` : ''}`,
+        datos_anteriores: { anulacionEstado: 'solicitada' },
+        datos_nuevos: { anulacionEstado: 'rechazada', respuesta: texto || null },
+        ip_address: ip,
+      });
+      return NextResponse.json({ success: true, id: idGuia, anulacionEstado: 'rechazada' }, { status: 200 });
+    }
+
+    // aprobar / anular: acá sí se anula de verdad.
+    if (operacion === 'aprobar' && guia.anulacionEstado !== 'solicitada') {
+      return NextResponse.json({ error: 'Esta guía no tiene una anulación pendiente.' }, { status: 400 });
+    }
+
+    // Al aprobar, el motivo que vale es el de quien la solicitó: es el que
+    // cuenta qué pasó con el camión. La nota de gerencia va aparte.
+    const motivoFinal = operacion === 'aprobar'
+      ? (guia.motivoAnulacion || texto).slice(0, 255)
+      : texto.slice(0, 255);
+
     await query(
-      'UPDATE guia_despacho SET anulada = 1, motivo_anulacion = ?, anulada_at = NOW(), anulada_por = ? WHERE id = ?',
-      [motivoLimpio.slice(0, 255), auth.session.userId, idGuia],
+      `UPDATE guia_despacho
+       SET anulada = 1, anulacion_estado = 'anulada', motivo_anulacion = ?,
+           anulada_at = NOW(), anulada_por = ?,
+           anulacion_respuesta = ?, anulacion_respondida_por = ?, anulacion_respondida_at = NOW()
+       WHERE id = ?`,
+      [
+        motivoFinal,
+        auth.session.userId,
+        operacion === 'aprobar' && texto ? texto.slice(0, 255) : null,
+        auth.session.userId,
+        idGuia,
+      ],
     );
 
     // El pedido vuelve al estado que le corresponde sin esta guía: los M³ que
     // no se despacharon quedan otra vez disponibles para la guía nueva.
-    if (guia.pedidoId) {
-      const [pedidoRows]: any = await query('SELECT cantidad_m3 FROM pedidos WHERE id = ?', [guia.pedidoId]);
-      const pedidoTotal = Number(pedidoRows?.cantidad_m3 || 0);
-      const [sumRows]: any = await query(
-        'SELECT COALESCE(SUM(cantidad_m3), 0) AS totalGuias FROM guia_despacho WHERE pedido_id = ? AND COALESCE(anulada, 0) = 0',
-        [guia.pedidoId],
-      );
-      const totalGuias = Number(sumRows?.totalGuias || 0);
-      const estado = totalGuias >= pedidoTotal && pedidoTotal > 0
-        ? 'completado'
-        : totalGuias > 0 ? 'en_proceso' : 'pendiente';
-      await query('UPDATE pedidos SET estado = ? WHERE id = ?', [estado, guia.pedidoId]);
-      emitSocketEvent('pedidos:updated');
-    }
+    if (guia.pedidoId) await recalcularEstadoPedido(Number(guia.pedidoId));
 
     emitSocketEvent('guia-despacho:anulada');
 
-    const usuario = await getUsuarioFromRequest();
     await registrarLog({
       // La auditoría solo admite crear / editar / eliminar: anular es una
       // edición de la guía, no un borrado, y el detalle va en la descripción.
       ...usuario, accion: 'editar', modulo: 'Guías de Despacho', entidad_id: idGuia,
-      descripcion: `Anuló la guía GD-${guia.numeroGuia ?? guia.id} (${guia.tipo}) - ${guia.cantidadM3} M3 - motivo: ${motivoLimpio}`,
-      datos_anteriores: { anulada: 0 },
-      datos_nuevos: { anulada: 1, motivo: motivoLimpio },
-      ip_address: getClientIp(request),
+      descripcion: operacion === 'aprobar'
+        ? `Aprobó la anulación de la guía ${etiqueta} - motivo: ${motivoFinal}`
+        : `Anuló la guía ${etiqueta} - motivo: ${motivoFinal}`,
+      datos_anteriores: { anulada: 0, anulacionEstado: guia.anulacionEstado || null },
+      datos_nuevos: { anulada: 1, anulacionEstado: 'anulada', motivo: motivoFinal },
+      ip_address: ip,
     });
 
-    return NextResponse.json({ success: true, id: idGuia }, { status: 200 });
+    return NextResponse.json({ success: true, id: idGuia, anulacionEstado: 'anulada' }, { status: 200 });
   } catch (error) {
-    console.error('Error PATCH guia_despacho (anular):', error);
-    return NextResponse.json({ error: 'Error al anular la guía de despacho' }, { status: 500 });
+    console.error('Error PATCH guia_despacho (anulación):', error);
+    return NextResponse.json({ error: 'Error al procesar la anulación de la guía' }, { status: 500 });
   }
 }
 

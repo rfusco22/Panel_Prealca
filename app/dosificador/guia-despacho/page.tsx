@@ -36,10 +36,12 @@ export default function GuiaDespachoPage() {
 
     socket.on('guia-despacho:created', handleUpdate);
     socket.on('guia-despacho:anulada', handleUpdate);
+    socket.on('guia-despacho:anulacion-solicitada', handleUpdate);
 
     return () => {
       socket.off('guia-despacho:created', handleUpdate);
       socket.off('guia-despacho:anulada', handleUpdate);
+      socket.off('guia-despacho:anulacion-solicitada', handleUpdate);
     };
   }, [socket]);
 
