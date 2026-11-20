@@ -68,6 +68,7 @@ function IngresosTable() {
           <tr>
             <th className="px-4 py-3 font-semibold text-gray-700">ID</th>
             <th className="px-4 py-3 font-semibold text-gray-700">Fecha</th>
+            <th className="px-4 py-3 font-semibold text-gray-700">Tipo</th>
             <th className="px-4 py-3 font-semibold text-gray-700">Banco</th>
             <th className="px-4 py-3 font-semibold text-gray-700">Referencia</th>
             <th className="px-4 py-3 font-semibold text-gray-700">Cliente</th>
@@ -83,6 +84,21 @@ function IngresosTable() {
               <td className="px-4 py-3 text-gray-500">#{ingreso.id}</td>
               <td className="px-4 py-3 whitespace-nowrap">
                 {formatearFecha(ingreso.createdAt || ingreso.fecha)}
+              </td>
+              {/* Los ingresos cargados antes de que existiera la columna no
+                  tienen tipo y salen con un guión. */}
+              <td className="px-4 py-3">
+                {ingreso.tipo ? (
+                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                    String(ingreso.tipo).toUpperCase() === 'PREALCA'
+                      ? 'bg-blue-50 text-blue-700'
+                      : 'bg-purple-50 text-purple-700'
+                  }`}>
+                    {String(ingreso.tipo).toUpperCase() === 'PREALCA' ? 'Prealca' : 'Premezclado'}
+                  </span>
+                ) : (
+                  <span className="text-gray-400">—</span>
+                )}
               </td>
               <td className="px-4 py-3 font-medium text-gray-900">{ingreso.banco}</td>
               <td className="px-4 py-3 text-gray-600">{ingreso.referencia}</td>

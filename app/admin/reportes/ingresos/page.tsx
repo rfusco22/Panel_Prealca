@@ -6,6 +6,7 @@ import { DateRangePicker, QuickDateFilters } from '@/components/reports/DateRang
 import { SummaryCards } from '@/components/reports/SummaryCards';
 import { ExportButtons } from '@/components/reports/ExportButtons';
 import { BarChartCard, PieChartCard } from '@/components/reports/ReportCharts';
+import { formatearFecha } from '@/lib/fecha';
 
 function formatBs(v: number) { return v.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' Bs'; }
 
@@ -13,6 +14,10 @@ export default function ReporteIngresosPage() {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [data, setData] = useState<any[]>([]);
+  // Pestaña Premezclado / Prealca. Filtra del lado del cliente sobre lo que ya
+  // trajo el reporte: los totales de arriba siguen siendo los del período
+  // completo y la pestaña solo recorta el detalle.
+  const [tipo, setTipo] = useState<'TODOS' | 'PREMEZCLADO' | 'PREALCA'>('TODOS');
   const [summary, setSummary] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -31,10 +36,26 @@ export default function ReporteIngresosPage() {
 
   useEffect(() => { fetchData(); }, [from, to]);
 
+  const filas = tipo === 'TODOS' ? data : data.filter(r => (r.tipo || '').toUpperCase() === tipo);
+
+  const etiquetaTipo = (valor: unknown) => {
+    const t = typeof valor === 'string' ? valor.toUpperCase() : '';
+    if (t === 'PREALCA') return 'Prealca';
+    if (t === 'PREMEZCLADO') return 'Premezclado';
+    // Los ingresos cargados antes de que existiera la columna no tienen tipo.
+    return '—';
+  };
+
+  const PESTANAS: Array<{ valor: 'TODOS' | 'PREMEZCLADO' | 'PREALCA'; texto: string }> = [
+    { valor: 'TODOS', texto: 'Todos' },
+    { valor: 'PREMEZCLADO', texto: 'Premezclado' },
+    { valor: 'PREALCA', texto: 'Prealca' },
+  ];
+
   const excelData = {
     title: 'Reporte de Ingresos',
-    columns: ['Banco', 'Cliente', 'Vendedor', 'M³', 'Monto (Bs)', 'Monto ($)', 'IVA'],
-    data: data.map(r => [r.banco, r.nombreCliente, r.vendedor, r.m3 || 0, Number(r.precioBs), Number(r.precioDivisa), Number(r.montoIva || 0)]),
+    columns: ['Fecha', 'Tipo', 'Banco', 'Cliente', 'Vendedor', 'M³', 'Monto (Bs)', 'Monto ($)', 'IVA'],
+    data: filas.map(r => [formatearFecha(r.createdAt || r.fecha), etiquetaTipo(r.tipo), r.banco, r.nombreCliente, r.vendedor, r.m3 || 0, Number(r.precioBs), Number(r.precioDivisa), Number(r.montoIva || 0)]),
   };
 
   return (
@@ -68,13 +89,30 @@ export default function ReporteIngresosPage() {
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-slate-100">
+        <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <h3 className="text-sm font-bold text-slate-900">Detalle de Ingresos</h3>
+          <div className="flex bg-slate-100 p-1 rounded-lg">
+            {PESTANAS.map(p => {
+              const cuantos = p.valor === 'TODOS' ? data.length : data.filter(r => (r.tipo || '').toUpperCase() === p.valor).length;
+              return (
+                <button
+                  key={p.valor}
+                  type="button"
+                  onClick={() => setTipo(p.valor)}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-md transition ${tipo === p.valor ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  {p.texto} <span className="font-semibold text-slate-400">({cuantos})</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-slate-50">
+                <th className="px-4 py-3 text-left font-semibold text-slate-600">Fecha</th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-600">Tipo</th>
                 <th className="px-4 py-3 text-left font-semibold text-slate-600">Banco</th>
                 <th className="px-4 py-3 text-left font-semibold text-slate-600">Cliente</th>
                 <th className="px-4 py-3 text-left font-semibold text-slate-600">Vendedor</th>
@@ -85,11 +123,25 @@ export default function ReporteIngresosPage() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-400">Cargando...</td></tr>
-              ) : data.length === 0 ? (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-400">Sin datos para el período seleccionado</td></tr>
-              ) : data.map((r, i) => (
+                <tr><td colSpan={8} className="px-4 py-8 text-center text-slate-400">Cargando...</td></tr>
+              ) : filas.length === 0 ? (
+                <tr><td colSpan={8} className="px-4 py-8 text-center text-slate-400">Sin datos para el período seleccionado</td></tr>
+              ) : filas.map((r, i) => (
                 <tr key={i} className="border-t border-slate-100 hover:bg-slate-50">
+                  {/* createdAt es la fecha del ingreso; los registros viejos
+                      la traen en fecha. Misma lectura que la tabla de Ingresos. */}
+                  <td className="px-4 py-3 text-slate-700 whitespace-nowrap">{formatearFecha(r.createdAt || r.fecha)}</td>
+                  <td className="px-4 py-3">
+                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                      (r.tipo || '').toUpperCase() === 'PREALCA'
+                        ? 'bg-blue-50 text-blue-700'
+                        : (r.tipo || '').toUpperCase() === 'PREMEZCLADO'
+                          ? 'bg-purple-50 text-purple-700'
+                          : 'text-slate-400'
+                    }`}>
+                      {etiquetaTipo(r.tipo)}
+                    </span>
+                  </td>
                   <td className="px-4 py-3 text-slate-700">{r.banco}</td>
                   <td className="px-4 py-3 text-slate-700">{r.nombreCliente}</td>
                   <td className="px-4 py-3 text-slate-700">{r.vendedor}</td>

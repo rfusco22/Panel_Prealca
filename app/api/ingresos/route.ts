@@ -23,6 +23,22 @@ import { requireAuth } from '@/lib/auth-guard';
 // qué páginas lo llaman de verdad, no de suponer quién debería.
 async function ensureColumns() {
   try { await query(`ALTER TABLE ingresos ADD COLUMN moneda ENUM('BS','USD') NOT NULL DEFAULT 'BS'`); } catch {}
+  // Si el cobro es de concreto Premezclado o de Prealca. Es la misma división
+  // que ya tienen las guías de despacho (guia_despacho.tipo), pero los
+  // ingresos no están atados a una guía -- se cargan por banco y referencia --
+  // así que lo elige quien registra el ingreso.
+  //
+  // Admite NULL a propósito: los ingresos cargados antes de esta columna no
+  // tienen con qué completarse, y adivinarles un tipo sería inventar plata en
+  // una categoría. En los reportes salen como "—".
+  // Ver sql/migracion_tipo_ingreso.sql.
+  try { await query(`ALTER TABLE ingresos ADD COLUMN tipo ENUM('PREMEZCLADO','PREALCA') NULL`); } catch {}
+}
+
+/** Normaliza el tipo que llega del formulario; cualquier otra cosa es NULL. */
+function tipoIngreso(valor: unknown): 'PREMEZCLADO' | 'PREALCA' | null {
+  const texto = typeof valor === 'string' ? valor.trim().toUpperCase() : '';
+  return texto === 'PREMEZCLADO' || texto === 'PREALCA' ? texto : null;
 }
 
 export async function GET() {
@@ -53,6 +69,7 @@ export async function POST(request: Request) {
     await ensureColumns();
     const body = await request.json();
     const { banco, nombreCliente, rif, vendedor, comision_porcentaje, comision_monto, descripcion, m3, resistencia, tasaCambio, aplicaIva, tipoDocumento, referencia } = body;
+    const tipo = tipoIngreso(body.tipo);
 
     // En qué moneda entró la plata. Importa para la comisión del vendedor,
     // que se paga en la moneda del pago. Si no llega, se asume bolívares:
@@ -82,8 +99,8 @@ export async function POST(request: Request) {
     const comprobantes = prepararComprobantes(body.comprobantes);
     await ensureTablaComprobantes();
 
-    const sql = `INSERT INTO ingresos (banco, nombreCliente, rif, vendedor, comision_porcentaje, comision_monto, descripcion, m3, resistencia, precioBs, precioDivisa, tasaCambio, aplicaIva, montoIva, tipoDocumento, referencia, moneda) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-    const values = [banco, nombreCliente, rif, vendedor, comision_porcentaje || null, comision_monto || null, descripcion || null, m3 ? parseFloat(m3) : null, resistencia || null, precioBs, precioDivisa, tasaCambioNum, aplicaIvaSql, montoIva || null, tipoDocumento, referencia, moneda];
+    const sql = `INSERT INTO ingresos (banco, nombreCliente, rif, vendedor, comision_porcentaje, comision_monto, descripcion, m3, resistencia, precioBs, precioDivisa, tasaCambio, aplicaIva, montoIva, tipoDocumento, referencia, moneda, tipo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    const values = [banco, nombreCliente, rif, vendedor, comision_porcentaje || null, comision_monto || null, descripcion || null, m3 ? parseFloat(m3) : null, resistencia || null, precioBs, precioDivisa, tasaCambioNum, aplicaIvaSql, montoIva || null, tipoDocumento, referencia, moneda, tipo];
     // Ingreso y comprobantes en una sola transacción: o quedan los dos o
     // ninguno. Antes el comprobante se descartaba siempre.
     const ingresoId = await transaccion(async (conn) => {
@@ -97,7 +114,7 @@ export async function POST(request: Request) {
     await registrarLog({
       ...usuario, accion: 'crear', modulo: 'Ingresos', entidad_id: ingresoId,
       descripcion: `Registró ingreso: ${nombreCliente} - Bs. ${precioBs}`,
-      datos_nuevos: { banco, nombreCliente, rif, precioBs, precioDivisa, tipoDocumento, referencia },
+      datos_nuevos: { banco, nombreCliente, rif, precioBs, precioDivisa, tipoDocumento, referencia, tipo },
       ip_address: getClientIp(request),
     });
 

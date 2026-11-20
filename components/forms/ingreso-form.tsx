@@ -38,6 +38,9 @@ export function IngresoForm({ onAdd, onClose }: IngresoFormProps) {
   const [monedaEntrada, setMonedaEntrada] = useState<'BS' | 'USD'>('BS');
   const [aplicaIva, setAplicaIva] = useState(false);
   const [tipoDocumento, setTipoDocumento] = useState('FACTURA');
+  // Premezclado o Prealca: la misma división que las guías de despacho. El
+  // ingreso no está atado a una guía, así que lo elige quien lo registra.
+  const [tipo, setTipo] = useState<'PREMEZCLADO' | 'PREALCA'>('PREMEZCLADO');
   const [referencia, setReferencia] = useState('');
   const [comprobantes, setComprobantes] = useState<{ name: string; url: string }[]>([]);
   const [errorComprobante, setErrorComprobante] = useState<string | null>(null);
@@ -133,6 +136,7 @@ export function IngresoForm({ onAdd, onClose }: IngresoFormProps) {
         montoIva: ivaBs,
         totalBs,
         tipoDocumento,
+        tipo,
         comision_porcentaje: tipoComision === 'PORCENTAJE' ? parseFloat(valorComision) || null : null,
         comision_monto: tipoComision === 'MONTO' ? parseFloat(valorComision) || null : null,
         referencia,
@@ -144,7 +148,7 @@ export function IngresoForm({ onAdd, onClose }: IngresoFormProps) {
         setBancoId(''); setClienteId(''); setNombreCliente(''); setRif(''); setVendedor('');
         setValorComision(''); setDescripcion(''); setM3(''); setResistencia('');
         setPrecioBs(''); setPrecioUsd(''); setMonedaEntrada('BS');
-        setAplicaIva(false); setTipoDocumento('FACTURA');
+        setAplicaIva(false); setTipoDocumento('FACTURA'); setTipo('PREMEZCLADO');
         setReferencia(''); setComprobantes([]); setShowSuccess(false);
       }, 1500);
     } catch (err: any) {
@@ -302,6 +306,26 @@ export function IngresoForm({ onAdd, onClose }: IngresoFormProps) {
                   </div>
                   <input type="number" step="0.01" value={valorComision} onChange={e => setValorComision(e.target.value)} className={`${inputCls} pl-7`} placeholder="0.00" />
                 </div>
+              </div>
+            </div>
+
+            <div>
+              <label className={labelCls}>Tipo</label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setTipo('PREMEZCLADO')}
+                  className={`flex-1 px-3 py-2 text-xs font-bold rounded-lg border transition ${tipo === 'PREMEZCLADO' ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200'}`}
+                >
+                  Premezclado
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTipo('PREALCA')}
+                  className={`flex-1 px-3 py-2 text-xs font-bold rounded-lg border transition ${tipo === 'PREALCA' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-200'}`}
+                >
+                  Prealca
+                </button>
               </div>
             </div>
 
