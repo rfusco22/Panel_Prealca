@@ -138,3 +138,103 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: "Error interno al guardar en la base de datos." }, { status: 500 });
   }
 }
+
+// Editar un ingreso ya registrado. Lo pueden hacer admin y gerencia, que son
+// los dos roles que ven esta pantalla: un ingreso mal tipeado (banco, monto,
+// cliente, tipo) antes solo se podía arreglar en la base.
+//
+// Lo que NO se puede: cambiar la plata sin dejar rastro. Cada edición queda en
+// auditoría con los valores anteriores y los nuevos.
+//
+// Los comprobantes ya cargados no se borran desde acá; si se adjuntan nuevos,
+// se agregan a los que ya tenía.
+export async function PUT(request: Request) {
+  const auth = await requireAuth(['admin', 'gerencia']);
+  if (auth.response) return auth.response;
+
+  try {
+    await ensureColumns();
+    await ensureTablaComprobantes();
+    const body = await request.json();
+
+    const id = Number(body.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      return NextResponse.json({ success: false, error: 'Ingreso inválido.' }, { status: 400 });
+    }
+
+    const anteriores: any = await query('SELECT * FROM ingresos WHERE id = ?', [id]);
+    if (anteriores.length === 0) {
+      return NextResponse.json({ success: false, error: 'El ingreso no existe.' }, { status: 404 });
+    }
+    const anterior = anteriores[0];
+
+    const { banco, nombreCliente, rif, vendedor, comision_porcentaje, comision_monto, descripcion, m3, resistencia, tasaCambio, aplicaIva, tipoDocumento, referencia } = body;
+
+    const tipo = tipoIngreso(body.tipo);
+    if (!tipo) {
+      return NextResponse.json(
+        { success: false, error: 'Debe indicar si el ingreso es de Premezclado o de Prealca.' },
+        { status: 400 },
+      );
+    }
+
+    const moneda = body.moneda === 'USD' ? 'USD' : 'BS';
+
+    // Mismo criterio que al crear: precioBs y tasaCambio los trae quien edita,
+    // y el IVA y el monto en divisa se recalculan acá y no se confían al
+    // cliente.
+    const precioBs = parseFloat(body.precioBs);
+    const tasaCambioNum = parseFloat(tasaCambio);
+    if (!Number.isFinite(precioBs) || precioBs < 0) {
+      return NextResponse.json({ success: false, error: 'precioBs inválido.' }, { status: 400 });
+    }
+    if (!Number.isFinite(tasaCambioNum) || tasaCambioNum <= 0) {
+      return NextResponse.json({ success: false, error: 'tasaCambio inválida.' }, { status: 400 });
+    }
+    const aplicaIvaSql = aplicaIva ? 1 : 0;
+    const montoIva = aplicaIva ? precioBs * 0.16 : 0;
+    const precioDivisa = (precioBs + montoIva) / tasaCambioNum;
+
+    const comprobantes = prepararComprobantes(body.comprobantes);
+
+    const sql = `UPDATE ingresos SET banco = ?, nombreCliente = ?, rif = ?, vendedor = ?, comision_porcentaje = ?, comision_monto = ?, descripcion = ?, m3 = ?, resistencia = ?, precioBs = ?, precioDivisa = ?, tasaCambio = ?, aplicaIva = ?, montoIva = ?, tipoDocumento = ?, referencia = ?, moneda = ?, tipo = ? WHERE id = ?`;
+    const values = [banco, nombreCliente, rif, vendedor, comision_porcentaje || null, comision_monto || null, descripcion || null, m3 ? parseFloat(m3) : null, resistencia || null, precioBs, precioDivisa, tasaCambioNum, aplicaIvaSql, montoIva || null, tipoDocumento, referencia, moneda, tipo, id];
+
+    await transaccion(async (conn) => {
+      await conn.execute(sql, values);
+      // Los comprobantes nuevos se suman a los que ya tenía.
+      await guardarComprobantes(conn, 'ingreso', id, comprobantes);
+    });
+    emitSocketEvent('ingresos:updated');
+
+    const usuario = await getUsuarioFromRequest();
+    await registrarLog({
+      ...usuario, accion: 'editar', modulo: 'Ingresos', entidad_id: id,
+      descripcion: `Editó el ingreso #${id}: ${nombreCliente} - Bs. ${precioBs}`,
+      datos_anteriores: {
+        banco: anterior.banco, nombreCliente: anterior.nombreCliente, rif: anterior.rif,
+        vendedor: anterior.vendedor, precioBs: anterior.precioBs, precioDivisa: anterior.precioDivisa,
+        tasaCambio: anterior.tasaCambio, aplicaIva: anterior.aplicaIva, montoIva: anterior.montoIva,
+        tipoDocumento: anterior.tipoDocumento, referencia: anterior.referencia,
+        moneda: anterior.moneda, tipo: anterior.tipo, m3: anterior.m3,
+      },
+      datos_nuevos: {
+        banco, nombreCliente, rif, vendedor, precioBs, precioDivisa, tasaCambio: tasaCambioNum,
+        aplicaIva: aplicaIvaSql, montoIva, tipoDocumento, referencia, moneda, tipo,
+        m3: m3 ? parseFloat(m3) : null,
+      },
+      ip_address: getClientIp(request),
+    });
+
+    return NextResponse.json({ success: true, mensaje: 'Ingreso actualizado.' });
+  } catch (error: any) {
+    if (error instanceof ComprobanteInvalido) {
+      return NextResponse.json({ success: false, error: error.message }, { status: 400 });
+    }
+    console.error('Error al actualizar el ingreso:', error);
+    if (error.code === 'ER_DUP_ENTRY') {
+      return NextResponse.json({ success: false, error: 'Esta referencia bancaria ya fue registrada en otro ingreso.' }, { status: 400 });
+    }
+    return NextResponse.json({ success: false, error: 'Error interno al actualizar el ingreso.' }, { status: 500 });
+  }
+}

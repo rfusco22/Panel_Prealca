@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { IngresoForm } from '@/components/forms/ingreso-form';
-import { Plus, X, TrendingUp } from 'lucide-react';
+import { Plus, X, TrendingUp, Pencil } from 'lucide-react';
 import { formatearFecha } from '@/lib/fecha';
 import { ComprobanteLinks } from '@/components/comprobante-links';
 function formatBs(v: number) { return v.toLocaleString('es-VE', { minimumFractionDigits: 2 }) + ' Bs'; }
@@ -10,6 +10,8 @@ function formatBs(v: number) { return v.toLocaleString('es-VE', { minimumFractio
 export default function IngresosPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [ingresos, setIngresos] = useState<any[]>([]);
+  // Ingreso que se está editando. null = el modal es de alta.
+  const [editando, setEditando] = useState<any | null>(null);
 
   const fetchIngresos = async () => {
     try {
@@ -34,10 +36,12 @@ export default function IngresosPage() {
     fetchIngresos();
   }, []);
 
-  const handleAdd = async (data: any) => {
+  // Alta y edición pasan por acá: si el formulario manda un id, es edición.
+  const handleGuardar = async (data: any) => {
     try {
+      const esEdicion = !!data.id;
       const res = await fetch('/api/ingresos', {
-        method: 'POST',
+        method: esEdicion ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
@@ -46,11 +50,15 @@ export default function IngresosPage() {
         throw new Error(result.error || 'Error al guardar el ingreso');
       }
       await fetchIngresos();
-      setTimeout(() => setIsModalOpen(false), 1500);
+      setTimeout(() => cerrarModal(), 1500);
     } catch (err: any) {
       throw err;
     }
   };
+
+  const abrirAlta = () => { setEditando(null); setIsModalOpen(true); };
+  const abrirEdicion = (ingreso: any) => { setEditando(ingreso); setIsModalOpen(true); };
+  const cerrarModal = () => { setIsModalOpen(false); setEditando(null); };
 
   return (
     <div className="flex-1 space-y-6 p-4 md:p-8 pt-6">
@@ -59,7 +67,7 @@ export default function IngresosPage() {
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">Historial de Ingresos</h1>
           <p className="text-slate-500 mt-1">Registra y verifica los pagos de clientes y operaciones.</p>
         </div>
-        <button onClick={() => setIsModalOpen(true)} className="bg-slate-900 hover:bg-slate-800 text-white rounded-lg shadow-sm px-5 py-2.5 flex items-center gap-2 transition-all font-medium">
+        <button onClick={abrirAlta} className="bg-slate-900 hover:bg-slate-800 text-white rounded-lg shadow-sm px-5 py-2.5 flex items-center gap-2 transition-all font-medium">
           <Plus size={18} /> Nuevo Ingreso
         </button>
       </div>
@@ -90,11 +98,12 @@ export default function IngresosPage() {
                 <th className="px-4 py-3 text-right font-semibold text-slate-600">Monto ($)</th>
                 <th className="px-4 py-3 text-center font-semibold text-slate-600">Tipo</th>
                 <th className="px-4 py-3 text-center font-semibold text-slate-600">Comprobante</th>
+                <th className="px-4 py-3 text-center font-semibold text-slate-600">Editar</th>
               </tr>
             </thead>
             <tbody>
               {ingresos.length === 0 ? (
-                <tr><td colSpan={9} className="px-4 py-12 text-center text-slate-400">No hay ingresos registrados</td></tr>
+                <tr><td colSpan={10} className="px-4 py-12 text-center text-slate-400">No hay ingresos registrados</td></tr>
               ) : ingresos.map((ing) => (
                 <tr key={ing.id} className="border-b border-slate-100 hover:bg-slate-50">
                   <td className="px-4 py-3 text-slate-700">{formatearFecha(ing.createdAt || ing.fecha)}</td>
@@ -112,6 +121,15 @@ export default function IngresosPage() {
                   <td className="px-4 py-3 text-center">
                     <ComprobanteLinks comprobantes={ing.comprobantes} />
                   </td>
+                  <td className="px-4 py-3 text-center">
+                    <button
+                      onClick={() => abrirEdicion(ing)}
+                      className="p-2 text-slate-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition"
+                      title="Editar ingreso"
+                    >
+                      <Pencil size={16} />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -122,19 +140,32 @@ export default function IngresosPage() {
       {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:px-4">
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} />
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={cerrarModal} />
           <div className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-200">
             <div className="px-5 sm:px-8 py-5 sm:py-6 border-b border-slate-100 flex items-center justify-between shrink-0">
               <div>
-                <h3 className="text-lg sm:text-xl font-bold text-slate-900">Registro de Ingreso</h3>
-                <p className="text-sm text-slate-500 mt-1">Registra los datos bancarios y asocia la operación al cliente.</p>
+                <h3 className="text-lg sm:text-xl font-bold text-slate-900">
+                  {editando ? `Editar Ingreso #${editando.id}` : 'Registro de Ingreso'}
+                </h3>
+                <p className="text-sm text-slate-500 mt-1">
+                  {editando
+                    ? 'Los cambios quedan registrados en la auditoría, con los valores anteriores.'
+                    : 'Registra los datos bancarios y asocia la operación al cliente.'}
+                </p>
               </div>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-700 p-2 rounded-full transition-colors bg-slate-50 hover:bg-slate-100">
+              <button onClick={cerrarModal} className="text-slate-400 hover:text-slate-700 p-2 rounded-full transition-colors bg-slate-50 hover:bg-slate-100">
                 <X size={20} />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto bg-white">
-              <IngresoForm onAdd={handleAdd} onClose={() => setIsModalOpen(false)} />
+              {/* La key fuerza un formulario nuevo por ingreso: si no, al abrir
+                  otro quedarían los valores del anterior. */}
+              <IngresoForm
+                key={editando ? `editar-${editando.id}` : 'nuevo'}
+                ingreso={editando || undefined}
+                onAdd={handleGuardar}
+                onClose={cerrarModal}
+              />
             </div>
           </div>
         </div>

@@ -10,13 +10,23 @@ const MAX_COMPROBANTES = 5;
 interface IngresoFormProps {
   onAdd: (data: any) => void;
   onClose?: () => void;
+  /**
+   * Ingreso que se está editando, tal como lo devuelve /api/ingresos. Si viene,
+   * el formulario arranca con esos valores y guarda con PUT en vez de POST.
+   */
+  ingreso?: any;
 }
 
-export function IngresoForm({ onAdd, onClose }: IngresoFormProps) {
-  const [tasaCambio, setTasaCambio] = useState<number>(0);
+export function IngresoForm({ onAdd, onClose, ingreso }: IngresoFormProps) {
+  const editando = !!ingreso;
+  // Al editar se arranca con la tasa con la que se registró el ingreso: tomar
+  // la del BCV de hoy cambiaría el monto en divisa de una operación vieja.
+  const [tasaCambio, setTasaCambio] = useState<number>(Number(ingreso?.tasaCambio) || 0);
   const [cargandoTasa, setCargandoTasa] = useState(true);
   const [errorTasa, setErrorTasa] = useState<string | null>(null);
-  const [tipoComision, setTipoComision] = useState<'PORCENTAJE' | 'MONTO'>('PORCENTAJE');
+  const [tipoComision, setTipoComision] = useState<'PORCENTAJE' | 'MONTO'>(
+    ingreso?.comision_monto ? 'MONTO' : 'PORCENTAJE',
+  );
   const [showSuccess, setShowSuccess] = useState(false);
 
   const [listaBancos, setListaBancos] = useState<any[]>([]);
@@ -26,26 +36,44 @@ export function IngresoForm({ onAdd, onClose }: IngresoFormProps) {
   const [clienteId, setClienteId] = useState('');
 
   const [bancoId, setBancoId] = useState('');
-  const [nombreCliente, setNombreCliente] = useState('');
-  const [rif, setRif] = useState('');
-  const [vendedor, setVendedor] = useState('');
-  const [valorComision, setValorComision] = useState('');
-  const [descripcion, setDescripcion] = useState('');
-  const [m3, setM3] = useState('');
-  const [resistencia, setResistencia] = useState('');
-  const [precioBs, setPrecioBs] = useState('');
-  const [precioUsd, setPrecioUsd] = useState('');
-  const [monedaEntrada, setMonedaEntrada] = useState<'BS' | 'USD'>('BS');
-  const [aplicaIva, setAplicaIva] = useState(false);
-  const [tipoDocumento, setTipoDocumento] = useState('FACTURA');
+  const [nombreCliente, setNombreCliente] = useState(ingreso?.nombreCliente || '');
+  const [rif, setRif] = useState(ingreso?.rif || '');
+  const [vendedor, setVendedor] = useState(ingreso?.vendedor || '');
+  const [valorComision, setValorComision] = useState(
+    ingreso?.comision_monto ? String(ingreso.comision_monto)
+      : ingreso?.comision_porcentaje ? String(ingreso.comision_porcentaje) : '',
+  );
+  const [descripcion, setDescripcion] = useState(ingreso?.descripcion || '');
+  const [m3, setM3] = useState(ingreso?.m3 != null ? String(ingreso.m3) : '');
+  const [resistencia, setResistencia] = useState(ingreso?.resistencia || '');
+  // En edición se respeta la moneda en que entró la plata (define en qué
+  // moneda se paga la comisión). El monto guardado siempre es precioBs sin
+  // IVA; si el cobro fue en divisa, se vuelve a dividir por la tasa de ESE
+  // ingreso, no por la de hoy.
+  const [precioBs, setPrecioBs] = useState(
+    ingreso && ingreso.moneda !== 'USD' ? String(Number(ingreso.precioBs || 0)) : '',
+  );
+  const [precioUsd, setPrecioUsd] = useState(
+    ingreso && ingreso.moneda === 'USD'
+      // 4 decimales, como la columna Monto ($) del listado: con 2 el monto en
+      // Bs se corría unos céntimos al volver a multiplicar por la tasa, y
+      // guardar sin tocar nada cambiaba la plata del ingreso.
+      ? (Number(ingreso.precioBs || 0) / (Number(ingreso.tasaCambio) || 1)).toFixed(4)
+      : '',
+  );
+  const [monedaEntrada, setMonedaEntrada] = useState<'BS' | 'USD'>(ingreso?.moneda === 'USD' ? 'USD' : 'BS');
+  const [aplicaIva, setAplicaIva] = useState(!!Number(ingreso?.aplicaIva || 0));
+  const [tipoDocumento, setTipoDocumento] = useState(ingreso?.tipoDocumento || 'FACTURA');
   // Premezclado o Prealca: la misma división que las guías de despacho. El
   // ingreso no está atado a una guía, así que lo elige quien lo registra.
   //
   // Arranca vacío a propósito, y es obligatorio. Con un valor por defecto, el
   // que se apura deja todo como Premezclado sin mirar y el reporte queda
   // mintiendo; prefiero que el formulario no deje seguir.
-  const [tipo, setTipo] = useState<'' | 'PREMEZCLADO' | 'PREALCA'>('');
-  const [referencia, setReferencia] = useState('');
+  const [tipo, setTipo] = useState<'' | 'PREMEZCLADO' | 'PREALCA'>(
+    ingreso?.tipo === 'PREALCA' || ingreso?.tipo === 'PREMEZCLADO' ? ingreso.tipo : '',
+  );
+  const [referencia, setReferencia] = useState(ingreso?.referencia || '');
   const [comprobantes, setComprobantes] = useState<{ name: string; url: string }[]>([]);
   const [errorComprobante, setErrorComprobante] = useState<string | null>(null);
   const [procesandoComprobante, setProcesandoComprobante] = useState(false);
@@ -59,7 +87,9 @@ export function IngresoForm({ onAdd, onClose }: IngresoFormProps) {
           fetch('/api/bancos/select'),
         ]);
         const bcvData = await bcvRes.json();
-        if (bcvData.tasa) setTasaCambio(bcvData.tasa);
+        if (editando) {
+          // Ya se cargó la tasa del ingreso; la del día no la pisa.
+        } else if (bcvData.tasa) setTasaCambio(bcvData.tasa);
         else setErrorTasa('No se pudo obtener la tasa');
 
         const selectData = await selectRes.json();
@@ -68,7 +98,20 @@ export function IngresoForm({ onAdd, onClose }: IngresoFormProps) {
         setListaProductos(selectData.productos || []);
 
         const bancosData = await bancosRes.json();
-        setListaBancos(Array.isArray(bancosData) ? bancosData : []);
+        const bancos = Array.isArray(bancosData) ? bancosData : [];
+        setListaBancos(bancos);
+
+        // La tabla ingresos guarda el NOMBRE del banco y del cliente, no sus
+        // ids, así que al editar hay que volver a encontrarlos en las listas
+        // para dejar los dos selects en el valor correcto. Si el banco o el
+        // cliente ya no existen, el select queda vacío y hay que elegirlo de
+        // nuevo, que es justamente lo que hay que ver.
+        if (ingreso) {
+          const banco = bancos.find((b: any) => b.nombreBanco === ingreso.banco);
+          if (banco) setBancoId(String(banco.id));
+          const cliente = (selectData.clientes || []).find((c: any) => c.nombre === ingreso.nombreCliente);
+          if (cliente) setClienteId(String(cliente.id));
+        }
       } catch { setErrorTasa('No se pudo obtener datos iniciales'); }
       setCargandoTasa(false);
     };
@@ -129,6 +172,8 @@ export function IngresoForm({ onAdd, onClose }: IngresoFormProps) {
 
     try {
       await onAdd({
+        // En edición el id le dice a la página que tiene que ir por PUT.
+        ...(ingreso ? { id: ingreso.id } : {}),
         banco: bancoSeleccionado?.nombreBanco || '',
         bancoId: Number(bancoId), nombreCliente, rif, vendedor, descripcion,
         clienteId: Number(clienteId),
@@ -152,6 +197,9 @@ export function IngresoForm({ onAdd, onClose }: IngresoFormProps) {
       });
 
       setShowSuccess(true);
+      // Editando no se vacían los campos: el modal se cierra y la lista se
+      // recarga; limpiarlos haría parpadear un formulario en blanco.
+      if (editando) return;
       setTimeout(() => {
         setBancoId(''); setClienteId(''); setNombreCliente(''); setRif(''); setVendedor('');
         setValorComision(''); setDescripcion(''); setM3(''); setResistencia('');
@@ -176,7 +224,7 @@ export function IngresoForm({ onAdd, onClose }: IngresoFormProps) {
           <div className="bg-emerald-100 text-emerald-500 p-4 rounded-full mb-5 animate-bounce">
             <CheckCircle2 size={56} strokeWidth={2.5} />
           </div>
-          <h3 className="text-2xl font-black text-slate-900 mb-2">¡Ingreso Registrado!</h3>
+          <h3 className="text-2xl font-black text-slate-900 mb-2">{editando ? '¡Ingreso Actualizado!' : '¡Ingreso Registrado!'}</h3>
           <p className="text-slate-500 text-sm font-medium text-center px-10">Los datos se han guardado correctamente.</p>
         </div>
       )}
@@ -399,7 +447,7 @@ export function IngresoForm({ onAdd, onClose }: IngresoFormProps) {
           </button>
           <button type="submit" disabled={isSubmitting} className="bg-slate-900 hover:bg-slate-800 text-white rounded-lg px-6 py-2 shadow-md transition-all text-sm font-semibold flex items-center justify-center gap-2 w-full sm:w-auto disabled:opacity-60 disabled:cursor-not-allowed">
             {isSubmitting && <Loader2 size={16} className="animate-spin" />}
-            Registrar Ingreso
+            {editando ? 'Guardar cambios' : 'Registrar Ingreso'}
           </button>
         </div>
       </div>
