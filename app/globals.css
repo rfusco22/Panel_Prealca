@@ -183,10 +183,10 @@
    =========================================================================== */
 
 :root {
-  --sombra-1: 0 1px 2px rgba(15, 23, 42, 0.04), 0 2px 8px rgba(15, 23, 42, 0.04);
-  --sombra-2: 0 2px 4px rgba(15, 23, 42, 0.05), 0 8px 24px rgba(15, 23, 42, 0.07);
-  --sombra-3: 0 10px 20px rgba(15, 23, 42, 0.08), 0 24px 48px rgba(15, 23, 42, 0.10);
-  --borde-suave: rgba(148, 163, 184, 0.22);
+  --sombra-1: 0 1px 2px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(15, 23, 42, 0.07);
+  --sombra-2: 0 6px 12px rgba(15, 23, 42, 0.09), 0 18px 40px rgba(15, 23, 42, 0.12);
+  --sombra-3: 0 18px 32px rgba(15, 23, 42, 0.14), 0 40px 80px rgba(15, 23, 42, 0.18);
+  --borde-suave: rgba(148, 163, 184, 0.26);
 }
 
 /* Tarjeta base: borde tenue, sombra en capas y un brillo arriba que simula luz
@@ -213,7 +213,7 @@
 /* Se levanta al pasar el mouse. El translate es chico a propósito: alcanza
    para que la tarjeta se despegue del fondo sin que la grilla "salte". */
 .superficie-levanta:hover {
-  transform: translateY(-3px);
+  transform: translateY(-6px) scale(1.01);
   box-shadow: var(--sombra-2);
 }
 
@@ -227,9 +227,35 @@
 }
 
 .indicador:hover {
-  transform: perspective(900px) translateY(-4px) rotateX(2.5deg);
+  transform:
+    perspective(800px)
+    translateY(-8px)
+    scale(1.025)
+    rotateX(var(--rx, 6deg))
+    rotateY(var(--ry, 0deg));
   box-shadow: var(--sombra-3);
 }
+
+/* El contenido se despega un poco de la tarjeta: es lo que termina de dar la
+   sensación de capas, más que la inclinación sola. */
+.indicador > * {
+  transform: translateZ(28px);
+  transform-style: preserve-3d;
+}
+
+/* Reflejo que barre la tarjeta al pasar el mouse. */
+.indicador::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, 0.85) 50%, transparent 65%);
+  transform: translateX(-120%);
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.indicador:hover::before { transform: translateX(120%); }
 
 /* Mancha de color que tiñe apenas la esquina de la tarjeta. El color lo pone
    cada módulo con --tinte. */
@@ -252,18 +278,21 @@
 
 .fila-interactiva:hover {
   background-color: #f8fafc;
-  box-shadow: inset 3px 0 0 0 #0f172a;
+  box-shadow: inset 5px 0 0 0 #0f172a, 0 6px 18px rgba(15, 23, 42, 0.10);
+  transform: translateX(3px) scale(1.004);
+  position: relative;
+  z-index: 2;
 }
 
 /* Entrada escalonada: cada elemento aparece un poco después del anterior.
    El retraso lo pone quien la usa con --retraso. */
 @keyframes aparecer {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: perspective(900px) translateY(22px) rotateX(-7deg) scale(0.97); }
   to { opacity: 1; transform: none; }
 }
 
 .aparecer {
-  animation: aparecer 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: aparecer 0.6s cubic-bezier(0.17, 0.84, 0.44, 1) both;
   animation-delay: var(--retraso, 0ms);
 }
 
@@ -281,10 +310,12 @@
   transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease;
 }
 
-.accion:hover { transform: translateY(-1px) scale(1.06); }
-.accion:active { transform: translateY(0) scale(0.96); }
+.accion:hover { transform: translateY(-2px) scale(1.14); box-shadow: 0 6px 14px rgba(15, 23, 42, 0.14); }
+.accion:active { transform: translateY(0) scale(0.92); box-shadow: none; }
 
 @media (prefers-reduced-motion: reduce) {
+  .indicador > * { transform: none; }
+  .indicador::before { display: none; }
   .superficie,
   .superficie-levanta:hover,
   .indicador:hover,

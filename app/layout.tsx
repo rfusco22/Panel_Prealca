@@ -2,6 +2,7 @@ import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Providers } from '@/components/Providers'
+import { Efecto3D } from '@/components/efecto-3d'
 import './globals.css'
 
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
@@ -39,6 +40,8 @@ export default function RootLayout({
         <Providers>
           {children}
         </Providers>
+        {/* Inclina las tarjetas hacia el cursor. No pinta nada: solo escucha. */}
+        <Efecto3D />
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>
