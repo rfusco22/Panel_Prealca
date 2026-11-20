@@ -6,7 +6,7 @@ import { GuiaDespachoForm } from '@/components/forms/guia-despacho-form';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
-import { printDocument, generateGuiaDespachoHtml, generatePrealcaHtml } from '@/lib/document-templates';
+import { printDocument, generateGuiaDespachoHtml, generatePrealcaHtml, generateServicioBombaHtml } from '@/lib/document-templates';
 
 export default function NewGuiaDespachoPage() {
   const router = useRouter();
@@ -105,19 +105,48 @@ export default function NewGuiaDespachoPage() {
       // El form manda choferId; el nombre para el documento se resuelve acá.
       const chofer = choferes.find(ch => ch.id === Number(formData.choferId));
       const esPrealca = formData.tipo === 'Prealca';
+      const esServicioBomba = formData.tipo === 'Servicio de Bomba';
       // numeroGuia arranca en 1 y es independiente del id real de la tabla
       // (ver sql/migracion_numero_guia.sql); las guías creadas antes de esa
       // migración no lo tienen, por eso el fallback al id de siempre.
       const guiaNumber = `GD-${result.numeroGuia ?? result.id}`;
 
-      if (esPrealca) {
-        printDocument(generatePrealcaHtml({
+      // La fecha del documento es la que eligió el usuario (la devuelve la API
+      // ya normalizada), no la de hoy: se cargan guías de días anteriores.
+      const fechaGuia = result.fecha || formData.fecha;
+
+      // Cada tipo imprime su propio documento. Antes acá solo se miraba si era
+      // Prealca, así que una orden de Servicio de Bomba salía impresa con la
+      // plantilla de la guía de Premezclado -- otro documento, con otros
+      // campos. La vista previa del formulario sí usaba la correcta, o sea que
+      // el papel que salía al guardar no era el que se había visto en pantalla.
+      if (esServicioBomba) {
+        printDocument(generateServicioBombaHtml({
           guiaNumber,
-          fecha: new Date().toISOString(),
+          fecha: fechaGuia,
+          observaciones: formData.observaciones || '',
           clienteNombre: cliente?.nombre || '',
           clienteRif: cliente?.rif || '',
           clienteDireccion: cliente?.direccion || '',
           clienteTelefono: cliente?.telefono || '',
+          operador: chofer?.nombre || '',
+          unidad: unidad?.placa || '',
+          items: producto ? [{
+            resistencia: producto.resistencia || '',
+            pulgada: producto.pulgada || '',
+            cantidad: Number(formData.cantidadM3),
+          }] : [],
+        }));
+      } else if (esPrealca) {
+        printDocument(generatePrealcaHtml({
+          guiaNumber,
+          fecha: fechaGuia,
+          observaciones: formData.observaciones || '',
+          clienteNombre: cliente?.nombre || '',
+          clienteRif: cliente?.rif || '',
+          clienteDireccion: cliente?.direccion || '',
+          clienteTelefono: cliente?.telefono || '',
+          obra: formData.obra || '',
           chofer: chofer?.nombre || '',
           placa: unidad?.placa || '',
           items: producto ? [{
@@ -129,10 +158,12 @@ export default function NewGuiaDespachoPage() {
       } else {
         printDocument(generateGuiaDespachoHtml({
           guiaNumber,
-          fecha: new Date().toISOString(),
+          fecha: fechaGuia,
+          observaciones: formData.observaciones || '',
           clienteNombre: cliente?.nombre || '',
           clienteRif: cliente?.rif || '',
           clienteDireccion: cliente?.direccion || '',
+          clienteTelefono: cliente?.telefono || '',
           chofer: chofer?.nombre || '',
           placa: unidad?.placa || '',
           vanM3: Number(formData.cantidadM3),

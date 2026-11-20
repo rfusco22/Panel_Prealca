@@ -22,8 +22,11 @@ export async function GET(req: Request) {
 
     let dateFilterGuias = '';
     const paramsGuias: any[] = [];
-    if (from) { dateFilterGuias += ' AND gd.created_at >= ?'; paramsGuias.push(from); }
-    if (to) { dateFilterGuias += ' AND gd.created_at <= ?'; paramsGuias.push(to + ' 23:59:59'); }
+    // Se filtra por la fecha de despacho que cargó el usuario (gd.fecha), no
+    // por el momento en que se tipeó la guía: se cargan guías de días
+    // anteriores. Las guías viejas, sin esa columna, caen en created_at.
+    if (from) { dateFilterGuias += ' AND COALESCE(gd.fecha, gd.created_at) >= ?'; paramsGuias.push(from); }
+    if (to) { dateFilterGuias += ' AND COALESCE(gd.fecha, gd.created_at) <= ?'; paramsGuias.push(to + ' 23:59:59'); }
 
     const clientes = await query(`
       SELECT

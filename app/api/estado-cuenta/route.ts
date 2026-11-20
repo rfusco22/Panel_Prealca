@@ -105,7 +105,7 @@ export async function GET(req: Request) {
     );
 
     const guias: any = await query(
-      `SELECT gd.id, gd.numero_guia AS numeroGuia, gd.tipo, gd.created_at AS fecha,
+      `SELECT gd.id, gd.numero_guia AS numeroGuia, gd.tipo, COALESCE(gd.fecha, gd.created_at) AS fecha,
               gd.cantidad_m3 AS cantidadM3, gd.obra,
               CONCAT(p.resistencia, ' - ', p.pulgada) AS producto,
               COALESCE(ch.nombre, gd.chofer) AS chofer
@@ -113,7 +113,7 @@ export async function GET(req: Request) {
        LEFT JOIN productos p ON gd.producto_id = p.id
        LEFT JOIN choferes ch ON gd.chofer_id = ch.id
        WHERE gd.cliente_id = ?
-       ORDER BY gd.created_at DESC, gd.id DESC`,
+       ORDER BY COALESCE(gd.fecha, gd.created_at) DESC, gd.id DESC`,
       [clienteId]
     );
 

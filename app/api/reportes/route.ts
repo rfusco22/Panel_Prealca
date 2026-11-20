@@ -22,6 +22,13 @@ const ROLES_POR_REPORTE: Record<string, readonly Rol[]> = {
 // vendedores, montos por cliente, gasto en materia prima, retenciones.
 const ROLES_POR_DEFECTO: readonly Rol[] = ['admin', 'gerencia'];
 
+// Fecha de una guía de despacho para los reportes: el día de despacho que
+// cargó el usuario y, para las guías anteriores a esa columna, el instante en
+// que se creó el registro. Una guía de ayer cargada hoy tiene que contar en el
+// día en que salió el camión, no en el día en que se tipeó.
+// Ver sql/migracion_fecha_observaciones_guia.sql.
+const FECHA_GUIA = 'COALESCE(gd.fecha, gd.created_at)';
+
 export async function GET(request: Request) {
   const auth = await requireAuth();
   if (auth.response) return auth.response;
@@ -478,7 +485,7 @@ export async function GET(request: Request) {
       // nombre) y se cruza contra clientes.rif. Lo que no matchee ningún
       // cliente se devuelve igual, como fila aparte, para no esconder plata.
       case 'clientes-top': {
-        const dateFilterGuias = dateFilter.replace(/created_at/g, 'gd.created_at');
+        const dateFilterGuias = dateFilter.replace(/created_at/g, FECHA_GUIA);
         // ingresos usa createdAt en camelCase, no created_at.
         const dateFilterIngresos = dateFilter.replace(/created_at/g, 'i.createdAt');
 
@@ -583,15 +590,15 @@ export async function GET(request: Request) {
       // que salió de planta (el despacho físico), no lo facturado. Los dos
       // números existen y no siempre coinciden.
       case 'm3': {
-        const dateFilterGuias = dateFilter.replace(/created_at/g, 'gd.created_at');
+        const dateFilterGuias = dateFilter.replace(/created_at/g, FECHA_GUIA);
 
         const porMes: any = await query(
-          `SELECT DATE_FORMAT(gd.created_at, '%Y-%m') AS mes,
+          `SELECT DATE_FORMAT(${FECHA_GUIA}, '%Y-%m') AS mes,
                   COUNT(*) AS guias,
                   SUM(gd.cantidad_m3) AS totalM3
            FROM guia_despacho gd
            WHERE 1=1 ${dateFilterGuias}
-           GROUP BY DATE_FORMAT(gd.created_at, '%Y-%m')
+           GROUP BY DATE_FORMAT(${FECHA_GUIA}, '%Y-%m')
            ORDER BY mes DESC`,
           params
         );
@@ -653,7 +660,7 @@ export async function GET(request: Request) {
 
       // Resumen por resistencia del concreto. Ver issue #2.
       case 'resistencia': {
-        const dateFilterGuias = dateFilter.replace(/created_at/g, 'gd.created_at');
+        const dateFilterGuias = dateFilter.replace(/created_at/g, FECHA_GUIA);
 
         // Agrupa por resistencia sola (el listado de productos la muestra junto
         // a la pulgada, pero acá interesa la mezcla).
@@ -737,7 +744,7 @@ export async function GET(request: Request) {
       // agrupadas por su texto, para que se note que falta asignarlas en vez de
       // que desaparezcan del conteo.
       case 'viajes': {
-        const dateFilterGuias = dateFilter.replace(/created_at/g, 'gd.created_at');
+        const dateFilterGuias = dateFilter.replace(/created_at/g, FECHA_GUIA);
 
         // El GROUP BY lista todas las columnas no agregadas a propósito:
         // only_full_group_by (activo por defecto) rechaza la consulta si no.

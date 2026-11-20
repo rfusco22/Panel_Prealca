@@ -181,6 +181,20 @@ export function generateOrdenCompraHtml(data: OrdenCompraPrintData): string {
 </body></html>`
 }
 
+// Coletilla fija de la celda de observaciones de las guías de concreto, más
+// el texto libre que haya escrito quien emitió la guía. Vive acá, compartida
+// por las dos plantillas (Premezclado y Prealca), para que no se vuelvan a ir
+// una por un lado y la otra por el otro.
+function observacionesColetilla(observaciones?: string): string {
+  const libre = (observaciones || '').trim()
+  return `
+          <p>El Concreto suministrado cumple con la Norma COVENIN 633.</p>
+          <p>Cualquier adición de agua va por cuenta y riesgo del Cliente.</p>
+          <p style="font-weight:700;margin-top:4px;">ADITIVO WRDA 79</p>
+          ${libre ? `<p style="margin-top:4px;white-space:pre-wrap;">${escapeHtml(libre)}</p>` : ''}
+          <p style="text-align:right;font-weight:700;margin-top:4px;">FRACTIL 10%</p>`
+}
+
 export interface GuiaDespachoPrintData {
   guiaNumber: string
   fecha: string
@@ -192,6 +206,9 @@ export interface GuiaDespachoPrintData {
   placa: string
   vanM3?: number
   deM3?: number
+  /** Texto libre que escribe quien emite la guía. Se imprime en la celda de
+   *  observaciones, debajo de la coletilla fija. */
+  observaciones?: string
   items: Array<{
     nombreProducto: string
     resistencia?: string
@@ -207,6 +224,10 @@ export interface GuiaDespachoPrintData {
 export function generateGuiaDespachoHtml(data: GuiaDespachoPrintData): string {
   const item = data.items[0] || { nombreProducto: '', cantidad: 0, unidadMedida: '', precioUnitario: 0, subtotalItem: 0 }
   const horaSalida = new Date().toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: true })
+  // La coletilla (COVENIN 633, adición de agua, ADITIVO WRDA 79, FRACTIL 10%)
+  // es la misma que imprime la guía de Prealca: es texto legal del documento y
+  // tiene que salir en los dos tipos de guía.
+  const observacionesHtml = observacionesColetilla(data.observaciones)
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -248,7 +269,7 @@ export function generateGuiaDespachoHtml(data: GuiaDespachoPrintData): string {
   .guia-table .col-resistencia { width: 20%; text-align: center; }
   .guia-table .col-asent { width: 10%; text-align: center; }
   .guia-table .col-obs { width: 60%; }
-  .observaciones-cell { min-height: 80px; font-size: 12px; line-height: 1.6; }
+  .observaciones-cell { min-height: 80px; font-size: 9px; line-height: 1.6; }
   
   /* Adición agua */
   .agua-row { display: flex; justify-content: space-between; padding: 8px 20px; border-top: 1px solid #999; font-size: 11px; color: #555; }
@@ -335,7 +356,7 @@ export function generateGuiaDespachoHtml(data: GuiaDespachoPrintData): string {
         <td class="col-cant">${item.cantidad}</td>
         <td class="col-resistencia" style="text-align:center;">${escapeHtml(item.resistencia) || ''}</td>
         <td class="col-asent" style="text-align:center;">${item.pulgada ? escapeHtml(item.pulgada) + '&quot;' : ''}</td>
-        <td class="col-obs observaciones-cell">&nbsp;</td>
+        <td class="col-obs observaciones-cell">${observacionesHtml}</td>
       </tr>
     </tbody>
   </table>
@@ -394,6 +415,8 @@ export interface ServicioBombaPrintData {
   clienteTelefono?: string
   operador: string
   unidad: string
+  /** Texto libre que escribe quien emite la orden. */
+  observaciones?: string
   items: Array<{
     resistencia: string
     pulgada: string
@@ -454,7 +477,7 @@ export function generateServicioBombaHtml(data: ServicioBombaPrintData): string 
     </div>
     <div class="guia-fechas">
       <div class="fecha-box">
-        <span class="fecha-label">Fecha de Emisión:</span> ${formatearFecha(new Date())}
+        <span class="fecha-label">Fecha de Emisión:</span> ${formatDate(data.fecha)}
       </div>
       <br>
       <div class="fecha-box">
@@ -524,7 +547,7 @@ export function generateServicioBombaHtml(data: ServicioBombaPrintData): string 
     </div>
     <div class="footer-row">
       <span class="label">Observaciones:</span>
-      <span class="value"></span>
+      <span class="value">${escapeHtml((data.observaciones || '').trim())}</span>
     </div>
     <div class="footer-row">
       <span class="label">NOMBRE:</span>
@@ -561,6 +584,9 @@ export interface PrealcaPrintData {
   placa?: string
   vanM3?: number
   deM3?: number
+  /** Texto libre que escribe quien emite la guía. Se imprime en la celda de
+   *  observaciones, debajo de la coletilla fija. */
+  observaciones?: string
   items: Array<{
     resistencia: string
     pulgada: string
@@ -571,6 +597,7 @@ export interface PrealcaPrintData {
 export function generatePrealcaHtml(data: PrealcaPrintData): string {
   const item = data.items[0] || { resistencia: '', pulgada: '', cantidad: 0 }
   const horaSalida = new Date().toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: true })
+  const observacionesHtml = observacionesColetilla(data.observaciones)
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -688,11 +715,7 @@ export function generatePrealcaHtml(data: PrealcaPrintData): string {
         <td style="text-align:center;font-weight:700;font-size:14px;padding:12px 8px;">${item.cantidad}</td>
         <td style="text-align:center;font-weight:700;padding:12px 8px;">${escapeHtml(item.resistencia) || ''}${item.pulgada ? ' ' + escapeHtml(item.pulgada) + 'ST' : ''}</td>
         <td style="text-align:center;padding:12px 8px;">${item.pulgada ? escapeHtml(item.pulgada) + '&quot;' : ''}</td>
-        <td style="font-size:9px;line-height:1.6;padding:10px;">
-          <p>El Concreto suministrado cumple con la Norma COVENIN 633.</p>
-          <p>Cualquier adición de agua va por cuenta y riesgo del Cliente.</p>
-          <p style="font-weight:700;margin-top:4px;">ADITIVO WRDA 79</p>
-          <p style="text-align:right;font-weight:700;margin-top:4px;">FRACTIL 10%</p>
+        <td style="font-size:9px;line-height:1.6;padding:10px;">${observacionesHtml}
         </td>
       </tr>
     </tbody>

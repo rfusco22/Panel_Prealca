@@ -50,10 +50,10 @@ export async function GET(req: Request) {
       `SELECT periodo, COUNT(*) AS viajes, COALESCE(SUM(m3), 0) AS m3,
               COUNT(DISTINCT chofer) AS choferes, COUNT(DISTINCT cliente_id) AS clientes
        FROM (
-         SELECT ${exprPeriodo(periodo, 'gd.created_at')} AS periodo, gd.cantidad_m3 AS m3,
+         SELECT ${exprPeriodo(periodo, 'COALESCE(gd.fecha, gd.created_at)')} AS periodo, gd.cantidad_m3 AS m3,
                 COALESCE(CAST(gd.chofer_id AS CHAR), gd.chofer) AS chofer, gd.cliente_id
          FROM guia_despacho gd
-         WHERE gd.created_at >= ? AND gd.created_at <= ? ${filtroChoferD}
+         WHERE COALESCE(gd.fecha, gd.created_at) >= ? AND COALESCE(gd.fecha, gd.created_at) <= ? ${filtroChoferD}
        ) t
        GROUP BY periodo ORDER BY periodo ASC`,
       pD
@@ -64,14 +64,14 @@ export async function GET(req: Request) {
               COUNT(*) AS viajes, COALESCE(SUM(gd.cantidad_m3), 0) AS m3
        FROM guia_despacho gd
        LEFT JOIN choferes ch ON gd.chofer_id = ch.id
-       WHERE gd.created_at >= ? AND gd.created_at <= ? ${filtroChoferD}
+       WHERE COALESCE(gd.fecha, gd.created_at) >= ? AND COALESCE(gd.fecha, gd.created_at) <= ? ${filtroChoferD}
        GROUP BY gd.chofer_id, COALESCE(ch.nombre, gd.chofer, 'Sin chofer')`,
       pD
     );
 
     const despachoDetalle: any = await query(
-      `SELECT gd.id, gd.numero_guia AS numeroGuia, gd.tipo, gd.created_at AS fecha,
-              ${exprPeriodo(periodo, 'gd.created_at')} AS periodo,
+      `SELECT gd.id, gd.numero_guia AS numeroGuia, gd.tipo, COALESCE(gd.fecha, gd.created_at) AS fecha,
+              ${exprPeriodo(periodo, 'COALESCE(gd.fecha, gd.created_at)')} AS periodo,
               gd.cantidad_m3 AS cantidad, COALESCE(ch.nombre, gd.chofer) AS chofer,
               un.numero_unidad AS unidad, c.nombre AS cliente, gd.obra,
               CONCAT(p.resistencia, ' - ', p.pulgada) AS producto
@@ -80,8 +80,8 @@ export async function GET(req: Request) {
        LEFT JOIN unidades un ON gd.unidad_id = un.id
        LEFT JOIN clientes c ON gd.cliente_id = c.id
        LEFT JOIN productos p ON gd.producto_id = p.id
-       WHERE gd.created_at >= ? AND gd.created_at <= ? ${filtroChoferD}
-       ORDER BY gd.created_at DESC, gd.id DESC
+       WHERE COALESCE(gd.fecha, gd.created_at) >= ? AND COALESCE(gd.fecha, gd.created_at) <= ? ${filtroChoferD}
+       ORDER BY COALESCE(gd.fecha, gd.created_at) DESC, gd.id DESC
        LIMIT 2000`,
       pD
     );

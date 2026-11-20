@@ -2,7 +2,7 @@
 
 import { Printer, Download } from 'lucide-react';
 import { useState } from 'react';
-import { generateGuiaDespachoHtml, generatePrealcaHtml } from '@/lib/document-templates';
+import { generateGuiaDespachoHtml, generatePrealcaHtml, generateServicioBombaHtml } from '@/lib/document-templates';
 import { formatearFecha } from '@/lib/fecha';
 interface GuiaDespacho {
   id: number;
@@ -30,6 +30,11 @@ interface GuiaDespacho {
   numeroUnidad?: string;
   pedidoId?: number;
   pedidoTotalM3?: number;
+  obra?: string;
+  /** Obra del pedido asociado, cuando la guía no trae una propia. */
+  pedidoObra?: string;
+  /** Texto libre que escribió quien emitió la guía. Se reimprime tal cual. */
+  observaciones?: string;
 }
 
 interface GuiaDespachoTableProps {
@@ -52,6 +57,24 @@ function buildGuiaHtml(guia: GuiaDespacho, van: number, de: number): string {
 
   const guiaNumber = `GD-${guia.numeroGuia ?? guia.id}`;
 
+  // Cada tipo se reimprime con su propia plantilla. Antes la condición solo
+  // separaba Prealca del resto, así que una orden de Servicio de Bomba se
+  // reimprimía como guía de Premezclado, que es otro documento.
+  if (guia.tipo === 'Servicio de Bomba') {
+    return generateServicioBombaHtml({
+      guiaNumber,
+      fecha: guia.fecha,
+      clienteNombre: guia.clienteNombre,
+      clienteRif: guia.clienteRif || '',
+      clienteDireccion: guia.clienteDireccion || '',
+      clienteTelefono: guia.clienteTelefono,
+      operador: guia.chofer,
+      unidad: guia.placa || guia.numeroUnidad || '',
+      observaciones: guia.observaciones || '',
+      items: [item],
+    });
+  }
+
   return guia.tipo === 'Prealca'
     ? generatePrealcaHtml({
         guiaNumber,
@@ -59,8 +82,10 @@ function buildGuiaHtml(guia: GuiaDespacho, van: number, de: number): string {
         clienteNombre: guia.clienteNombre,
         clienteRif: guia.clienteRif || '',
         clienteDireccion: guia.clienteDireccion || '',
+        obra: guia.obra || guia.pedidoObra || '',
         chofer: guia.chofer,
         placa: guia.placa || '',
+        observaciones: guia.observaciones || '',
         items: [item],
       })
     : generateGuiaDespachoHtml({
@@ -74,6 +99,7 @@ function buildGuiaHtml(guia: GuiaDespacho, van: number, de: number): string {
         placa: guia.placa || '',
         vanM3: van,
         deM3: de,
+        observaciones: guia.observaciones || '',
         items: [item],
         total: Number(guia.cantidadM3),
       });

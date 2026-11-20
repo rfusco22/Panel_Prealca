@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Truck, User, Package, Ruler, AlertCircle, Eye, Printer, Loader2, Box } from 'lucide-react';
 import { printDocument, generateGuiaDespachoHtml, generatePrealcaHtml, generateServicioBombaHtml } from '@/lib/document-templates';
-import { formatearFecha } from '@/lib/fecha';
+import { formatearFecha, hoyLocal, validarFechaNoFutura } from '@/lib/fecha';
 const guiaSchema = z.object({
   clienteId: z.coerce.number().min(1, 'Debe seleccionar un cliente'),
   productoId: z.coerce.number().min(1, 'Debe seleccionar un producto'),
@@ -15,6 +15,15 @@ const guiaSchema = z.object({
   unidadId: z.coerce.number().optional(),
   pedidoId: z.coerce.number().optional(),
   obra: z.string().optional(),
+  // Día del despacho. Lo elige el usuario porque se cargan guías de días
+  // anteriores; hacia adelante no, una guía es un despacho que ya ocurrió
+  // (misma regla que egresos, ver validarFechaNoFutura).
+  fecha: z.string()
+    .min(1, 'Debe indicar la fecha del despacho')
+    .refine((v) => validarFechaNoFutura(v) === null, 'La fecha no puede ser posterior a hoy'),
+  // Texto libre que sale impreso en la celda de observaciones, debajo de la
+  // coletilla fija de la guía.
+  observaciones: z.string().optional(),
 });
 
 // Con z.coerce.* el tipo de ENTRADA del form (lo que escribe el usuario) y el
@@ -75,13 +84,19 @@ export function GuiaDespachoForm({
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm<GuiaFormInput, any, GuiaFormData>({
     resolver: zodResolver(guiaSchema),
-    defaultValues: initialData,
+    // La fecha arranca en hoy (en la zona del negocio, no la del navegador) y
+    // el usuario puede correrla hacia atrás para cargar guías de días pasados.
+    defaultValues: { fecha: hoyLocal(), ...initialData },
   });
 
   const clienteId = watch('clienteId');
   const productoId = watch('productoId');
   const cantidadM3 = watch('cantidadM3');
   const pedidoId = watch('pedidoId');
+  // La vista previa y el documento impreso muestran la fecha elegida, no la de
+  // hoy: si se carga una guía de ayer, el papel tiene que decir ayer.
+  const fechaSeleccionada = watch('fecha') || hoyLocal();
+  const observaciones = watch('observaciones') || '';
 
   const esPrealca = tipoMode === 'Prealca';
   const esServicioBomba = tipoMode === 'Servicio de Bomba';
@@ -128,7 +143,8 @@ export function GuiaDespachoForm({
     if (esServicioBomba) {
       printDocument(generateServicioBombaHtml({
         guiaNumber: 'Vista previa',
-        fecha: new Date().toISOString(),
+        fecha: fechaSeleccionada,
+        observaciones,
         clienteNombre: clienteSeleccionado?.nombre || '',
         clienteRif: clienteSeleccionado?.rif || '',
         clienteDireccion: clienteSeleccionado?.direccion || '',
@@ -144,7 +160,8 @@ export function GuiaDespachoForm({
     } else if (esPrealca) {
       printDocument(generatePrealcaHtml({
         guiaNumber: 'Vista previa',
-        fecha: new Date().toISOString(),
+        fecha: fechaSeleccionada,
+        observaciones,
         clienteNombre: clienteSeleccionado?.nombre || '',
         clienteRif: clienteSeleccionado?.rif || '',
         clienteDireccion: clienteSeleccionado?.direccion || '',
@@ -163,7 +180,8 @@ export function GuiaDespachoForm({
     } else {
       printDocument(generateGuiaDespachoHtml({
         guiaNumber: 'Vista previa',
-        fecha: new Date().toISOString(),
+        fecha: fechaSeleccionada,
+        observaciones,
         clienteNombre: clienteSeleccionado?.nombre || '',
         clienteRif: clienteSeleccionado?.rif || '',
         clienteDireccion: clienteSeleccionado?.direccion || '',
@@ -268,6 +286,18 @@ export function GuiaDespachoForm({
                 </div>
               )}
               <div>
+                <label className={labelCls}>Fecha del Despacho</label>
+                {/* max = hoy: se pueden cargar días anteriores, nunca futuros. */}
+                <input type="date" {...register('fecha')} max={hoyLocal()} className={inputCls} />
+                {errors.fecha && <p className={errorCls}><AlertCircle size={12} />{errors.fecha.message}</p>}
+                {fechaSeleccionada !== hoyLocal() && (
+                  <p className="mt-1.5 text-xs font-semibold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-lg inline-flex items-center gap-1.5">
+                    <AlertCircle size={12} />
+                    Guía de un día anterior: {formatearFecha(fechaSeleccionada)}
+                  </p>
+                )}
+              </div>
+              <div>
                 <label className={labelCls}>Obra (opcional)</label>
                 <input type="text" {...register('obra')} placeholder="Nombre de la obra..." className={inputCls} />
               </div>
@@ -342,6 +372,19 @@ export function GuiaDespachoForm({
                 </div>
                 {errors.choferId && <p className={errorCls}><AlertCircle size={12} />{errors.choferId.message}</p>}
               </div>
+              <div className="sm:col-span-2">
+                <label className={labelCls}>Observaciones (opcional)</label>
+                <textarea
+                  {...register('observaciones')}
+                  rows={3}
+                  maxLength={500}
+                  placeholder="Lo que haga falta aclarar en la guía..."
+                  className={`${inputCls} resize-y`}
+                />
+                <p className="mt-1 text-xs text-slate-400">
+                  Sale impreso en Observaciones, debajo de la coletilla (COVENIN 633 / ADITIVO WRDA 79).
+                </p>
+              </div>
             </div>
           </div>
 
@@ -393,7 +436,7 @@ export function GuiaDespachoForm({
                   <div className="text-right text-[10px] space-y-1">
                     <div className="border border-slate-400 px-2 py-1">
                       <span className="font-semibold text-slate-500">Fecha de Emisión:</span>{' '}
-                      <span className="text-slate-700">{formatearFecha(new Date())}</span>
+                      <span className="text-slate-700">{formatearFecha(fechaSeleccionada)}</span>
                     </div>
                     <div className="border border-slate-400 px-2 py-1">
                       <span className="font-semibold text-slate-500">Fecha de Vencimiento:</span>{' '}
@@ -466,7 +509,7 @@ export function GuiaDespachoForm({
                 <div className="space-y-1.5 text-xs">
                   <div className="flex gap-2">
                     <span className="font-semibold w-28 shrink-0">Observaciones:</span>
-                    <span className="flex-1 border-b border-slate-400"></span>
+                    <span className="flex-1 border-b border-slate-400 whitespace-pre-wrap">{observaciones}</span>
                   </div>
                   <div className="flex gap-2">
                     <span className="font-semibold w-28 shrink-0">NOMBRE:</span>
@@ -508,7 +551,7 @@ export function GuiaDespachoForm({
                   <div className="text-right text-[9px] shrink-0">
                     <div className="border border-black px-3 py-1 mb-1">
                       <p className="font-bold">FECHA DE EMISIÓN</p>
-                      <p>{formatearFecha(new Date())}</p>
+                      <p>{formatearFecha(fechaSeleccionada)}</p>
                     </div>
                     <div className="border border-black px-3 py-1">
                       <p className="font-bold">FECHA DE VENCIMIENTO</p>
@@ -564,6 +607,7 @@ export function GuiaDespachoForm({
                           <p>El Concreto suministrado cumple con la Norma COVENIN 633.</p>
                           <p>Cualquier adición de agua va por cuenta y riesgo del Cliente.</p>
                           <p className="font-bold mt-1">ADITIVO WRDA 79</p>
+                          {observaciones.trim() && <p className="mt-1 whitespace-pre-wrap">{observaciones.trim()}</p>}
                           <p className="text-right font-bold mt-1">FRACTIL 10%</p>
                         </td>
                       </tr>
@@ -631,7 +675,7 @@ export function GuiaDespachoForm({
                   <div className="text-right text-[10px] space-y-1">
                     <div className="border border-slate-400 px-2 py-1">
                       <span className="font-semibold text-slate-500">Fecha de Emisión:</span>{' '}
-                      <span className="text-slate-700">{formatearFecha(new Date())}</span>
+                      <span className="text-slate-700">{formatearFecha(fechaSeleccionada)}</span>
                     </div>
                     <div className="border border-slate-400 px-2 py-1">
                       <span className="font-semibold text-slate-500">Fecha de Vencimiento:</span>{' '}
@@ -682,7 +726,17 @@ export function GuiaDespachoForm({
                           <td className="border border-slate-400 px-2 py-6 text-center">{Number(cantidadM3) || 0}</td>
                           <td className="border border-slate-400 px-2 py-6 text-center">{productoSeleccionado.resistencia || ''}</td>
                           <td className="border border-slate-400 px-2 py-6 text-center">{productoSeleccionado.pulgada ? `${productoSeleccionado.pulgada}"` : ''}</td>
-                          <td className="border border-slate-400 px-2 py-6 min-h-[80px]">&nbsp;</td>
+                          {/* La coletilla es la misma que la guía de Prealca: es
+                              texto del documento y tiene que salir en los dos
+                              tipos (ver observacionesColetilla en
+                              lib/document-templates.ts). */}
+                          <td className="border border-slate-400 px-3 py-4 text-[9px] leading-relaxed align-top">
+                            <p>El Concreto suministrado cumple con la Norma COVENIN 633.</p>
+                            <p>Cualquier adición de agua va por cuenta y riesgo del Cliente.</p>
+                            <p className="font-bold mt-1">ADITIVO WRDA 79</p>
+                            {observaciones.trim() && <p className="mt-1 whitespace-pre-wrap">{observaciones.trim()}</p>}
+                            <p className="text-right font-bold mt-1">FRACTIL 10%</p>
+                          </td>
                         </tr>
                       ) : (
                         <tr>
