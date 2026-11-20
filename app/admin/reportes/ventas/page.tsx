@@ -38,7 +38,7 @@ export default function ReporteVentasPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="aparecer space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Reporte de Ventas</h1>
@@ -65,7 +65,7 @@ export default function ReporteVentasPage() {
         {summary && <PieChartCard title="Forma de Pago" data={summary.byFormaPago} />}
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="superficie overflow-hidden">
         <div className="p-4 border-b border-slate-100">
           <h3 className="text-sm font-bold text-slate-900">Detalle de Facturas</h3>
         </div>
@@ -86,7 +86,7 @@ export default function ReporteVentasPage() {
               ) : data.length === 0 ? (
                 <tr><td colSpan={5} className="px-4 py-8 text-center text-slate-400">Sin datos para el período seleccionado</td></tr>
               ) : data.map((r, i) => (
-                <tr key={i} className="border-t border-slate-100 hover:bg-slate-50">
+                <tr key={i} className="border-t border-slate-100 fila-interactiva">
                   <td className="px-4 py-3 font-medium text-slate-900">F-{r.id}</td>
                   <td className="px-4 py-3 text-slate-700">{r.fecha ? formatearFecha(r.fecha) : '—'}</td>
                   <td className="px-4 py-3 text-slate-700">{r.clienteNombre || '—'}</td>

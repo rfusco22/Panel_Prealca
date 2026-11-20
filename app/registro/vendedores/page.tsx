@@ -108,7 +108,7 @@ export default function VendedoresPage() {
         </button>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden p-6">
+      <div className="superficie overflow-hidden p-6">
         <VendedoresTable data={vendedores} isLoading={loading} error={error} onEdit={abrirEditar} onDelete={handleDelete} />
       </div>
 

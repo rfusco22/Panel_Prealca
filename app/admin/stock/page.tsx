@@ -122,7 +122,7 @@ export default function StockPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="aparecer space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Inventario por Producto</h1>
@@ -195,7 +195,7 @@ export default function StockPage() {
                     const limitante = getMaterialLimitante(prod.formula);
                     return (
                       <Fragment key={prod.productoId}>
-                        <tr className="hover:bg-slate-50/50 transition-colors">
+                        <tr className="fila-interactiva transition-colors">
                           <td className="px-6 py-4">
                             <span className="font-semibold text-slate-900">{prod.productoNombre}</span>
                           </td>
@@ -311,7 +311,7 @@ export default function StockPage() {
                     const disp = Number(mp.disponible);
                     const badge = getMateriaPrimaBadge(disp);
                     return (
-                      <tr key={mp.agregadoId} className="hover:bg-slate-50/50 transition-colors">
+                      <tr key={mp.agregadoId} className="fila-interactiva transition-colors">
                         <td className="px-6 py-4">
                           <div className="font-semibold text-slate-900">{mp.agregadoNombre}</div>
                           <div className="text-xs text-slate-400">{mp.unidadMedida}</div>

@@ -29,9 +29,9 @@ export default function ReporteViajesSeguridadVialPage() {
   const [to, setTo] = useState('');
 
   return (
-    <div className="space-y-6">
+    <div className="aparecer space-y-6">
       <div className="flex items-center gap-3">
-        <Link href="/seguridad-vial" className="p-2 hover:bg-slate-100 rounded-lg transition">
+        <Link href="/seguridad-vial" className="accion p-2 hover:bg-slate-100 rounded-lg transition">
           <ArrowLeft size={20} className="text-slate-600" />
         </Link>
         <div className="p-2.5 bg-cyan-50 rounded-xl"><Truck className="w-5 h-5 text-cyan-600" /></div>

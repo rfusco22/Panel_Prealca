@@ -174,7 +174,7 @@ export function FacturaForm({ initialData }: FacturaFormProps) {
           {error && <div className="flex items-center gap-3 bg-red-50 border border-red-100 text-red-800 p-4 rounded-xl"><AlertCircle size={20} className="text-red-500 shrink-0" /><p className="text-sm font-medium">{error}</p></div>}
           {success && <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-100 text-emerald-800 p-4 rounded-xl"><CheckCircle2 size={20} className="text-emerald-500 shrink-0" /><p className="text-sm font-medium">{success}</p></div>}
 
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5">
+          <div className="superficie p-6 space-y-5">
             <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
               <span className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white text-sm font-bold shrink-0">1</span>
               <h3 className="text-lg font-semibold text-slate-900">Datos del Cliente</h3>
@@ -194,7 +194,7 @@ export function FacturaForm({ initialData }: FacturaFormProps) {
             )}
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5">
+          <div className="superficie p-6 space-y-5">
             <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
               <span className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white text-sm font-bold shrink-0">2</span>
               <h3 className="text-lg font-semibold text-slate-900">Datos de la Factura</h3>
@@ -225,7 +225,7 @@ export function FacturaForm({ initialData }: FacturaFormProps) {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5">
+          <div className="superficie p-6 space-y-5">
             <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
               <span className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white text-sm font-bold shrink-0">3</span>
               <h3 className="text-lg font-semibold text-slate-900">Forma de Pago</h3>
@@ -274,7 +274,7 @@ export function FacturaForm({ initialData }: FacturaFormProps) {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5">
+          <div className="superficie p-6 space-y-5">
             <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
               <span className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white text-sm font-bold shrink-0">4</span>
               <h3 className="text-lg font-semibold text-slate-900">Resumen</h3>

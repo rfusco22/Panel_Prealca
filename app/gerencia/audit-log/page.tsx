@@ -173,7 +173,7 @@ export default function GerenciaAuditLogPage() {
       </div>
 
       {/* TABLE */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+      <div className="superficie overflow-hidden">
         {loading ? (
           <div className="p-12 text-center"><Loader2 size={24} className="animate-spin text-slate-300 mx-auto" /></div>
         ) : logsFiltrados.length === 0 ? (
@@ -201,7 +201,7 @@ export default function GerenciaAuditLogPage() {
                   const AccionIcon = accionInfo.icon;
                   const isExpanded = expandedId === log.id;
                   return (
-                    <tr key={log.id} className="hover:bg-slate-50/80 transition-colors group">
+                    <tr key={log.id} className="fila-interactiva transition-colors group">
                       <td className="px-6 py-3">
                         <div className="flex items-center gap-1.5 text-slate-500">
                           <Clock size={12} className="text-slate-400" />
@@ -229,7 +229,7 @@ export default function GerenciaAuditLogPage() {
                       <td className="px-6 py-3 text-[11px] text-slate-400 font-mono">{log.ipAddress || '-'}</td>
                       <td className="px-6 py-3 text-right">
                         {(log.datosAnteriores || log.datosNuevos) && (
-                          <button onClick={() => setExpandedId(isExpanded ? null : log.id)} className="p-1.5 text-slate-400 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition-colors">
+                          <button onClick={() => setExpandedId(isExpanded ? null : log.id)} className="accion p-1.5 text-slate-400 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition-colors">
                             <Eye size={14} />
                           </button>
                         )}

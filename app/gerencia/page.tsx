@@ -159,7 +159,7 @@ export default function GerenciaPage() {
       </section>
 
       {/* Accesos por sección */}
-      <section className="space-y-6">
+      <section className="aparecer space-y-6">
         <h2 className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Módulos</h2>
         {secciones.map((s) => (
           <div key={s.id}>

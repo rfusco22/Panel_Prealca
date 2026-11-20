@@ -51,7 +51,7 @@ export default function EstadoFinancieroPage() {
   const balanceColor = (summary?.balance || 0) >= 0 ? 'text-emerald-600' : 'text-red-600';
 
   return (
-    <div className="space-y-6">
+    <div className="aparecer space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Estado Financiero</h1>
@@ -95,7 +95,7 @@ export default function EstadoFinancieroPage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="superficie overflow-hidden">
               <div className="p-4 border-b border-slate-100 bg-emerald-50">
                 <h3 className="text-sm font-bold text-emerald-800">Ingresos por Banco</h3>
               </div>
@@ -108,7 +108,7 @@ export default function EstadoFinancieroPage() {
                 ))}
               </div>
             </div>
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="superficie overflow-hidden">
               <div className="p-4 border-b border-slate-100 bg-red-50">
                 <h3 className="text-sm font-bold text-red-800">Egresos por Clasificación</h3>
               </div>

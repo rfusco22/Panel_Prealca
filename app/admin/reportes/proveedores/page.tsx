@@ -54,7 +54,7 @@ export default function ReporteProveedoresPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link href={backHref} className="p-2 hover:bg-slate-100 rounded-lg transition"><ArrowLeft size={20} className="text-slate-600" /></Link>
+          <Link href={backHref} className="accion p-2 hover:bg-slate-100 rounded-lg transition"><ArrowLeft size={20} className="text-slate-600" /></Link>
           <div className="p-2.5 bg-orange-50 rounded-xl"><Truck className="w-5 h-5 text-orange-600" /></div>
           <div>
             <h1 className="text-xl font-bold text-slate-900">Reporte de Proveedores</h1>
@@ -90,7 +90,7 @@ export default function ReporteProveedoresPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="superficie overflow-hidden">
         <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
           <h3 className="text-sm font-bold text-slate-800">Proveedores ({proveedores.length})</h3>
           {selected && <button onClick={() => setSelected(null)} className="text-xs text-blue-600 hover:text-blue-800 font-semibold">Ver todos</button>}
@@ -133,7 +133,7 @@ export default function ReporteProveedoresPage() {
       </div>
 
       {selected && filteredDetalles.length > 0 && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="superficie overflow-hidden">
           <div className="px-5 py-3 border-b border-slate-100">
             <h3 className="text-sm font-bold text-slate-800">Detalle: {selected.nombre} ({filteredDetalles.length} registros)</h3>
           </div>

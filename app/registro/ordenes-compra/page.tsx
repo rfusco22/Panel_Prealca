@@ -54,7 +54,7 @@ export default function OrdenesCompraPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="aparecer space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-gray-900">Órdenes de Compra</h1>
         <Link href="/registro/ordenes-compra/new">

@@ -51,7 +51,7 @@ function ClientesTable({ data, isLoading, onEdit, onDelete }: ClientesTableProps
         </thead>
         <tbody className="divide-y divide-slate-100">
           {data.map((c) => (
-            <tr key={c.id} className="hover:bg-slate-50/80 transition-colors">
+            <tr key={c.id} className="fila-interactiva transition-colors">
               <td className="px-6 py-4 font-bold text-slate-800">{c.nombre}</td>
               <td className="px-6 py-4 font-medium text-slate-600">{c.rif}</td>
               <td className="px-6 py-4 text-slate-500">{c.telefono || '-'}</td>

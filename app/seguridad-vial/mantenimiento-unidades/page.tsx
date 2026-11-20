@@ -570,7 +570,7 @@ export default function MantenimientoUnidadesPage() {
       </div>
 
       {/* LISTADO */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+      <div className="superficie overflow-hidden">
         {loading ? (
           <div className="p-12 text-center"><Loader2 className="animate-spin mx-auto text-slate-400" size={32} /><p className="mt-3 text-slate-500">Cargando mantenimientos...</p></div>
         ) : mantenimientosFiltrados.length === 0 ? (
@@ -602,10 +602,10 @@ export default function MantenimientoUnidadesPage() {
                         <span className="text-xs text-slate-500">{formatDate(m.fecha)}</span>
                       </div>
                       <div className="flex gap-1">
-                        <button onClick={() => handleEdit(m)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md">
+                        <button onClick={() => handleEdit(m)} className="accion p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md">
                           <Edit2 size={14} />
                         </button>
-                        <button onClick={() => handleDelete(m.id)} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md">
+                        <button onClick={() => handleDelete(m.id)} className="accion p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md">
                           <Trash2 size={14} />
                         </button>
                       </div>
@@ -646,7 +646,7 @@ export default function MantenimientoUnidadesPage() {
                     const tipo = TIPO_MANTENIMIENTO[m.tipoMantenimiento] || TIPO_MANTENIMIENTO.otro;
                     const Icon = tipo.icon;
                     return (
-                      <tr key={m.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors group">
+                      <tr key={m.id} className="border-b border-slate-50 fila-interactiva group">
                         <td className="px-4 py-3 text-slate-700 whitespace-nowrap">
                           <div className="text-xs font-semibold">{formatDate(m.fecha)}</div>
                           <div className="text-[10px] text-slate-400">{diasDesde(m.fecha)}</div>
@@ -688,10 +688,10 @@ export default function MantenimientoUnidadesPage() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => handleEdit(m)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors">
+                            <button onClick={() => handleEdit(m)} className="accion p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors">
                               <Edit2 size={14} />
                             </button>
-                            <button onClick={() => handleDelete(m.id)} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors">
+                            <button onClick={() => handleDelete(m.id)} className="accion p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors">
                               <Trash2 size={14} />
                             </button>
                           </div>

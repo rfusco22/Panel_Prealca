@@ -17,7 +17,7 @@ export function BarChartCard({ title, data }: BarChartCardProps) {
   if (chartData.length === 0) return null;
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+    <div className="superficie superficie-levanta aparecer p-5">
       <h3 className="text-sm font-bold text-slate-900 mb-4">{title}</h3>
       <ResponsiveContainer width="100%" height={280}>
         <BarChart data={chartData}>
@@ -43,7 +43,7 @@ export function PieChartCard({ title, data }: PieChartCardProps) {
   if (chartData.length === 0) return null;
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+    <div className="superficie superficie-levanta aparecer p-5">
       <h3 className="text-sm font-bold text-slate-900 mb-4">{title}</h3>
       <ResponsiveContainer width="100%" height={280}>
         <PieChart>
@@ -67,7 +67,7 @@ export function LineChartCard({ title, data, lines = ['value'] }: LineChartCardP
   if (data.length === 0) return null;
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+    <div className="superficie superficie-levanta aparecer p-5">
       <h3 className="text-sm font-bold text-slate-900 mb-4">{title}</h3>
       <ResponsiveContainer width="100%" height={280}>
         <LineChart data={data}>

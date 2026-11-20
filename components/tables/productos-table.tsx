@@ -49,7 +49,7 @@ export function ProductosTable({
   }
 
   return (
-    <div className="overflow-x-auto bg-white rounded-lg shadow">
+    <div className="overflow-x-auto superficie">
       <table className="w-full">
         <thead className="bg-gray-100 border-b">
           <tr>
@@ -61,7 +61,7 @@ export function ProductosTable({
         </thead>
         <tbody>
           {data.map((producto) => (
-            <tr key={producto.id} className="border-b hover:bg-gray-50 transition">
+            <tr key={producto.id} className="border-b fila-interactiva">
               <td className="px-6 py-3 text-sm font-medium text-gray-900">{producto.nombre}</td>
               <td className="px-6 py-3 text-sm text-gray-600">{producto.resistencia || '--'}</td>
               <td className="px-6 py-3 text-sm text-gray-600">{producto.descripcion?.substring(0, 50) || '--'}...</td>

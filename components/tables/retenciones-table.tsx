@@ -147,7 +147,7 @@ function RetencionesTable() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {data.map((ret) => (
-                <tr key={ret.id} className="hover:bg-slate-50/80 transition-colors">
+                <tr key={ret.id} className="fila-interactiva transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap font-medium text-slate-900">
                     {formatearFecha(ret.fecha || ret.created_at)}
                   </td>

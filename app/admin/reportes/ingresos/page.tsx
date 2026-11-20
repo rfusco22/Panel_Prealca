@@ -59,7 +59,7 @@ export default function ReporteIngresosPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="aparecer space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Reporte de Ingresos</h1>
@@ -88,7 +88,7 @@ export default function ReporteIngresosPage() {
         {summary && <PieChartCard title="Distribución por Vendedor" data={summary.byVendedor} />}
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="superficie overflow-hidden">
         <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <h3 className="text-sm font-bold text-slate-900">Detalle de Ingresos</h3>
           <div className="flex bg-slate-100 p-1 rounded-lg">
@@ -127,7 +127,7 @@ export default function ReporteIngresosPage() {
               ) : filas.length === 0 ? (
                 <tr><td colSpan={8} className="px-4 py-8 text-center text-slate-400">Sin datos para el período seleccionado</td></tr>
               ) : filas.map((r, i) => (
-                <tr key={i} className="border-t border-slate-100 hover:bg-slate-50">
+                <tr key={i} className="border-t border-slate-100 fila-interactiva">
                   {/* createdAt es la fecha del ingreso; los registros viejos
                       la traen en fecha. Misma lectura que la tabla de Ingresos. */}
                   <td className="px-4 py-3 text-slate-700 whitespace-nowrap">{formatearFecha(r.createdAt || r.fecha)}</td>

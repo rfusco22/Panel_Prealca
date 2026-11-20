@@ -214,7 +214,7 @@ export function GuiaDespachoForm({
       <div className="p-8 overflow-y-auto">
         <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
           {/* Toggle PREMEZCLADO / PREALCA / SERVICIO DE BOMBA */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+          <div className="superficie p-4">
             <div className="flex rounded-xl bg-slate-100 p-1">
               <button type="button" onClick={() => setTipoMode('Premezclado')} className={`flex-1 py-3 px-4 rounded-lg text-sm font-bold transition-all duration-200 ${tipoMode === 'Premezclado' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:text-slate-700'}`}>
                 PREMEZCLADO
@@ -241,7 +241,7 @@ export function GuiaDespachoForm({
 
           {error && <div className="flex items-center gap-3 bg-red-50 border border-red-100 text-red-800 p-4 rounded-xl"><AlertCircle size={20} className="text-red-500 shrink-0" /><p className="text-sm font-medium">{error}</p></div>}
 
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5">
+          <div className="superficie p-6 space-y-5">
             <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
               <span className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white text-sm font-bold shrink-0">1</span>
               <h3 className="text-lg font-semibold text-slate-900">Información General</h3>
@@ -347,7 +347,7 @@ export function GuiaDespachoForm({
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5">
+          <div className="superficie p-6 space-y-5">
             <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
               <span className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white text-sm font-bold shrink-0">2</span>
               <h3 className="text-lg font-semibold text-slate-900">Detalles del Envío</h3>

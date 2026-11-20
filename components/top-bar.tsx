@@ -31,7 +31,7 @@ export function TopBar({ userRole = 'admin', onToggleSidebar }: TopBarProps) {
           onClick={onToggleSidebar}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className="p-2 hover:bg-gray-100 rounded-lg transition"
+          className="accion p-2 hover:bg-gray-100 rounded-lg transition"
         >
           <Menu size={24} className="text-gray-700" />
         </motion.button>
@@ -67,7 +67,7 @@ export function TopBar({ userRole = 'admin', onToggleSidebar }: TopBarProps) {
             onClick={handleLogout}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+            className="accion p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
             title="Cerrar Sesión"
           >
             <LogOut size={22} />

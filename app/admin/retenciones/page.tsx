@@ -31,7 +31,7 @@ export default function RetencionesPage() {
         </div>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden p-6">
+      <div className="superficie overflow-hidden p-6">
         <RetencionesTable key={refreshKey} />
       </div>
     </div>

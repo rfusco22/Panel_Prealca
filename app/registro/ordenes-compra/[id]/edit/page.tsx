@@ -57,7 +57,7 @@ export default function EditOrdenCompraPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="aparecer space-y-6">
       <div className="flex items-center gap-2">
         <Link href="/registro/ordenes-compra">
           <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">
@@ -68,12 +68,12 @@ export default function EditOrdenCompraPage() {
       </div>
 
       {loading ? (
-        <div className="bg-white rounded-lg shadow p-12 text-center text-gray-500">
+        <div className="superficie p-12 text-center text-gray-500">
           <Loader2 className="animate-spin mx-auto mb-3" size={24} />
           Cargando orden de compra...
         </div>
       ) : notFound || !initialData ? (
-        <div className="bg-white rounded-lg shadow p-12 text-center text-gray-500">
+        <div className="superficie p-12 text-center text-gray-500">
           No se encontró la orden de compra.
         </div>
       ) : (

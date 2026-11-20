@@ -58,7 +58,7 @@ export default function AlertaSeguridadVialPage() {
   const totalAlertas = totalChoferes + totalUnidades;
 
   return (
-    <div className="flex-1 space-y-6 p-4 md:p-8 pt-6">
+    <div className="aparecer flex-1 space-y-6 p-4 md:p-8 pt-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-slate-900">Alertas</h1>
         <p className="text-slate-500 mt-1">Choferes y unidades con documentos o mantenimiento vencidos o por vencer en ≤ 7 días.</p>

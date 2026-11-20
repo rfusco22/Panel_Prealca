@@ -159,7 +159,7 @@ export default function PedidosPage() {
       </div>
 
       {/* Listado: Cards en móvil, Tabla en desktop */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+      <div className="superficie overflow-hidden">
         {loading ? (
           <div className="p-12 text-center"><Loader2 className="animate-spin mx-auto text-slate-400" size={32} /><p className="mt-3 text-slate-500">Cargando pedidos...</p></div>
         ) : pedidos.length === 0 ? (
@@ -232,7 +232,7 @@ export default function PedidosPage() {
                     const badge = estadoBadge[pedido.estado] || estadoBadge.pendiente;
                     const Icon = badge.icon;
                     return (
-                      <tr key={pedido.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
+                      <tr key={pedido.id} className="border-b border-slate-50 fila-interactiva">
                         <td className="px-4 py-3 font-bold text-slate-900">{pedido.id}</td>
                         <td className="px-4 py-3 font-medium text-slate-900">{pedido.clienteNombre}</td>
                         <td className="px-4 py-3 text-slate-600">{pedido.productoNombre}</td>

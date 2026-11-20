@@ -97,7 +97,7 @@ function ChoferesTable({ refreshKey, onEdit }: { refreshKey?: number; onEdit?: (
             const RifIcon = rifStatus.icon;
 
             return (
-              <tr key={c.id} className="hover:bg-slate-50/80 transition-colors group">
+              <tr key={c.id} className="fila-interactiva transition-colors group">
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-sm font-bold text-slate-600">
@@ -149,10 +149,10 @@ function ChoferesTable({ refreshKey, onEdit }: { refreshKey?: number; onEdit?: (
                 </td>
                 <td className="px-6 py-4 text-right">
                   <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => onEdit && onEdit(c)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Editar">
+                    <button onClick={() => onEdit && onEdit(c)} className="accion p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Editar">
                       <Pencil size={15} />
                     </button>
-                    <button onClick={() => handleDelete(c.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Eliminar">
+                    <button onClick={() => handleDelete(c.id)} className="accion p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Eliminar">
                       <Trash2 size={15} />
                     </button>
                   </div>

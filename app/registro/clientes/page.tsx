@@ -105,7 +105,7 @@ export default function ClientesPage() {
         </button>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden p-6">
+      <div className="superficie overflow-hidden p-6">
         <ClientesTable data={clientes} isLoading={loading} onEdit={abrirEditar} onDelete={handleDelete} />
       </div>
 

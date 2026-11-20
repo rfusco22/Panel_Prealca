@@ -279,7 +279,7 @@ export default function RegistroBancosPage() {
       )}
 
       {/* Tabla */}
-      <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+      <div className="superficie overflow-hidden">
         {loading ? (
           <div className="text-center py-20">
             <div className="animate-spin w-6 h-6 border-2 border-slate-800 border-t-transparent rounded-full mx-auto mb-4"></div>
@@ -314,10 +314,10 @@ export default function RegistroBancosPage() {
                   const prefix = banco.numeroCuenta.substring(0, 4);
 
                   return (
-                  <tr key={banco.id} className="hover:bg-slate-50 transition-colors group">
+                  <tr key={banco.id} className="fila-interactiva transition-colors group">
                     <td className="px-6 py-4 font-medium text-slate-900 flex items-center gap-3">
                       {/* Logo en la tabla */}
-                      <div className="w-8 h-8 bg-white rounded-lg border border-slate-200 shadow-sm flex items-center justify-center shrink-0 overflow-hidden p-1">
+                      <div className="w-8 h-8 superficie flex items-center justify-center shrink-0 overflow-hidden p-1">
                         <Image 
                           src={`/bancos/${prefix}.png`} 
                           alt={banco.nombreBanco} 
@@ -338,12 +338,12 @@ export default function RegistroBancosPage() {
                         {/* BOTÓN EDITAR CONECTADO */}
                         <button 
                           onClick={() => handleEdit(banco)}
-                          className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                          className="accion p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
                         >
                           <Edit2 size={16} />
                         </button>
 
-                        <button onClick={() => handleDelete(banco.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors">
+                        <button onClick={() => handleDelete(banco.id)} className="accion p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors">
                           <Trash2 size={16} />
                         </button>
                       </div>

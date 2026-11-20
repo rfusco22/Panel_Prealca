@@ -51,7 +51,7 @@ export function ProveedoresTable({
   }
 
   return (
-    <div className="overflow-x-auto bg-white rounded-lg shadow">
+    <div className="overflow-x-auto superficie">
       <table className="w-full">
         <thead className="bg-gray-100 border-b">
           <tr>
@@ -65,7 +65,7 @@ export function ProveedoresTable({
         </thead>
         <tbody>
           {data.map((proveedor) => (
-            <tr key={proveedor.id} className="border-b hover:bg-gray-50 transition">
+            <tr key={proveedor.id} className="border-b fila-interactiva">
               <td className="px-6 py-3 text-sm text-gray-900">{proveedor.nombre}</td>
               <td className="px-6 py-3 text-sm text-gray-600">{proveedor.rif}</td>
               <td className="px-6 py-3 text-sm text-gray-600">{proveedor.direccion || '--'}</td>

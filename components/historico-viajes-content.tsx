@@ -184,7 +184,7 @@ export default function HistoricoViajesContent() {
           )}
 
           {/* Tabla por período */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="superficie overflow-hidden">
             <div className="px-5 py-4 border-b border-slate-100">
               <h3 className="font-bold text-slate-900">Histórico {periodo}</h3>
               <p className="text-xs text-slate-500">Hacé clic en una fila para ver los viajes de ese {nombrePeriodo.toLowerCase()}.</p>
@@ -276,7 +276,7 @@ export default function HistoricoViajesContent() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Por chofer */}
-            <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="lg:col-span-2 superficie overflow-hidden">
               <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-2">
                 <Users size={16} className="text-slate-500" /><h3 className="font-bold text-slate-900">Viajes por chofer</h3>
               </div>
@@ -309,7 +309,7 @@ export default function HistoricoViajesContent() {
 
             {/* Por material */}
             {verM && (
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="superficie overflow-hidden">
                 <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-2">
                   <Package size={16} className="text-orange-500" /><h3 className="font-bold text-slate-900">Materia prima por material</h3>
                 </div>

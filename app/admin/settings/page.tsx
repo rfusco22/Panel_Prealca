@@ -61,7 +61,7 @@ export default function SettingsPage() {
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
           <div className="flex-1">
             <div className="flex items-center gap-5 mb-8">
-              <div className="w-16 h-16 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center p-2 relative overflow-hidden">
+              <div className="w-16 h-16 superficie border border-slate-100 flex items-center justify-center p-2 relative overflow-hidden">
                 <Image src="/logobcv.png" alt="Logo BCV" width={48} height={48} className="object-contain" />
               </div>
               <div>

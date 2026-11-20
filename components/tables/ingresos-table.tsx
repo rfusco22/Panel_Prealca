@@ -80,7 +80,7 @@ function IngresosTable() {
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {data.map((ingreso) => (
-            <tr key={ingreso.id} className="hover:bg-gray-50 transition-colors">
+            <tr key={ingreso.id} className="fila-interactiva transition-colors">
               <td className="px-4 py-3 text-gray-500">#{ingreso.id}</td>
               <td className="px-4 py-3 whitespace-nowrap">
                 {formatearFecha(ingreso.createdAt || ingreso.fecha)}

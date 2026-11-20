@@ -56,7 +56,7 @@ export default function EgresosPage() {
   };
 
   return (
-    <div className="flex-1 space-y-6 p-4 md:p-8 pt-6">
+    <div className="aparecer flex-1 space-y-6 p-4 md:p-8 pt-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">Historial de Egresos</h1>
@@ -79,7 +79,7 @@ export default function EgresosPage() {
       )}
 
       {/* Tabla */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+      <div className="superficie overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -98,7 +98,7 @@ export default function EgresosPage() {
               {egresos.length === 0 ? (
                 <tr><td colSpan={8} className="px-4 py-12 text-center text-slate-400">No hay egresos registrados</td></tr>
               ) : egresos.map((eg) => (
-                <tr key={eg.id} className="border-b border-slate-100 hover:bg-slate-50">
+                <tr key={eg.id} className="border-b border-slate-100 fila-interactiva">
                   <td className="px-4 py-3 text-slate-700">{formatearFecha(eg.fecha)}</td>
                   <td className="px-4 py-3 text-slate-700">{eg.banco}</td>
                   <td className="px-4 py-3 text-slate-700">{eg.nombreProveedor}</td>

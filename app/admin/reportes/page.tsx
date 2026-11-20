@@ -142,7 +142,7 @@ export default function ReportesPage() {
   const base = pathname.replace(/\/$/, '');
 
   return (
-    <div className="space-y-6">
+    <div className="aparecer space-y-6">
       <div className="flex items-center gap-3">
         <div className="p-2.5 bg-slate-900 rounded-xl"><BarChart3 className="w-6 h-6 text-white" /></div>
         <div>
@@ -156,7 +156,7 @@ export default function ReportesPage() {
           const Icon = r.icon;
           return (
             <Link key={r.href} href={`${base}/${r.href}`}>
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 hover:shadow-md hover:border-slate-300 transition-all cursor-pointer group h-full flex flex-col">
+              <div className="superficie p-6 hover:shadow-md hover:border-slate-300 transition-all cursor-pointer group h-full flex flex-col">
                 <div className="flex items-center gap-4 mb-4">
                   <div className={`p-3 rounded-xl ${r.color} shrink-0`}>
                     <Icon size={24} />

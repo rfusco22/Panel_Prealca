@@ -60,7 +60,7 @@ export default function ReporteBancosPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link href={backHref} className="p-2 hover:bg-slate-100 rounded-lg transition"><ArrowLeft size={20} className="text-slate-600" /></Link>
+          <Link href={backHref} className="accion p-2 hover:bg-slate-100 rounded-lg transition"><ArrowLeft size={20} className="text-slate-600" /></Link>
           <div className="p-2.5 bg-emerald-50 rounded-xl"><Building2 className="w-5 h-5 text-emerald-600" /></div>
           <div>
             <h1 className="text-xl font-bold text-slate-900">Conciliación Bancaria</h1>
@@ -100,7 +100,7 @@ export default function ReporteBancosPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="superficie overflow-hidden">
         <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
           <h3 className="text-sm font-bold text-slate-800">Bancos ({bancos.length})</h3>
           {selected && <button onClick={() => setSelected(null)} className="text-xs text-blue-600 hover:text-blue-800 font-semibold">Ver todos</button>}
@@ -143,7 +143,7 @@ export default function ReporteBancosPage() {
       </div>
 
       {selected && movimientosBanco.length > 0 && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="superficie overflow-hidden">
           <div className="px-5 py-3 border-b border-slate-100">
             <h3 className="text-sm font-bold text-slate-800">Movimientos: {selected.nombreBanco} ({movimientosBanco.length})</h3>
           </div>

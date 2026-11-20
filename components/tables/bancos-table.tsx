@@ -50,7 +50,7 @@ export function BancosTable({
   }
 
   return (
-    <div className="overflow-x-auto bg-white rounded-lg shadow">
+    <div className="overflow-x-auto superficie">
       <table className="w-full">
         <thead className="bg-gray-100 border-b">
           <tr>
@@ -63,7 +63,7 @@ export function BancosTable({
         </thead>
         <tbody>
           {data.map((banco) => (
-            <tr key={banco.id} className="border-b hover:bg-gray-50 transition">
+            <tr key={banco.id} className="border-b fila-interactiva">
               <td className="px-6 py-3 text-sm font-medium text-gray-900">{banco.nombreBanco}</td>
               <td className="px-6 py-3 text-sm text-gray-600">{banco.numeroCuenta}</td>
               <td className="px-6 py-3 text-sm text-gray-600">{banco.titularCuenta}</td>

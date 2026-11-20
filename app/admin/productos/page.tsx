@@ -235,7 +235,7 @@ export default function AdminProductosPage() {
       )}
 
       {/* Tabla Principal Mejorada (DISEÑO PREMIUM) */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+      <div className="superficie overflow-hidden">
         {loading ? (
           <div className="text-center py-20">
             <div className="animate-spin w-6 h-6 border-2 border-slate-800 border-t-transparent rounded-full mx-auto mb-4"></div>
@@ -267,7 +267,7 @@ export default function AdminProductosPage() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {productos.map((producto) => (
-                  <tr key={producto.id} className="hover:bg-slate-50/80 transition-colors group align-middle">
+                  <tr key={producto.id} className="fila-interactiva transition-colors group align-middle">
                     
                     {/* Columna: Resistencia (Con Icono Premium) */}
                     <td className="px-6 py-4">
@@ -327,13 +327,13 @@ export default function AdminProductosPage() {
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button 
                           onClick={() => handleEdit(producto)}
-                          className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          className="accion p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                         >
                           <Edit2 size={16} />
                         </button>
                         <button 
                           onClick={() => handleDelete(producto.id)} 
-                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          className="accion p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         >
                           <Trash2 size={16} />
                         </button>
@@ -477,7 +477,7 @@ export default function AdminProductosPage() {
                         <button
                           type="button"
                           onClick={() => removerItemDeFormula(index)}
-                          className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg self-end sm:self-center transition-colors mt-2 sm:mt-[22px] border border-transparent hover:border-red-100"
+                          className="accion p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg self-end sm:self-center transition-colors mt-2 sm:mt-[22px] border border-transparent hover:border-red-100"
                         >
                           <Trash2 size={16} />
                         </button>

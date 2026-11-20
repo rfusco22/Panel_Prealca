@@ -43,7 +43,7 @@ export default function AlertaChoferesPage() {
   }, 0);
 
   return (
-    <div className="flex-1 space-y-6 p-4 md:p-8 pt-6">
+    <div className="aparecer flex-1 space-y-6 p-4 md:p-8 pt-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-slate-900">Alertas de Documentos</h1>
         <p className="text-slate-500 mt-1">Choferes con documentos vencidos o por vencer en ≤ 7 días.</p>

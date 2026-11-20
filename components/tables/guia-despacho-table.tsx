@@ -296,14 +296,14 @@ export function GuiaDespachoTable({ data, onChange }: GuiaDespachoTableProps) {
 
   if (data.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow p-12 text-center">
+      <div className="superficie p-12 text-center">
         <p className="text-gray-500">No hay guías de despacho registradas</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
+    <div className="superficie overflow-hidden">
       {pendientes.length > 0 && (
         <div className="flex items-center gap-2 px-6 py-3 bg-amber-50 border-b border-amber-200 text-sm text-amber-800">
           <Clock size={16} className="shrink-0" />
@@ -337,7 +337,7 @@ export function GuiaDespachoTable({ data, onChange }: GuiaDespachoTableProps) {
                     ? 'bg-red-50/40 text-gray-400'
                     : tienePendiente(guia)
                       ? 'bg-amber-50/50'
-                      : 'hover:bg-gray-50'
+                      : 'fila-interactiva'
                 }`}
               >
                 <td className="px-6 py-3 text-sm text-gray-900">
@@ -400,7 +400,7 @@ export function GuiaDespachoTable({ data, onChange }: GuiaDespachoTableProps) {
                     <button
                       onClick={() => handlePrint(guia)}
                       disabled={printingId === guia.id || estaAnulada(guia)}
-                      className="p-2 text-slate-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition disabled:opacity-50"
+                      className="accion p-2 text-slate-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition disabled:opacity-50"
                       title={estaAnulada(guia) ? 'Guía anulada: no se reimprime' : 'Imprimir'}
                     >
                       {printingId === guia.id ? (
@@ -412,7 +412,7 @@ export function GuiaDespachoTable({ data, onChange }: GuiaDespachoTableProps) {
                     <button
                       onClick={() => handleDownload(guia)}
                       disabled={downloadingId === guia.id || estaAnulada(guia)}
-                      className="p-2 text-slate-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition disabled:opacity-50"
+                      className="accion p-2 text-slate-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition disabled:opacity-50"
                       title={estaAnulada(guia) ? 'Guía anulada: no se descarga' : 'Descargar PDF'}
                     >
                       {downloadingId === guia.id ? (
@@ -427,14 +427,14 @@ export function GuiaDespachoTable({ data, onChange }: GuiaDespachoTableProps) {
                       <>
                         <button
                           onClick={() => abrirCuadro(guia, 'aprobar')}
-                          className="p-2 text-slate-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition"
+                          className="accion p-2 text-slate-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition"
                           title="Aprobar anulación"
                         >
                           <Check size={16} />
                         </button>
                         <button
                           onClick={() => abrirCuadro(guia, 'rechazar')}
-                          className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+                          className="accion p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
                           title="Rechazar anulación"
                         >
                           <X size={16} />
@@ -444,7 +444,7 @@ export function GuiaDespachoTable({ data, onChange }: GuiaDespachoTableProps) {
                     {!estaAnulada(guia) && puedeAnular && !tienePendiente(guia) && (
                       <button
                         onClick={() => abrirCuadro(guia, 'anular')}
-                        className="p-2 text-slate-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition"
+                        className="accion p-2 text-slate-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition"
                         title="Anular guía"
                       >
                         <Ban size={16} />
@@ -453,7 +453,7 @@ export function GuiaDespachoTable({ data, onChange }: GuiaDespachoTableProps) {
                     {!estaAnulada(guia) && !puedeAnular && !tienePendiente(guia) && (
                       <button
                         onClick={() => abrirCuadro(guia, 'solicitar')}
-                        className="p-2 text-slate-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition"
+                        className="accion p-2 text-slate-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition"
                         title="Solicitar anulación"
                       >
                         <Ban size={16} />

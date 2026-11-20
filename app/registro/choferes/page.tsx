@@ -57,7 +57,7 @@ export default function ChoferesPage() {
         </button>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden p-6">
+      <div className="superficie overflow-hidden p-6">
         <ChoferesTable key={refreshKey} onEdit={handleEdit} />
       </div>
 

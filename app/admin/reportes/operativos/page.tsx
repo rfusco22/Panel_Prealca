@@ -66,7 +66,7 @@ function MetrosCubicos({ from, to }: { from: string; to: string }) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="aparecer space-y-6">
       <div className="flex items-center justify-between gap-4">
         <p className="text-xs text-slate-500">
           Mide lo despachado según las guías, no lo facturado.
@@ -137,7 +137,7 @@ function PorResistencia({ from, to }: { from: string; to: string }) {
         <PieChartCard title="Participación por resistencia" data={summary.m3PorResistencia} />
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="superficie overflow-hidden">
         <div className="p-4 border-b border-slate-100">
           <h3 className="text-sm font-bold text-slate-900">Por resistencia</h3>
         </div>
@@ -155,7 +155,7 @@ function PorResistencia({ from, to }: { from: string; to: string }) {
               {data.length === 0 ? (
                 <tr><td colSpan={4} className="px-4 py-8 text-center text-slate-400">Sin despachos en el período seleccionado</td></tr>
               ) : data.map((r: any, i: number) => (
-                <tr key={i} className="border-t border-slate-100 hover:bg-slate-50">
+                <tr key={i} className="border-t border-slate-100 fila-interactiva">
                   <td className="px-4 py-3 font-medium text-slate-900">{r.resistencia}</td>
                   <td className="px-4 py-3 text-right text-slate-700">{r.guias}</td>
                   <td className="px-4 py-3 text-right font-bold text-slate-900">{Number(r.totalM3).toFixed(2)}</td>
@@ -186,7 +186,7 @@ function PorResistencia({ from, to }: { from: string; to: string }) {
 /** Tabla de solo lectura, para los desgloses que no necesitan nada especial. */
 function TablaSimple({ titulo, columnas, filas }: { titulo: string; columnas: string[]; filas: (string | number)[][] }) {
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+    <div className="superficie overflow-hidden">
       <div className="p-4 border-b border-slate-100">
         <h3 className="text-sm font-bold text-slate-900">{titulo}</h3>
       </div>
@@ -203,7 +203,7 @@ function TablaSimple({ titulo, columnas, filas }: { titulo: string; columnas: st
             {filas.length === 0 ? (
               <tr><td colSpan={columnas.length} className="px-4 py-8 text-center text-slate-400">Sin datos para el período seleccionado</td></tr>
             ) : filas.map((fila, i) => (
-              <tr key={i} className="border-t border-slate-100 hover:bg-slate-50">
+              <tr key={i} className="border-t border-slate-100 fila-interactiva">
                 {fila.map((celda, j) => (
                   <td key={j} className={`px-4 py-3 ${j === 0 ? 'text-left font-medium text-slate-900' : 'text-right text-slate-700'}`}>{celda}</td>
                 ))}
@@ -269,7 +269,7 @@ function MateriaPrima({ from, to }: { from: string; to: string }) {
         { label: 'Carga inicial', value: summary.entradasSaldoInicial, icon: <Layers size={18} className="text-slate-600" />, color: 'bg-slate-50' },
       ]} />
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="superficie overflow-hidden">
         <div className="p-4 border-b border-slate-100 flex flex-wrap items-baseline justify-between gap-2">
           <h3 className="text-sm font-bold text-slate-900">Cuánto se gastó</h3>
           <p className="text-xs text-slate-400">
@@ -320,7 +320,7 @@ function MateriaPrima({ from, to }: { from: string; to: string }) {
               </thead>
               <tbody>
                 {gasto.map((r: any, i: number) => (
-                  <tr key={i} className="border-t border-slate-100 hover:bg-slate-50">
+                  <tr key={i} className="border-t border-slate-100 fila-interactiva">
                     <td className="px-4 py-3 font-medium text-slate-900">
                       {r.subCategoria}
                       {r.esFlete && (
@@ -353,7 +353,7 @@ function MateriaPrima({ from, to }: { from: string; to: string }) {
       )}
 
       {gastoDetalle.length > 0 && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="superficie overflow-hidden">
           <div className="p-4 border-b border-slate-100">
             <h3 className="text-sm font-bold text-slate-900">Detalle de pagos de producción</h3>
             <p className="text-xs text-slate-400 mt-0.5">Para ver si un proveedor cambió el precio</p>
@@ -372,7 +372,7 @@ function MateriaPrima({ from, to }: { from: string; to: string }) {
               </thead>
               <tbody>
                 {gastoDetalle.map((r: any) => (
-                  <tr key={r.id} className="border-t border-slate-100 hover:bg-slate-50">
+                  <tr key={r.id} className="border-t border-slate-100 fila-interactiva">
                     <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{formatearFechaCorta(r.fecha)}</td>
                     <td className="px-4 py-3 font-medium text-slate-900">{r.proveedor}</td>
                     <td className="px-4 py-3 text-slate-700">{r.subCategoria}</td>
@@ -409,7 +409,7 @@ function MateriaPrima({ from, to }: { from: string; to: string }) {
         </div>
       )}
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="superficie overflow-hidden">
         <div className="p-4 border-b border-slate-100">
           <h3 className="text-sm font-bold text-slate-900">Comprado por material</h3>
         </div>
@@ -427,7 +427,7 @@ function MateriaPrima({ from, to }: { from: string; to: string }) {
               {data.length === 0 ? (
                 <tr><td colSpan={4} className="px-4 py-8 text-center text-slate-400">Sin compras en el período seleccionado</td></tr>
               ) : data.map((r: any, i: number) => (
-                <tr key={i} className="border-t border-slate-100 hover:bg-slate-50">
+                <tr key={i} className="border-t border-slate-100 fila-interactiva">
                   <td className="px-4 py-3 font-medium text-slate-900">{r.agregado}</td>
                   <td className="px-4 py-3 text-slate-500">{r.unidad}</td>
                   <td className="px-4 py-3 text-right text-slate-700">{r.entradas}</td>
@@ -523,7 +523,7 @@ function ComisionesVendedores({ from, to }: { from: string; to: string }) {
 
       {summary.operaciones > 0 && <BarChartCard title="Comisión en Bs por vendedor" data={summary.comisionPorVendedorBs} />}
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="superficie overflow-hidden">
         <div className="p-4 border-b border-slate-100">
           <h3 className="text-sm font-bold text-slate-900">Por vendedor</h3>
         </div>
@@ -544,7 +544,7 @@ function ComisionesVendedores({ from, to }: { from: string; to: string }) {
               {data.length === 0 ? (
                 <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-400">Sin comisiones en el período seleccionado</td></tr>
               ) : data.map((r: any, i: number) => (
-                <tr key={i} className="border-t border-slate-100 hover:bg-slate-50">
+                <tr key={i} className="border-t border-slate-100 fila-interactiva">
                   <td className="px-4 py-3 font-medium text-slate-900">{r.vendedor}</td>
                   <td className="px-4 py-3 text-right text-slate-500">{r.operaciones}</td>
                   <td className="px-4 py-3 text-right text-slate-600 tabular-nums">{fmt(Number(r.ventaBs))}</td>
@@ -565,7 +565,7 @@ function ComisionesVendedores({ from, to }: { from: string; to: string }) {
       </div>
 
       {detalle.length > 0 && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="superficie overflow-hidden">
           <button onClick={() => setVerDetalle(v => !v)} className="w-full p-4 border-b border-slate-100 flex items-center justify-between hover:bg-slate-50 transition">
             <div className="text-left">
               <h3 className="text-sm font-bold text-slate-900">Detalle por operación</h3>
@@ -591,7 +591,7 @@ function ComisionesVendedores({ from, to }: { from: string; to: string }) {
                   {detalle.map((r: any) => {
                     const esBs = r.moneda === 'BS';
                     return (
-                      <tr key={r.id} className="border-t border-slate-100 hover:bg-slate-50">
+                      <tr key={r.id} className="border-t border-slate-100 fila-interactiva">
                         <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{formatearFechaCorta(r.fecha)}</td>
                         <td className="px-4 py-3 text-slate-700">{r.vendedor}</td>
                         <td className="px-4 py-3 text-slate-600">{r.nombreCliente}</td>
@@ -689,7 +689,7 @@ function PrincipalesClientes({ from, to }: { from: string; to: string }) {
 
       <BarChartCard title={`Top ${Math.min(topN, 10)} por M³`} data={summary.m3PorCliente} />
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="superficie overflow-hidden">
         <div className="p-4 border-b border-slate-100">
           <h3 className="text-sm font-bold text-slate-900">Ranking de clientes</h3>
         </div>
@@ -710,7 +710,7 @@ function PrincipalesClientes({ from, to }: { from: string; to: string }) {
               {visibles.length === 0 ? (
                 <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-400">Sin movimientos en el período seleccionado</td></tr>
               ) : visibles.map((r: any, i: number) => (
-                <tr key={i} className="border-t border-slate-100 hover:bg-slate-50">
+                <tr key={i} className="border-t border-slate-100 fila-interactiva">
                   <td className="px-4 py-3 text-slate-400 tabular-nums">{i + 1}</td>
                   <td className="px-4 py-3 font-medium text-slate-900">
                     {r.cliente}
@@ -825,7 +825,7 @@ export function ViajesPorTrompero({ from, to }: { from: string; to: string }) {
 
       {summary && <BarChartCard title="Viajes por chofer" data={summary.viajesPorChofer} />}
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="superficie overflow-hidden">
         <div className="p-4 border-b border-slate-100">
           <h3 className="text-sm font-bold text-slate-900">Detalle por chofer</h3>
         </div>
@@ -849,7 +849,7 @@ export function ViajesPorTrompero({ from, to }: { from: string; to: string }) {
                 const licencia = documentoVencido(r.licenciaVencimiento);
                 const certificado = documentoVencido(r.certificadoVencimiento);
                 return (
-                  <tr key={i} className="border-t border-slate-100 hover:bg-slate-50">
+                  <tr key={i} className="border-t border-slate-100 fila-interactiva">
                     <td className="px-4 py-3 font-medium text-slate-900">
                       <div className="flex items-center gap-2">
                         <HardHat size={14} className="text-slate-400 shrink-0" />
@@ -880,7 +880,7 @@ export function ViajesPorTrompero({ from, to }: { from: string; to: string }) {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="superficie overflow-hidden">
         <div className="p-4 border-b border-slate-100">
           <h3 className="text-sm font-bold text-slate-900">Viajes por unidad</h3>
           <p className="text-xs text-slate-400 mt-0.5">Para cruzar con el mantenimiento de la flota</p>
@@ -899,7 +899,7 @@ export function ViajesPorTrompero({ from, to }: { from: string; to: string }) {
               {unidades.length === 0 ? (
                 <tr><td colSpan={4} className="px-4 py-8 text-center text-slate-400">Sin datos para el período seleccionado</td></tr>
               ) : unidades.map((u, i) => (
-                <tr key={i} className="border-t border-slate-100 hover:bg-slate-50">
+                <tr key={i} className="border-t border-slate-100 fila-interactiva">
                   <td className="px-4 py-3 font-medium text-slate-900">
                     {u.numeroUnidad ? `#${u.numeroUnidad}` : <span className="text-slate-400">Sin unidad asignada</span>}
                   </td>
@@ -925,7 +925,7 @@ export default function ReportesOperativosPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <Link href={backHref} className="p-2 hover:bg-slate-100 rounded-lg transition">
+        <Link href={backHref} className="accion p-2 hover:bg-slate-100 rounded-lg transition">
           <ArrowLeft size={20} className="text-slate-600" />
         </Link>
         <div className="p-2.5 bg-cyan-50 rounded-xl"><Truck className="w-5 h-5 text-cyan-600" /></div>

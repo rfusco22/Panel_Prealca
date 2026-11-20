@@ -7,7 +7,7 @@ import { ChevronLeft } from 'lucide-react';
 
 export default function NewFacturaPage() {
   return (
-    <div className="space-y-6">
+    <div className="aparecer space-y-6">
       <div className="flex items-center gap-2">
         <Link href="/registro/facturas">
           <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">

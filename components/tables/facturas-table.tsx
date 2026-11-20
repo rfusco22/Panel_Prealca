@@ -45,14 +45,14 @@ export function FacturasTable({ data, onDelete, editLink }: FacturasTableProps) 
 
   if (data.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow p-12 text-center">
+      <div className="superficie p-12 text-center">
         <p className="text-gray-500">No hay facturas registradas</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
+    <div className="superficie overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead className="bg-gray-100 border-b">
@@ -68,7 +68,7 @@ export function FacturasTable({ data, onDelete, editLink }: FacturasTableProps) 
           </thead>
           <tbody>
             {data.map((factura) => (
-              <tr key={factura.id} className="border-b hover:bg-gray-50 transition">
+              <tr key={factura.id} className="border-b fila-interactiva">
                 <td className="px-6 py-3 text-sm font-semibold text-gray-900">F-{factura.id}</td>
                 <td className="px-6 py-3 text-sm text-gray-600">{factura.clienteNombre || `Cliente #${factura.clienteId}`}</td>
                 <td className="px-6 py-3 text-sm text-gray-600">{factura.formaPago || '—'}</td>

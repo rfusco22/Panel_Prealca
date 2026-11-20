@@ -373,7 +373,7 @@ export function ChatWidget() {
                     {connected ? `${onlineUserIds.filter((id) => id !== yo).length} en línea` : 'Reconectando...'}
                   </p>
                 </div>
-                <button onClick={() => setAbierto(false)} className="p-1.5 hover:bg-slate-100 rounded-lg md:hidden"><X size={18} /></button>
+                <button onClick={() => setAbierto(false)} className="accion p-1.5 hover:bg-slate-100 rounded-lg md:hidden"><X size={18} /></button>
               </div>
               <div className="p-3">
                 <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-1.5">
@@ -430,7 +430,7 @@ export function ChatWidget() {
               ) : (
                 <>
                   <header className="px-4 py-3 border-b border-slate-100 flex items-center gap-3">
-                    <button onClick={() => setActivo(null)} className="p-1.5 hover:bg-slate-100 rounded-lg md:hidden"><ArrowLeft size={18} /></button>
+                    <button onClick={() => setActivo(null)} className="accion p-1.5 hover:bg-slate-100 rounded-lg md:hidden"><ArrowLeft size={18} /></button>
                     {activo === 'general' ? (
                       <div className="h-9 w-9 rounded-full bg-indigo-600 text-white flex items-center justify-center"><Hash size={16} /></div>
                     ) : (
@@ -446,7 +446,7 @@ export function ChatWidget() {
                         {contactoActivo && !typingActivo && <> · {ROLES[contactoActivo.role]?.label || contactoActivo.role}</>}
                       </p>
                     </div>
-                    <button onClick={() => setAbierto(false)} className="p-1.5 hover:bg-slate-100 rounded-lg"><X size={18} /></button>
+                    <button onClick={() => setAbierto(false)} className="accion p-1.5 hover:bg-slate-100 rounded-lg"><X size={18} /></button>
                   </header>
 
                   <div className="flex-1 overflow-y-auto px-4 py-3 bg-[#f6f7fb]">

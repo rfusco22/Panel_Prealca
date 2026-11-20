@@ -258,7 +258,7 @@ export default function MateriaPrimaPage() {
           <p className="text-slate-500 font-medium">No hay registros de materia prima.</p>
         </div>
       ) : (
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="superficie overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="bg-slate-50/80 text-[10px] uppercase font-extrabold text-slate-500 tracking-widest border-b border-slate-200">
@@ -275,7 +275,7 @@ export default function MateriaPrimaPage() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {materiaPrima.map((mp) => (
-                  <tr key={mp.id} className="hover:bg-slate-50/80 transition-colors">
+                  <tr key={mp.id} className="fila-interactiva transition-colors">
                     <td className="px-6 py-4 font-medium text-slate-900">
                       {formatearFecha(mp.fecha || mp.created_at)}
                     </td>
@@ -317,14 +317,14 @@ export default function MateriaPrimaPage() {
                           <button
                             onClick={() => abrirEditar(mp)}
                             title="Editar registro"
-                            className="p-2 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+                            className="accion p-2 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-colors"
                           >
                             <Pencil size={16} />
                           </button>
                           <button
                             onClick={() => setAEliminar(mp)}
                             title="Eliminar registro"
-                            className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                            className="accion p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
                           >
                             <Trash2 size={16} />
                           </button>

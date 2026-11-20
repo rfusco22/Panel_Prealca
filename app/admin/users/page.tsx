@@ -229,7 +229,7 @@ export default function AdminUsersPage() {
       </div>
 
       {/* TABLE */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+      <div className="superficie overflow-hidden">
         {loading ? (
           <div className="p-12 text-center"><Loader2 size={24} className="animate-spin text-slate-300 mx-auto" /></div>
         ) : users.length === 0 ? (
@@ -257,7 +257,7 @@ export default function AdminUsersPage() {
                   const RoleIcon = roleInfo.icon;
                   const isOnline = onlineUserIds.includes(user.id);
                   return (
-                    <tr key={user.id} className="hover:bg-slate-50/80 transition-colors group">
+                    <tr key={user.id} className="fila-interactiva transition-colors group">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="relative">
@@ -293,10 +293,10 @@ export default function AdminUsersPage() {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => openEdit(user)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                          <button onClick={() => openEdit(user)} className="accion p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                             <Edit2 size={15} />
                           </button>
-                          <button onClick={() => handleDelete(user.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                          <button onClick={() => handleDelete(user.id)} className="accion p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
                             <Trash2 size={15} />
                           </button>
                         </div>

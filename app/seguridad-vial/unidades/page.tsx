@@ -199,7 +199,7 @@ export default function AdminUnidadesPage() {
       )}
 
       {/* --- TABLA --- */}
-      <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+      <div className="superficie overflow-hidden">
         {loading ? (
           <div className="text-center py-20">
             <div className="animate-spin w-6 h-6 border-2 border-slate-800 border-t-transparent rounded-full mx-auto mb-4"></div>
@@ -233,7 +233,7 @@ export default function AdminUnidadesPage() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {unidades.map((unidad) => (
-                  <tr key={unidad.id} className="hover:bg-slate-50 transition-colors group">
+                  <tr key={unidad.id} className="fila-interactiva transition-colors group">
                     <td className="px-6 py-4 font-bold text-slate-900">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-slate-100 text-slate-700 rounded-lg flex items-center justify-center shrink-0">
@@ -285,13 +285,13 @@ export default function AdminUnidadesPage() {
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button 
                           onClick={() => handleEdit(unidad)}
-                          className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                          className="accion p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
                         >
                           <Edit2 size={16} />
                         </button>
                         <button 
                           onClick={() => handleDelete(unidad.id)} 
-                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                          className="accion p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
                         >
                           <Trash2 size={16} />
                         </button>

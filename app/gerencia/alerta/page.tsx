@@ -152,10 +152,10 @@ export default function GerenciaAlertaPage() {
           <p className="text-slate-400 text-sm mt-1">No hay alertas activas en este momento.</p>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="aparecer space-y-6">
           {/* CHOFERES */}
           {(tab === 'todas' || tab === 'choferes') && choferes.length > 0 && (
-            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+            <div className="superficie overflow-hidden">
               <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
                 <div className="h-9 w-9 rounded-lg bg-amber-100 flex items-center justify-center">
                   <Truck size={18} className="text-amber-600" />
@@ -195,7 +195,7 @@ export default function GerenciaAlertaPage() {
 
           {/* BAJO STOCK */}
           {(tab === 'todas' || tab === 'stock') && materiaPrima.length > 0 && (
-            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+            <div className="superficie overflow-hidden">
               <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
                 <div className="h-9 w-9 rounded-lg bg-red-100 flex items-center justify-center">
                   <Package size={18} className="text-red-600" />
@@ -230,7 +230,7 @@ export default function GerenciaAlertaPage() {
 
           {/* PRODUCCIÓN BAJA */}
           {(tab === 'todas' || tab === 'produccion') && produccion.length > 0 && (
-            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+            <div className="superficie overflow-hidden">
               <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
                 <div className="h-9 w-9 rounded-lg bg-orange-100 flex items-center justify-center">
                   <Factory size={18} className="text-orange-600" />
@@ -263,7 +263,7 @@ export default function GerenciaAlertaPage() {
 
           {/* PEDIDOS PENDIENTES */}
           {(tab === 'todas' || tab === 'pedidos') && pedidos.length > 0 && (
-            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+            <div className="superficie overflow-hidden">
               <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
                 <div className="h-9 w-9 rounded-lg bg-violet-100 flex items-center justify-center">
                   <ShoppingCart size={18} className="text-violet-600" />

@@ -62,7 +62,7 @@ export default function VendedoresTable({ data, isLoading, error, onEdit, onDele
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {data.map((vendedor) => (
-            <tr key={vendedor.id} className="hover:bg-gray-50 transition-colors">
+            <tr key={vendedor.id} className="fila-interactiva transition-colors">
               <td className="px-4 py-3 text-gray-500">#{vendedor.id}</td>
               <td className="px-4 py-3 font-medium text-gray-900">{vendedor.nombre}</td>
               <td className="px-4 py-3 text-gray-700">{vendedor.cedula}</td>

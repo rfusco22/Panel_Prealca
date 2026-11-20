@@ -34,7 +34,7 @@ export function DateRangePicker({ from, to, onChange }: DateRangePickerProps) {
       {(from || to) && (
         <button
           onClick={() => onChange('', '')}
-          className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition"
+          className="accion p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition"
           title="Limpiar filtros"
         >
           <X size={15} />

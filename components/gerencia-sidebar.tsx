@@ -286,7 +286,7 @@ export function GerenciaSidebar({
             >
               <div className="h-20 flex items-center justify-between px-5 shrink-0">
                 <Marca compacta={false} />
-                <button onClick={onCloseMobile} className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition" aria-label="Cerrar menú">
+                <button onClick={onCloseMobile} className="accion p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition" aria-label="Cerrar menú">
                   <X size={20} />
                 </button>
               </div>

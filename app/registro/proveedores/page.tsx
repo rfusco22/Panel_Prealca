@@ -116,13 +116,13 @@ export default function ProveedoresPage() {
           <p className="text-slate-500 mt-3 font-medium">Cargando proveedores...</p>
         </div>
       ) : proveedores.length === 0 ? (
-        <div className="text-center py-16 bg-white border border-slate-200 rounded-2xl shadow-sm">
+        <div className="text-center py-16 superficie">
           <p className="text-slate-400 text-lg">No hay proveedores registrados</p>
         </div>
       ) : (
         <>
           {/* Desktop table */}
-          <div className="hidden lg:block bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+          <div className="hidden lg:block superficie overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead className="bg-slate-50 border-b border-slate-200">
@@ -137,7 +137,7 @@ export default function ProveedoresPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {proveedores.map((prov) => (
-                    <tr key={prov.id} className="hover:bg-slate-50 transition-colors">
+                    <tr key={prov.id} className="fila-interactiva transition-colors">
                       <td className="px-6 py-4 text-sm font-medium text-slate-900">{prov.nombre}</td>
                       <td className="px-6 py-4 text-sm text-slate-600 font-mono">{prov.rif}</td>
                       <td className="px-6 py-4">

@@ -45,7 +45,7 @@ export default function ReporteRetencionesPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="aparecer space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Reporte de Retenciones</h1>
@@ -71,7 +71,7 @@ export default function ReporteRetencionesPage() {
         {summary && <BarChartCard title="Retenciones por Cliente" data={summary.byCliente} />}
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="superficie overflow-hidden">
         <div className="p-4 border-b border-slate-100">
           <h3 className="text-sm font-bold text-slate-900">Detalle de Retenciones</h3>
         </div>
@@ -93,7 +93,7 @@ export default function ReporteRetencionesPage() {
               ) : data.length === 0 ? (
                 <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-400">Sin datos para el período seleccionado</td></tr>
               ) : data.map((r, i) => (
-                <tr key={i} className="border-t border-slate-100 hover:bg-slate-50">
+                <tr key={i} className="border-t border-slate-100 fila-interactiva">
                   <td className="px-4 py-3 text-slate-700">{r.fecha ? formatearFecha(r.fecha) : '—'}</td>
                   <td className="px-4 py-3 text-slate-700">{r.cliente_nombre}</td>
                   <td className="px-4 py-3 text-slate-700">{r.cliente_rif}</td>

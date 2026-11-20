@@ -161,7 +161,7 @@ export default function EstadoCuentaContent() {
       <div className="space-y-6 animate-in fade-in duration-300">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <button onClick={() => { setSeleccionado(null); setFrom(''); setTo(''); }} className="p-2 hover:bg-slate-100 rounded-lg transition" title="Volver">
+            <button onClick={() => { setSeleccionado(null); setFrom(''); setTo(''); }} className="accion p-2 hover:bg-slate-100 rounded-lg transition" title="Volver">
               <ArrowLeft size={20} className="text-slate-600" />
             </button>
             <div className="p-2.5 bg-indigo-50 rounded-xl"><BookOpen className="w-5 h-5 text-indigo-600" /></div>
@@ -191,7 +191,7 @@ export default function EstadoCuentaContent() {
               { label: 'Saldo', value: bs(d.resumen.saldoFinal), icon: <Scale size={18} className={d.resumen.saldoFinal > 0 ? 'text-red-600' : 'text-emerald-600'} />, color: d.resumen.saldoFinal > 0 ? 'bg-red-50' : 'bg-emerald-50' },
             ]} />
 
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="superficie overflow-hidden">
               <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
                 <h3 className="font-bold text-slate-900">Movimientos</h3>
                 <span className="text-xs text-slate-500">Pagado en divisas (histórico): {usd(d.resumen.totalPagadoUsd)}</span>
@@ -220,7 +220,7 @@ export default function EstadoCuentaContent() {
                       <tr><td colSpan={6} className="px-4 py-10 text-center text-slate-400">Sin movimientos en el período.</td></tr>
                     )}
                     {d.movimientos.map((m) => (
-                      <tr key={`${m.tipo}-${m.id}`} className="hover:bg-slate-50">
+                      <tr key={`${m.tipo}-${m.id}`} className="fila-interactiva">
                         <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap">{formatearFechaCorta(m.fecha)}</td>
                         <td className="px-4 py-2.5 whitespace-nowrap">
                           <span className={`inline-flex items-center gap-1.5 font-medium ${m.tipo === 'factura' ? 'text-blue-700' : 'text-emerald-700'}`}>
@@ -249,7 +249,7 @@ export default function EstadoCuentaContent() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="superficie overflow-hidden">
                 <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-2">
                   <AlertCircle size={16} className="text-amber-500" />
                   <h3 className="font-bold text-slate-900">Facturas no marcadas como pagadas</h3>
@@ -275,7 +275,7 @@ export default function EstadoCuentaContent() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="superficie overflow-hidden">
                 <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Truck size={16} className="text-cyan-600" />
@@ -343,7 +343,7 @@ export default function EstadoCuentaContent() {
 
       {error && <div className="p-3 rounded-lg bg-red-50 text-red-700 text-sm">{error}</div>}
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="superficie overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-slate-50 text-slate-500 text-xs uppercase">

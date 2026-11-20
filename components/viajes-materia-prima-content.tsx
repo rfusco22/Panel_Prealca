@@ -249,7 +249,7 @@ export default function ViajesMateriaPrimaContent() {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="superficie overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-slate-50 text-slate-500 text-xs uppercase">
@@ -270,7 +270,7 @@ export default function ViajesMateriaPrimaContent() {
               {!loading && filtrados.map((v) => {
                 const E = ESTADOS[v.estado] || ESTADOS.en_ruta;
                 return (
-                  <tr key={v.id} className="hover:bg-slate-50">
+                  <tr key={v.id} className="fila-interactiva">
                     <td className="px-4 py-3 whitespace-nowrap">
                       <p className="font-medium text-slate-800">{formatearFechaCorta(v.fecha)}</p>
                       <p className="text-[11px] text-slate-400">#{v.id}{v.nroGuiaProveedor ? ` · Guía ${v.nroGuiaProveedor}` : ''}</p>
@@ -294,13 +294,13 @@ export default function ViajesMateriaPrimaContent() {
                         {v.estado === 'en_ruta' && puedeCrear && (
                           <>
                             <button onClick={() => abrirRecibir(v)} className="px-2.5 py-1 text-xs font-semibold rounded-md bg-emerald-600 text-white hover:bg-emerald-700" title="Marcar como recibido">Recibir</button>
-                            <button onClick={() => cancelarViaje(v)} className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-md" title="Cancelar viaje"><XCircle size={16} /></button>
+                            <button onClick={() => cancelarViaje(v)} className="accion p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-md" title="Cancelar viaje"><XCircle size={16} /></button>
                           </>
                         )}
                         {puedeGestionar && (
                           <>
-                            <button onClick={() => abrirEditar(v)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md" title="Editar"><Pencil size={16} /></button>
-                            <button onClick={() => eliminar(v)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md" title="Eliminar"><Trash2 size={16} /></button>
+                            <button onClick={() => abrirEditar(v)} className="accion p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md" title="Editar"><Pencil size={16} /></button>
+                            <button onClick={() => eliminar(v)} className="accion p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md" title="Eliminar"><Trash2 size={16} /></button>
                           </>
                         )}
                       </div>
@@ -320,7 +320,7 @@ export default function ViajesMateriaPrimaContent() {
               <h2 className="text-lg font-bold text-slate-900">
                 {modal.modo === 'nuevo' ? 'Nuevo viaje de materia prima' : modal.modo === 'editar' ? `Editar viaje #${modal.viaje.id}` : `Recibir viaje #${modal.viaje.id}`}
               </h2>
-              <button type="button" onClick={() => setModal(null)} className="p-1.5 hover:bg-slate-100 rounded-lg"><X size={18} /></button>
+              <button type="button" onClick={() => setModal(null)} className="accion p-1.5 hover:bg-slate-100 rounded-lg"><X size={18} /></button>
             </div>
 
             <div className="p-6 space-y-4">
