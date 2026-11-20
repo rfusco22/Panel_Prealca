@@ -40,7 +40,11 @@ export function IngresoForm({ onAdd, onClose }: IngresoFormProps) {
   const [tipoDocumento, setTipoDocumento] = useState('FACTURA');
   // Premezclado o Prealca: la misma división que las guías de despacho. El
   // ingreso no está atado a una guía, así que lo elige quien lo registra.
-  const [tipo, setTipo] = useState<'PREMEZCLADO' | 'PREALCA'>('PREMEZCLADO');
+  //
+  // Arranca vacío a propósito, y es obligatorio. Con un valor por defecto, el
+  // que se apura deja todo como Premezclado sin mirar y el reporte queda
+  // mintiendo; prefiero que el formulario no deje seguir.
+  const [tipo, setTipo] = useState<'' | 'PREMEZCLADO' | 'PREALCA'>('');
   const [referencia, setReferencia] = useState('');
   const [comprobantes, setComprobantes] = useState<{ name: string; url: string }[]>([]);
   const [errorComprobante, setErrorComprobante] = useState<string | null>(null);
@@ -114,6 +118,10 @@ export function IngresoForm({ onAdd, onClose }: IngresoFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!bancoId || !clienteId || !referencia) return;
+    if (!tipo) {
+      setSubmitError('Indique si el ingreso es de Premezclado o de Prealca.');
+      return;
+    }
 
     const bancoSeleccionado = listaBancos.find((b: any) => b.id === Number(bancoId));
     setSubmitError(null);
@@ -148,7 +156,7 @@ export function IngresoForm({ onAdd, onClose }: IngresoFormProps) {
         setBancoId(''); setClienteId(''); setNombreCliente(''); setRif(''); setVendedor('');
         setValorComision(''); setDescripcion(''); setM3(''); setResistencia('');
         setPrecioBs(''); setPrecioUsd(''); setMonedaEntrada('BS');
-        setAplicaIva(false); setTipoDocumento('FACTURA'); setTipo('PREMEZCLADO');
+        setAplicaIva(false); setTipoDocumento('FACTURA'); setTipo('');
         setReferencia(''); setComprobantes([]); setShowSuccess(false);
       }, 1500);
     } catch (err: any) {
@@ -310,7 +318,7 @@ export function IngresoForm({ onAdd, onClose }: IngresoFormProps) {
             </div>
 
             <div>
-              <label className={labelCls}>Tipo</label>
+              <label className={labelCls}>Tipo *</label>
               <div className="flex gap-2">
                 <button
                   type="button"

@@ -11,7 +11,13 @@
 -- tienen con qué completarse. Adivinarles un tipo sería meter plata en una
 -- categoría que nadie eligió, así que quedan en NULL y en el reporte salen
 -- como "—". Si hace falta clasificarlos, se hace a mano con un UPDATE por
--- referencia bancaria, sabiendo cuál es cuál.
+-- referencia bancaria, sabiendo cuál es cuál:
+--
+--   UPDATE ingresos SET tipo = 'PREALCA' WHERE referencia IN ('...', '...');
+--   UPDATE ingresos SET tipo = 'PREMEZCLADO' WHERE referencia IN ('...');
+--
+-- Para los ingresos NUEVOS el tipo es obligatorio: lo exige el formulario y
+-- lo rechaza la API (400) si no viene. El NULL es solo para lo ya cargado.
 --
 -- El reporte de Ingresos muestra la columna Tipo y tiene pestañas
 -- Todos / Premezclado / Prealca que filtran el detalle.

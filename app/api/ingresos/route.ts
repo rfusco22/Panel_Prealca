@@ -69,7 +69,17 @@ export async function POST(request: Request) {
     await ensureColumns();
     const body = await request.json();
     const { banco, nombreCliente, rif, vendedor, comision_porcentaje, comision_monto, descripcion, m3, resistencia, tasaCambio, aplicaIva, tipoDocumento, referencia } = body;
+    // Obligatorio para los ingresos nuevos: sin esto el reporte por tipo no
+    // sirve, y un valor por defecto significaría clasificar plata sin que
+    // nadie lo haya decidido. Los ingresos viejos quedan en NULL porque ya
+    // estaban cargados, no porque se permita omitirlo.
     const tipo = tipoIngreso(body.tipo);
+    if (!tipo) {
+      return NextResponse.json(
+        { success: false, error: 'Debe indicar si el ingreso es de Premezclado o de Prealca.' },
+        { status: 400 },
+      );
+    }
 
     // En qué moneda entró la plata. Importa para la comisión del vendedor,
     // que se paga en la moneda del pago. Si no llega, se asume bolívares:
