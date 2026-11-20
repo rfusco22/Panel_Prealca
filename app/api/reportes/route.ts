@@ -29,6 +29,10 @@ const ROLES_POR_DEFECTO: readonly Rol[] = ['admin', 'gerencia'];
 // Ver sql/migracion_fecha_observaciones_guia.sql.
 const FECHA_GUIA = 'COALESCE(gd.fecha, gd.created_at)';
 
+// Las guías anuladas (camión accidentado, despacho rehecho con otra unidad) no
+// son despacho: no suman M³, ni viajes, ni consumo de materia prima.
+const GUIA_VIGENTE = 'AND COALESCE(gd.anulada, 0) = 0';
+
 export async function GET(request: Request) {
   const auth = await requireAuth();
   if (auth.response) return auth.response;
@@ -494,7 +498,7 @@ export async function GET(request: Request) {
                   COUNT(*) AS guias, SUM(gd.cantidad_m3) AS totalM3
            FROM guia_despacho gd
            JOIN clientes c ON gd.cliente_id = c.id
-           WHERE 1=1 ${dateFilterGuias}
+           WHERE 1=1 ${GUIA_VIGENTE} ${dateFilterGuias}
            GROUP BY c.id, c.nombre, c.rif, c.vendedor
            ORDER BY totalM3 DESC`,
           params
@@ -597,7 +601,7 @@ export async function GET(request: Request) {
                   COUNT(*) AS guias,
                   SUM(gd.cantidad_m3) AS totalM3
            FROM guia_despacho gd
-           WHERE 1=1 ${dateFilterGuias}
+           WHERE 1=1 ${GUIA_VIGENTE} ${dateFilterGuias}
            GROUP BY DATE_FORMAT(${FECHA_GUIA}, '%Y-%m')
            ORDER BY mes DESC`,
           params
@@ -606,7 +610,7 @@ export async function GET(request: Request) {
         const porTipo: any = await query(
           `SELECT gd.tipo, COUNT(*) AS guias, SUM(gd.cantidad_m3) AS totalM3
            FROM guia_despacho gd
-           WHERE 1=1 ${dateFilterGuias}
+           WHERE 1=1 ${GUIA_VIGENTE} ${dateFilterGuias}
            GROUP BY gd.tipo
            ORDER BY totalM3 DESC`,
           params
@@ -619,7 +623,7 @@ export async function GET(request: Request) {
                   COUNT(*) AS guias,
                   SUM(gd.cantidad_m3) AS totalM3
            FROM guia_despacho gd
-           WHERE 1=1 ${dateFilterGuias}
+           WHERE 1=1 ${GUIA_VIGENTE} ${dateFilterGuias}
            GROUP BY COALESCE(NULLIF(TRIM(gd.obra), ''), 'Sin obra')
            ORDER BY totalM3 DESC`,
           params
@@ -685,7 +689,7 @@ export async function GET(request: Request) {
                   SUM(gd.cantidad_m3) AS totalM3
            FROM guia_despacho gd
            LEFT JOIN productos p ON gd.producto_id = p.id
-           WHERE 1=1 ${dateFilterGuias}
+           WHERE 1=1 ${GUIA_VIGENTE} ${dateFilterGuias}
            GROUP BY ${normalizada}
            ORDER BY totalM3 DESC`,
           params
@@ -698,7 +702,7 @@ export async function GET(request: Request) {
                   SUM(gd.cantidad_m3) AS totalM3
            FROM guia_despacho gd
            LEFT JOIN productos p ON gd.producto_id = p.id
-           WHERE 1=1 ${dateFilterGuias}
+           WHERE 1=1 ${GUIA_VIGENTE} ${dateFilterGuias}
            GROUP BY ${normalizada}, COALESCE(p.pulgada, '—')
            ORDER BY resistencia, pulgada`,
           params
@@ -760,7 +764,7 @@ export async function GET(request: Request) {
              COUNT(DISTINCT gd.unidad_id) AS unidadesDistintas
            FROM guia_despacho gd
            LEFT JOIN choferes ch ON gd.chofer_id = ch.id
-           WHERE 1=1 ${dateFilterGuias}
+           WHERE 1=1 ${GUIA_VIGENTE} ${dateFilterGuias}
            GROUP BY gd.chofer_id, COALESCE(ch.nombre, gd.chofer), ch.cedula,
                     ch.licencia_vencimiento, ch.certificado_vencimiento
            ORDER BY viajes DESC, totalM3 DESC`,
@@ -776,7 +780,7 @@ export async function GET(request: Request) {
              SUM(gd.cantidad_m3) AS totalM3
            FROM guia_despacho gd
            LEFT JOIN unidades un ON gd.unidad_id = un.id
-           WHERE 1=1 ${dateFilterGuias}
+           WHERE 1=1 ${GUIA_VIGENTE} ${dateFilterGuias}
            GROUP BY gd.unidad_id, un.numero_unidad, un.placa
            ORDER BY viajes DESC`,
           params

@@ -49,7 +49,7 @@ export async function GET(req: Request) {
           (SELECT COALESCE(SUM(${MONTO_INGRESO}), 0) FROM ingresos i WHERE ${MATCH_INGRESO}) AS totalPagado,
           (SELECT COALESCE(SUM(i.precioDivisa), 0) FROM ingresos i WHERE ${MATCH_INGRESO}) AS totalPagadoUsd,
           (SELECT COUNT(*) FROM ingresos i WHERE ${MATCH_INGRESO}) AS cantidadPagos,
-          (SELECT COALESCE(SUM(gd.cantidad_m3), 0) FROM guia_despacho gd WHERE gd.cliente_id = c.id) AS totalM3,
+          (SELECT COALESCE(SUM(gd.cantidad_m3), 0) FROM guia_despacho gd WHERE gd.cliente_id = c.id AND COALESCE(gd.anulada, 0) = 0) AS totalM3,
           (SELECT MAX(f.created_at) FROM facturas f WHERE f.cliente_id = c.id) AS ultimaFactura,
           (SELECT MAX(i.createdAt) FROM ingresos i WHERE ${MATCH_INGRESO}) AS ultimoPago
         FROM clientes c
@@ -112,7 +112,7 @@ export async function GET(req: Request) {
        FROM guia_despacho gd
        LEFT JOIN productos p ON gd.producto_id = p.id
        LEFT JOIN choferes ch ON gd.chofer_id = ch.id
-       WHERE gd.cliente_id = ?
+       WHERE gd.cliente_id = ? AND COALESCE(gd.anulada, 0) = 0
        ORDER BY COALESCE(gd.fecha, gd.created_at) DESC, gd.id DESC`,
       [clienteId]
     );

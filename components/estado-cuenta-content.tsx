@@ -118,7 +118,7 @@ export default function EstadoCuentaContent() {
   useEffect(() => {
     if (!socket) return;
     const actualizar = () => setRefresh((k) => k + 1);
-    const eventos = ['facturas:created', 'facturas:updated', 'facturas:deleted', 'ingresos:created', 'ingresos:updated', 'ingresos:deleted', 'guia-despacho:created'];
+    const eventos = ['facturas:created', 'facturas:updated', 'facturas:deleted', 'ingresos:created', 'ingresos:updated', 'ingresos:deleted', 'guia-despacho:created', 'guia-despacho:anulada'];
     eventos.forEach((e) => socket.on(e, actualizar));
     return () => { eventos.forEach((e) => socket.off(e, actualizar)); };
   }, [socket]);

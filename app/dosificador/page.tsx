@@ -46,6 +46,7 @@ export default function DosificadorDashboard() {
 
     socket.on('guia-despacho:created', handleUpdate);
     socket.on('guia-despacho:deleted', handleUpdate);
+    socket.on('guia-despacho:anulada', handleUpdate);
     socket.on('materia-prima:created', handleUpdate);
     socket.on('materia-prima:updated', handleUpdate);
     socket.on('materia-prima:deleted', handleUpdate);
@@ -56,6 +57,7 @@ export default function DosificadorDashboard() {
     return () => {
       socket.off('guia-despacho:created', handleUpdate);
       socket.off('guia-despacho:deleted', handleUpdate);
+      socket.off('guia-despacho:anulada', handleUpdate);
       socket.off('materia-prima:created', handleUpdate);
       socket.off('materia-prima:updated', handleUpdate);
       socket.off('materia-prima:deleted', handleUpdate);

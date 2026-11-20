@@ -1,6 +1,6 @@
 'use client';
 
-import { Printer, Download } from 'lucide-react';
+import { Printer, Download, Ban, AlertCircle, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { generateGuiaDespachoHtml, generatePrealcaHtml, generateServicioBombaHtml } from '@/lib/document-templates';
 import { formatearFecha } from '@/lib/fecha';
@@ -35,10 +35,20 @@ interface GuiaDespacho {
   pedidoObra?: string;
   /** Texto libre que escribió quien emitió la guía. Se reimprime tal cual. */
   observaciones?: string;
+  /** 1 cuando la guía fue anulada: no se reimprime ni suma en ningún lado. */
+  anulada?: number | boolean;
+  motivoAnulacion?: string;
+  anuladaAt?: string;
 }
 
 interface GuiaDespachoTableProps {
   data: GuiaDespacho[];
+  /** Se llama después de anular, para que el listado se refresque. */
+  onChange?: () => void;
+}
+
+function estaAnulada(guia: GuiaDespacho): boolean {
+  return guia.anulada === 1 || guia.anulada === true;
 }
 
 // Al reimprimir se usa guia.chofer (el nombre que quedó guardado al emitirla) y
@@ -105,15 +115,53 @@ function buildGuiaHtml(guia: GuiaDespacho, van: number, de: number): string {
       });
 }
 
-export function GuiaDespachoTable({ data }: GuiaDespachoTableProps) {
+export function GuiaDespachoTable({ data, onChange }: GuiaDespachoTableProps) {
   const [printingId, setPrintingId] = useState<number | null>(null);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
+  // Anular pide motivo, así que va por un cuadro propio y no por un confirm():
+  // el motivo queda guardado y es lo único que explica después ese número de
+  // guía sin despacho.
+  const [guiaAAnular, setGuiaAAnular] = useState<GuiaDespacho | null>(null);
+  const [motivo, setMotivo] = useState('');
+  const [anulando, setAnulando] = useState(false);
+  const [errorAnular, setErrorAnular] = useState<string | null>(null);
+
+  const abrirAnular = (guia: GuiaDespacho) => {
+    setGuiaAAnular(guia);
+    setMotivo('');
+    setErrorAnular(null);
+  };
+
+  const confirmarAnular = async () => {
+    if (!guiaAAnular) return;
+    if (motivo.trim().length < 3) {
+      setErrorAnular('Escriba el motivo de la anulación.');
+      return;
+    }
+    setAnulando(true);
+    setErrorAnular(null);
+    try {
+      const res = await fetch('/api/guia-despacho', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: guiaAAnular.id, motivo: motivo.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || 'No se pudo anular la guía');
+      setGuiaAAnular(null);
+      onChange?.();
+    } catch (e) {
+      setErrorAnular(e instanceof Error ? e.message : 'No se pudo anular la guía');
+    } finally {
+      setAnulando(false);
+    }
+  };
 
   const getVanDe = (guia: GuiaDespacho) => {
     if (!guia.pedidoId) return { van: 0, de: 0 };
     const de = Number(guia.pedidoTotalM3) || 0;
     const priorM3 = data
-      .filter(g => g.pedidoId === guia.pedidoId && g.id < guia.id)
+      .filter(g => g.pedidoId === guia.pedidoId && g.id < guia.id && !estaAnulada(g))
       .reduce((sum, g) => sum + (Number(g.cantidadM3) || 0), 0);
     const van = priorM3 + Number(guia.cantidadM3);
     return { van, de };
@@ -205,7 +253,10 @@ export function GuiaDespachoTable({ data }: GuiaDespachoTableProps) {
           </thead>
           <tbody>
             {data.map((guia) => (
-              <tr key={guia.id} className="border-b hover:bg-gray-50 transition">
+              <tr
+                key={guia.id}
+                className={`border-b transition ${estaAnulada(guia) ? 'bg-red-50/40 text-gray-400' : 'hover:bg-gray-50'}`}
+              >
                 <td className="px-6 py-3 text-sm text-gray-900">
                   {formatearFecha(guia.fecha)}
                 </td>
@@ -221,8 +272,18 @@ export function GuiaDespachoTable({ data }: GuiaDespachoTableProps) {
                   >
                     {guia.tipo}
                   </span>
+                  {estaAnulada(guia) && (
+                    <span className="ml-2 px-2 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">
+                      ANULADA
+                    </span>
+                  )}
                 </td>
-                <td className="px-6 py-3 text-sm text-gray-600">{guia.clienteNombre}</td>
+                <td className="px-6 py-3 text-sm text-gray-600">
+                  {guia.clienteNombre}
+                  {estaAnulada(guia) && guia.motivoAnulacion && (
+                    <span className="block text-xs text-red-600 mt-0.5">Motivo: {guia.motivoAnulacion}</span>
+                  )}
+                </td>
                 <td className="px-6 py-3 text-sm text-gray-600">{guia.productoNombre}</td>
                 <td className="px-6 py-3 text-sm text-gray-900 font-medium">
                   {Number(guia.cantidadM3) ? Number(guia.cantidadM3).toFixed(2) : '-'}
@@ -232,9 +293,9 @@ export function GuiaDespachoTable({ data }: GuiaDespachoTableProps) {
                   <div className="flex gap-1 justify-center">
                     <button
                       onClick={() => handlePrint(guia)}
-                      disabled={printingId === guia.id}
+                      disabled={printingId === guia.id || estaAnulada(guia)}
                       className="p-2 text-slate-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition disabled:opacity-50"
-                      title="Imprimir"
+                      title={estaAnulada(guia) ? 'Guía anulada: no se reimprime' : 'Imprimir'}
                     >
                       {printingId === guia.id ? (
                         <span className="animate-spin inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full" />
@@ -244,9 +305,9 @@ export function GuiaDespachoTable({ data }: GuiaDespachoTableProps) {
                     </button>
                     <button
                       onClick={() => handleDownload(guia)}
-                      disabled={downloadingId === guia.id}
+                      disabled={downloadingId === guia.id || estaAnulada(guia)}
                       className="p-2 text-slate-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition disabled:opacity-50"
-                      title="Descargar PDF"
+                      title={estaAnulada(guia) ? 'Guía anulada: no se descarga' : 'Descargar PDF'}
                     >
                       {downloadingId === guia.id ? (
                         <span className="animate-spin inline-block w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full" />
@@ -254,6 +315,15 @@ export function GuiaDespachoTable({ data }: GuiaDespachoTableProps) {
                         <Download size={16} />
                       )}
                     </button>
+                    {!estaAnulada(guia) && (
+                      <button
+                        onClick={() => abrirAnular(guia)}
+                        className="p-2 text-slate-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition"
+                        title="Anular guía"
+                      >
+                        <Ban size={16} />
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -261,6 +331,65 @@ export function GuiaDespachoTable({ data }: GuiaDespachoTableProps) {
           </tbody>
         </table>
       </div>
+
+      {guiaAAnular && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2.5 bg-red-50 rounded-xl"><Ban className="w-5 h-5 text-red-600" /></div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">Anular guía</h3>
+                <p className="text-sm text-slate-500">
+                  GD-{guiaAAnular.numeroGuia ?? guiaAAnular.id} — {guiaAAnular.clienteNombre} — {Number(guiaAAnular.cantidadM3).toFixed(2)} M³
+                </p>
+              </div>
+            </div>
+
+            <p className="text-sm text-slate-600 mb-4">
+              La guía queda registrada con su número, marcada como anulada, y deja de contar en
+              inventario, en el pedido y en los reportes. Después se carga la guía nueva, que lleva
+              su propio número.
+            </p>
+
+            <label className="block text-xs font-semibold text-slate-600 mb-1.5">Motivo de la anulación</label>
+            <textarea
+              value={motivo}
+              onChange={(e) => setMotivo(e.target.value)}
+              rows={3}
+              maxLength={255}
+              autoFocus
+              placeholder="Ej: el camión se accidentó, se rehace con otra unidad"
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100 text-sm text-slate-900 resize-y"
+            />
+
+            {errorAnular && (
+              <p className="text-red-600 text-xs mt-2 font-medium flex items-center gap-1">
+                <AlertCircle size={12} />{errorAnular}
+              </p>
+            )}
+
+            <div className="flex justify-end gap-3 mt-5">
+              <button
+                type="button"
+                onClick={() => setGuiaAAnular(null)}
+                disabled={anulando}
+                className="px-4 py-2.5 rounded-lg text-sm font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition disabled:opacity-40"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={confirmarAnular}
+                disabled={anulando}
+                className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg shadow-md transition disabled:opacity-40 flex items-center gap-2"
+              >
+                {anulando && <Loader2 size={15} className="animate-spin" />}
+                {anulando ? 'Anulando...' : 'Anular guía'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

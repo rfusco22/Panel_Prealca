@@ -25,7 +25,7 @@ export async function GET() {
         COUNT(*) AS total_guias
       FROM guia_despacho gd
       JOIN productos p ON gd.producto_id = p.id
-      WHERE gd.fecha >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+      WHERE gd.fecha >= DATE_SUB(NOW(), INTERVAL 30 DAY) AND COALESCE(gd.anulada, 0) = 0
       GROUP BY gd.producto_id, p.resistencia, p.pulgada, p.unidad
       HAVING SUM(gd.cantidad_m3) < 200
       ORDER BY total_despachado ASC
@@ -40,7 +40,7 @@ export async function GET() {
         p.unidad,
         COALESCE(SUM(gd.cantidad_m3), 0) AS total_despachado
       FROM productos p
-      LEFT JOIN guia_despacho gd ON p.id = gd.producto_id AND gd.fecha >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+      LEFT JOIN guia_despacho gd ON p.id = gd.producto_id AND gd.fecha >= DATE_SUB(NOW(), INTERVAL 30 DAY) AND COALESCE(gd.anulada, 0) = 0
       GROUP BY p.id, p.resistencia, p.pulgada, p.unidad
       HAVING total_despachado < 200
       ORDER BY total_despachado ASC

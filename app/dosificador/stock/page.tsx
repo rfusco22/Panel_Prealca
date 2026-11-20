@@ -53,6 +53,7 @@ export default function DosificadorStockPage() {
     socket.on('materia-prima:deleted', handleUpdate);
     socket.on('guia-despacho:created', handleUpdate);
     socket.on('guia-despacho:deleted', handleUpdate);
+    socket.on('guia-despacho:anulada', handleUpdate);
     socket.on('productos:created', handleUpdate);
     socket.on('productos:updated', handleUpdate);
     return () => {
@@ -61,6 +62,7 @@ export default function DosificadorStockPage() {
       socket.off('materia-prima:deleted', handleUpdate);
       socket.off('guia-despacho:created', handleUpdate);
       socket.off('guia-despacho:deleted', handleUpdate);
+      socket.off('guia-despacho:anulada', handleUpdate);
       socket.off('productos:created', handleUpdate);
       socket.off('productos:updated', handleUpdate);
     };

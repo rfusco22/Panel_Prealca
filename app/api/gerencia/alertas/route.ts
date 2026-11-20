@@ -54,13 +54,13 @@ export async function GET() {
           SELECT SUM(gd.cantidad_m3 * pf.cantidad)
           FROM guia_despacho gd
           INNER JOIN producto_formulas pf ON pf.producto_id = gd.producto_id
-          WHERE pf.agregado_id = a.id
+          WHERE pf.agregado_id = a.id AND COALESCE(gd.anulada, 0) = 0
         ), 0) AS consumido,
         COALESCE(SUM(mp.cantidad), 0) - COALESCE((
           SELECT SUM(gd.cantidad_m3 * pf.cantidad)
           FROM guia_despacho gd
           INNER JOIN producto_formulas pf ON pf.producto_id = gd.producto_id
-          WHERE pf.agregado_id = a.id
+          WHERE pf.agregado_id = a.id AND COALESCE(gd.anulada, 0) = 0
         ), 0) AS disponible
       FROM agregados a
       LEFT JOIN materia_prima mp ON mp.agregado_id = a.id
@@ -83,7 +83,7 @@ export async function GET() {
         COALESCE(SUM(gd.cantidad_m3), 0) AS totalDespachado,
         COUNT(gd.id) AS totalGuias
       FROM productos p
-      LEFT JOIN guia_despacho gd ON p.id = gd.producto_id AND gd.fecha >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+      LEFT JOIN guia_despacho gd ON p.id = gd.producto_id AND gd.fecha >= DATE_SUB(NOW(), INTERVAL 30 DAY) AND COALESCE(gd.anulada, 0) = 0
       GROUP BY p.id, p.resistencia, p.pulgada, p.unidad
       HAVING totalDespachado < 200
       ORDER BY totalDespachado ASC

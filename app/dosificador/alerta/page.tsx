@@ -37,10 +37,12 @@ export default function AlertaPage() {
 
     socket.on('guia-despacho:created', handleUpdate);
     socket.on('guia-despacho:deleted', handleUpdate);
+    socket.on('guia-despacho:anulada', handleUpdate);
 
     return () => {
       socket.off('guia-despacho:created', handleUpdate);
       socket.off('guia-despacho:deleted', handleUpdate);
+      socket.off('guia-despacho:anulada', handleUpdate);
     };
   }, [socket, fetchData]);
 

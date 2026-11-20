@@ -24,13 +24,13 @@ export async function GET() {
           SELECT SUM(gd.cantidad_m3 * pf.cantidad)
           FROM guia_despacho gd
           INNER JOIN producto_formulas pf ON pf.producto_id = gd.producto_id
-          WHERE pf.agregado_id = a.id
+          WHERE pf.agregado_id = a.id AND COALESCE(gd.anulada, 0) = 0
         ), 0) AS totalConsumido,
         COALESCE(SUM(mp.cantidad), 0) - COALESCE((
           SELECT SUM(gd.cantidad_m3 * pf.cantidad)
           FROM guia_despacho gd
           INNER JOIN producto_formulas pf ON pf.producto_id = gd.producto_id
-          WHERE pf.agregado_id = a.id
+          WHERE pf.agregado_id = a.id AND COALESCE(gd.anulada, 0) = 0
         ), 0) AS disponible
       FROM agregados a
       LEFT JOIN materia_prima mp ON mp.agregado_id = a.id
@@ -65,7 +65,7 @@ export async function GET() {
                   (SELECT SUM(gd.cantidad_m3 * pf2.cantidad) 
                    FROM guia_despacho gd 
                    INNER JOIN producto_formulas pf2 ON pf2.producto_id = gd.producto_id 
-                   WHERE pf2.agregado_id = pf.agregado_id), 0
+                   WHERE pf2.agregado_id = pf.agregado_id AND COALESCE(gd.anulada, 0) = 0), 0
                 )
               ) / pf.cantidad
             END
@@ -76,7 +76,7 @@ export async function GET() {
         (
           SELECT COALESCE(SUM(gd.cantidad_m3), 0)
           FROM guia_despacho gd
-          WHERE gd.producto_id = p.id
+          WHERE gd.producto_id = p.id AND COALESCE(gd.anulada, 0) = 0
         ) AS totalDespachado,
         (
           SELECT COUNT(*)
@@ -109,7 +109,7 @@ export async function GET() {
           (SELECT SUM(gd.cantidad_m3 * pf2.cantidad) 
            FROM guia_despacho gd 
            INNER JOIN producto_formulas pf2 ON pf2.producto_id = gd.producto_id 
-           WHERE pf2.agregado_id = pf.agregado_id), 0
+           WHERE pf2.agregado_id = pf.agregado_id AND COALESCE(gd.anulada, 0) = 0), 0
         ) AS consumidoAgregado
       FROM producto_formulas pf
       INNER JOIN agregados a ON pf.agregado_id = a.id

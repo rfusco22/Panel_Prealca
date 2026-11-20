@@ -28,7 +28,9 @@ export async function GET() {
       FROM pedidos pe
       LEFT JOIN clientes c ON pe.cliente_id = c.id
       LEFT JOIN productos p ON pe.producto_id = p.id
-      LEFT JOIN guia_despacho gd ON gd.pedido_id = pe.id
+      -- Las guías anuladas no suman al acumulado: esos M³ vuelven a estar
+      -- disponibles para rehacer el despacho.
+      LEFT JOIN guia_despacho gd ON gd.pedido_id = pe.id AND COALESCE(gd.anulada, 0) = 0
       WHERE pe.estado IN ('pendiente', 'en_proceso')
       GROUP BY pe.id, pe.cliente_id, c.nombre, pe.producto_id, p.resistencia, p.pulgada, pe.cantidad_m3, pe.estado, pe.obra, pe.created_at
       ORDER BY pe.id DESC

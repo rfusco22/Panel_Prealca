@@ -53,7 +53,7 @@ export async function GET(req: Request) {
          SELECT ${exprPeriodo(periodo, 'COALESCE(gd.fecha, gd.created_at)')} AS periodo, gd.cantidad_m3 AS m3,
                 COALESCE(CAST(gd.chofer_id AS CHAR), gd.chofer) AS chofer, gd.cliente_id
          FROM guia_despacho gd
-         WHERE COALESCE(gd.fecha, gd.created_at) >= ? AND COALESCE(gd.fecha, gd.created_at) <= ? ${filtroChoferD}
+         WHERE COALESCE(gd.fecha, gd.created_at) >= ? AND COALESCE(gd.fecha, gd.created_at) <= ? AND COALESCE(gd.anulada, 0) = 0 ${filtroChoferD}
        ) t
        GROUP BY periodo ORDER BY periodo ASC`,
       pD
@@ -64,7 +64,7 @@ export async function GET(req: Request) {
               COUNT(*) AS viajes, COALESCE(SUM(gd.cantidad_m3), 0) AS m3
        FROM guia_despacho gd
        LEFT JOIN choferes ch ON gd.chofer_id = ch.id
-       WHERE COALESCE(gd.fecha, gd.created_at) >= ? AND COALESCE(gd.fecha, gd.created_at) <= ? ${filtroChoferD}
+       WHERE COALESCE(gd.fecha, gd.created_at) >= ? AND COALESCE(gd.fecha, gd.created_at) <= ? AND COALESCE(gd.anulada, 0) = 0 ${filtroChoferD}
        GROUP BY gd.chofer_id, COALESCE(ch.nombre, gd.chofer, 'Sin chofer')`,
       pD
     );
@@ -80,7 +80,7 @@ export async function GET(req: Request) {
        LEFT JOIN unidades un ON gd.unidad_id = un.id
        LEFT JOIN clientes c ON gd.cliente_id = c.id
        LEFT JOIN productos p ON gd.producto_id = p.id
-       WHERE COALESCE(gd.fecha, gd.created_at) >= ? AND COALESCE(gd.fecha, gd.created_at) <= ? ${filtroChoferD}
+       WHERE COALESCE(gd.fecha, gd.created_at) >= ? AND COALESCE(gd.fecha, gd.created_at) <= ? AND COALESCE(gd.anulada, 0) = 0 ${filtroChoferD}
        ORDER BY COALESCE(gd.fecha, gd.created_at) DESC, gd.id DESC
        LIMIT 2000`,
       pD

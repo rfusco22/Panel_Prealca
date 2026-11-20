@@ -20,7 +20,9 @@ export async function GET(req: Request) {
     const from = searchParams.get('from');
     const to = searchParams.get('to');
 
-    let dateFilterGuias = '';
+    // Arranca con la condición de guía vigente: las anuladas no cuentan como
+    // despacho del cliente. El resto del filtro de fechas se le suma abajo.
+    let dateFilterGuias = ' AND COALESCE(gd.anulada, 0) = 0';
     const paramsGuias: any[] = [];
     // Se filtra por la fecha de despacho que cargó el usuario (gd.fecha), no
     // por el momento en que se tipeó la guía: se cargan guías de días

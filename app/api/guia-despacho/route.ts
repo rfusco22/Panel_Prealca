@@ -28,6 +28,18 @@ async function ensureColumns() {
   try { await query(`ALTER TABLE guia_despacho ADD COLUMN fecha DATE NULL`); } catch {}
   try { await query(`ALTER TABLE guia_despacho ADD COLUMN observaciones TEXT NULL`); } catch {}
   try { await query(`CREATE INDEX idx_gd_fecha ON guia_despacho (fecha)`); } catch {}
+  // Ver sql/migracion_anular_guia.sql.
+  //
+  // Una guía no se borra: se anula. El camión se accidentó, se rehace con otro
+  // chofer y otra unidad, y el papel que ya salió de planta tiene que seguir
+  // existiendo con su número. La guía anulada queda en la base, marcada, y deja
+  // de sumar en inventario, pedidos y reportes, que es el "reverso" que hace
+  // falta: el stock sale de la suma de las guías vigentes, no de un contador.
+  try { await query(`ALTER TABLE guia_despacho ADD COLUMN anulada TINYINT(1) NOT NULL DEFAULT 0`); } catch {}
+  try { await query(`ALTER TABLE guia_despacho ADD COLUMN motivo_anulacion VARCHAR(255) NULL`); } catch {}
+  try { await query(`ALTER TABLE guia_despacho ADD COLUMN anulada_at DATETIME NULL`); } catch {}
+  try { await query(`ALTER TABLE guia_despacho ADD COLUMN anulada_por INT NULL`); } catch {}
+  try { await query(`CREATE INDEX idx_gd_anulada ON guia_despacho (anulada)`); } catch {}
   // Ver sql/migracion_numero_guia.sql y sql/migracion_numero_guia_por_tipo.sql
   try { await query(`ALTER TABLE guia_despacho ADD COLUMN numero_guia INT NULL`); } catch {}
   try { await query(`CREATE TABLE IF NOT EXISTS guia_numero_secuencia (numero INT AUTO_INCREMENT PRIMARY KEY)`); } catch {}
@@ -107,7 +119,7 @@ export async function GET() {
 
   try {
     await ensureColumns();
-    const guias = await query(`SELECT gd.id, gd.numero_guia AS numeroGuia, gd.tipo, gd.cliente_id AS clienteId, c.nombre AS clienteNombre, c.rif AS clienteRif, c.direccion AS clienteDireccion, c.telefono AS clienteTelefono, gd.producto_id AS productoId, CONCAT(p.resistencia, ' - ', p.pulgada) AS productoNombre, p.resistencia, p.pulgada, gd.cantidad_m3 AS cantidadM3, gd.precio_m3 AS precioM3, gd.iva_aplicado AS ivaAplicado, gd.iva_monto AS ivaMonto, gd.total, gd.chofer_id AS choferId, COALESCE(ch.nombre, gd.chofer) AS choferNombre, gd.chofer, gd.unidad_id AS unidadId, un.numero_unidad AS numeroUnidad, un.placa, gd.pedido_id AS pedidoId, pe.cantidad_m3 AS pedidoTotalM3, pe.obra AS pedidoObra, gd.obra, gd.observaciones, gd.usuario_id AS usuarioId, COALESCE(gd.fecha, DATE(gd.created_at)) AS fecha, gd.created_at AS creadoEn FROM guia_despacho gd LEFT JOIN clientes c ON gd.cliente_id = c.id LEFT JOIN productos p ON gd.producto_id = p.id LEFT JOIN unidades un ON gd.unidad_id = un.id LEFT JOIN choferes ch ON gd.chofer_id = ch.id LEFT JOIN pedidos pe ON gd.pedido_id = pe.id ORDER BY gd.id DESC`);
+    const guias = await query(`SELECT gd.id, gd.numero_guia AS numeroGuia, gd.tipo, gd.cliente_id AS clienteId, c.nombre AS clienteNombre, c.rif AS clienteRif, c.direccion AS clienteDireccion, c.telefono AS clienteTelefono, gd.producto_id AS productoId, CONCAT(p.resistencia, ' - ', p.pulgada) AS productoNombre, p.resistencia, p.pulgada, gd.cantidad_m3 AS cantidadM3, gd.precio_m3 AS precioM3, gd.iva_aplicado AS ivaAplicado, gd.iva_monto AS ivaMonto, gd.total, gd.chofer_id AS choferId, COALESCE(ch.nombre, gd.chofer) AS choferNombre, gd.chofer, gd.unidad_id AS unidadId, un.numero_unidad AS numeroUnidad, un.placa, gd.pedido_id AS pedidoId, pe.cantidad_m3 AS pedidoTotalM3, pe.obra AS pedidoObra, gd.obra, gd.observaciones, COALESCE(gd.anulada, 0) AS anulada, gd.motivo_anulacion AS motivoAnulacion, gd.anulada_at AS anuladaAt, gd.usuario_id AS usuarioId, COALESCE(gd.fecha, DATE(gd.created_at)) AS fecha, gd.created_at AS creadoEn FROM guia_despacho gd LEFT JOIN clientes c ON gd.cliente_id = c.id LEFT JOIN productos p ON gd.producto_id = p.id LEFT JOIN unidades un ON gd.unidad_id = un.id LEFT JOIN choferes ch ON gd.chofer_id = ch.id LEFT JOIN pedidos pe ON gd.pedido_id = pe.id ORDER BY gd.id DESC`);
     return NextResponse.json({ success: true, guias }, { status: 200 });
   } catch (error) {
     console.error('Error GET guia_despacho:', error);
@@ -177,7 +189,7 @@ export async function POST(request: Request) {
               (SELECT SUM(gd.cantidad_m3 * pf2.cantidad) 
                FROM guia_despacho gd 
                INNER JOIN producto_formulas pf2 ON pf2.producto_id = gd.producto_id 
-               WHERE pf2.agregado_id = pf.agregado_id), 0
+               WHERE pf2.agregado_id = pf.agregado_id AND COALESCE(gd.anulada, 0) = 0), 0
             )
           ) / pf.cantidad
         END
@@ -200,7 +212,7 @@ export async function POST(request: Request) {
     if (pedidoId) {
       const [pedidoRows]: any = await query('SELECT cantidad_m3 FROM pedidos WHERE id = ?', [pedidoId]);
       const pedidoTotal = Number(pedidoRows?.cantidad_m3 || 0);
-      const [sumRows]: any = await query('SELECT COALESCE(SUM(cantidad_m3), 0) AS totalGuias FROM guia_despacho WHERE pedido_id = ?', [pedidoId]);
+      const [sumRows]: any = await query('SELECT COALESCE(SUM(cantidad_m3), 0) AS totalGuias FROM guia_despacho WHERE pedido_id = ? AND COALESCE(anulada, 0) = 0', [pedidoId]);
       const totalGuias = Number(sumRows?.totalGuias || 0);
       if (totalGuias >= pedidoTotal) {
         await query("UPDATE pedidos SET estado = 'completado' WHERE id = ?", [pedidoId]);
@@ -224,6 +236,95 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Error POST guia_despacho:', error);
     return NextResponse.json({ error: 'Error al crear guía de despacho' }, { status: 500 });
+  }
+}
+
+// Anular una guía ya emitida.
+//
+// El caso real: el camión se accidentó en el camino, la guía ya está impresa y
+// hay que rehacer el despacho con otro chofer y otra unidad. Borrar la fila
+// también devolvería el inventario (el stock se calcula sumando las guías, no
+// con un contador aparte), pero se lleva puesto el papel: queda un número de
+// guía emitido del que no hay rastro, y la guía nueva igual lleva otro número.
+// Anular deja la guía en la base, marcada y con el motivo, y la saca de todas
+// las sumas: inventario, acumulado del pedido y reportes.
+//
+// No se reusa el número de guía anulada ni se renumeran las demás: el papel
+// anulado existe y tiene ese número.
+export async function PATCH(request: Request) {
+  // requireAuth deja pasar siempre a admin y gerencia (son superusuarios),
+  // así que esta lista es "además, el dosificador", que es quien emite las
+  // guías en planta y el que se entera del accidente.
+  const auth = await requireAuth(['dosificador']);
+  if (auth.response) return auth.response;
+
+  try {
+    await ensureColumns();
+    const { id, motivo } = await request.json();
+
+    const idGuia = Number(id);
+    if (!Number.isInteger(idGuia) || idGuia <= 0) {
+      return NextResponse.json({ error: 'Guía inválida.' }, { status: 400 });
+    }
+
+    // El motivo es obligatorio: una guía anulada sin explicación no sirve para
+    // reconstruir después qué pasó con ese número.
+    const motivoLimpio = typeof motivo === 'string' ? motivo.trim() : '';
+    if (motivoLimpio.length < 3) {
+      return NextResponse.json({ error: 'Debe indicar el motivo de la anulación.' }, { status: 400 });
+    }
+
+    const filas: any = await query(
+      'SELECT id, tipo, numero_guia AS numeroGuia, cantidad_m3 AS cantidadM3, pedido_id AS pedidoId, COALESCE(anulada, 0) AS anulada FROM guia_despacho WHERE id = ?',
+      [idGuia],
+    );
+    if (filas.length === 0) {
+      return NextResponse.json({ error: 'La guía no existe.' }, { status: 404 });
+    }
+    const guia = filas[0];
+    if (Number(guia.anulada) === 1) {
+      return NextResponse.json({ error: 'La guía ya está anulada.' }, { status: 400 });
+    }
+
+    await query(
+      'UPDATE guia_despacho SET anulada = 1, motivo_anulacion = ?, anulada_at = NOW(), anulada_por = ? WHERE id = ?',
+      [motivoLimpio.slice(0, 255), auth.session.userId, idGuia],
+    );
+
+    // El pedido vuelve al estado que le corresponde sin esta guía: los M³ que
+    // no se despacharon quedan otra vez disponibles para la guía nueva.
+    if (guia.pedidoId) {
+      const [pedidoRows]: any = await query('SELECT cantidad_m3 FROM pedidos WHERE id = ?', [guia.pedidoId]);
+      const pedidoTotal = Number(pedidoRows?.cantidad_m3 || 0);
+      const [sumRows]: any = await query(
+        'SELECT COALESCE(SUM(cantidad_m3), 0) AS totalGuias FROM guia_despacho WHERE pedido_id = ? AND COALESCE(anulada, 0) = 0',
+        [guia.pedidoId],
+      );
+      const totalGuias = Number(sumRows?.totalGuias || 0);
+      const estado = totalGuias >= pedidoTotal && pedidoTotal > 0
+        ? 'completado'
+        : totalGuias > 0 ? 'en_proceso' : 'pendiente';
+      await query('UPDATE pedidos SET estado = ? WHERE id = ?', [estado, guia.pedidoId]);
+      emitSocketEvent('pedidos:updated');
+    }
+
+    emitSocketEvent('guia-despacho:anulada');
+
+    const usuario = await getUsuarioFromRequest();
+    await registrarLog({
+      // La auditoría solo admite crear / editar / eliminar: anular es una
+      // edición de la guía, no un borrado, y el detalle va en la descripción.
+      ...usuario, accion: 'editar', modulo: 'Guías de Despacho', entidad_id: idGuia,
+      descripcion: `Anuló la guía GD-${guia.numeroGuia ?? guia.id} (${guia.tipo}) - ${guia.cantidadM3} M3 - motivo: ${motivoLimpio}`,
+      datos_anteriores: { anulada: 0 },
+      datos_nuevos: { anulada: 1, motivo: motivoLimpio },
+      ip_address: getClientIp(request),
+    });
+
+    return NextResponse.json({ success: true, id: idGuia }, { status: 200 });
+  } catch (error) {
+    console.error('Error PATCH guia_despacho (anular):', error);
+    return NextResponse.json({ error: 'Error al anular la guía de despacho' }, { status: 500 });
   }
 }
 

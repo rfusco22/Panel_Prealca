@@ -35,9 +35,11 @@ export default function GuiaDespachoPage() {
     };
 
     socket.on('guia-despacho:created', handleUpdate);
+    socket.on('guia-despacho:anulada', handleUpdate);
 
     return () => {
       socket.off('guia-despacho:created', handleUpdate);
+      socket.off('guia-despacho:anulada', handleUpdate);
     };
   }, [socket]);
 
@@ -55,6 +57,7 @@ export default function GuiaDespachoPage() {
 
       <GuiaDespachoTable
         data={guias}
+        onChange={fetchGuias}
       />
     </div>
   );

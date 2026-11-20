@@ -86,7 +86,7 @@ export default function HistoricoViajesContent() {
   useEffect(() => {
     if (!socket) return;
     const act = () => setRefresh((k) => k + 1);
-    const ev = ['guia-despacho:created', 'materia-prima:created', 'materia-prima:updated', 'materia-prima:deleted', 'viajes-mp:changed'];
+    const ev = ['guia-despacho:created', 'guia-despacho:anulada', 'materia-prima:created', 'materia-prima:updated', 'materia-prima:deleted', 'viajes-mp:changed'];
     ev.forEach((e) => socket.on(e, act));
     return () => { ev.forEach((e) => socket.off(e, act)); };
   }, [socket]);
